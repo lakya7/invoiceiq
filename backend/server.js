@@ -11,7 +11,7 @@ const app = express();
 const upload = multer({ dest: "uploads/" });
 
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","PUT","DELETE"] }));
@@ -390,7 +390,7 @@ app.listen(PORT, () => console.log(`InvoiceIQ backend on port ${PORT}`));
 // ── BILLING ROUTES ──────────────────────────────────────────────
 const billing = require("./billing");
 const Stripe = require("stripe");
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // Get subscription status
 app.get("/api/billing/:teamId", async (req, res) => {
