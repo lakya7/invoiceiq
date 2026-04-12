@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InvoiceIQ — Deployment Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet"/>
+<style>
+  :root { --ink:#0a0f1e; --paper:#f5f2eb; --accent:#e8531a; --muted:#7a7a6e; --card:#fff; --border:#e2ddd4; --green:#16a34a; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:'DM Sans',sans-serif;padding:0 0 80px;}
+  header{background:var(--ink);color:#fff;padding:24px 40px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;}
+  .logo span{color:#e8531a;}
+  .badge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:5px 12px;border-radius:20px;font-size:12px;color:rgba(255,255,255,0.7);}
+  .hero{padding:48px 40px 32px;border-bottom:1px solid var(--border);}
+  h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;margin-bottom:8px;}
+  .hero p{color:var(--muted);font-size:16px;max-width:540px;line-height:1.6;}
+  .time-badge{display:inline-flex;align-items:center;gap:6px;background:#fff7f4;border:1px solid #fcd9cc;color:var(--accent);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:500;margin-top:14px;}
+  .content{max-width:760px;margin:0 auto;padding:40px 24px;}
+  .step-block{margin-bottom:40px;}
+  .step-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .step-num{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;flex-shrink:0;}
+  .step-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+  .step-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  .card-header{padding:12px 18px;background:#f9f8f5;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;}
+  .card-body{padding:18px;}
+  pre{font-family:'DM Mono',monospace;font-size:13px;background:#0a0f1e;color:#e2ddd4;padding:18px;border-radius:8px;overflow-x:auto;line-height:1.7;}
+  .cmd{color:#f87c4f;}
+  .cmt{color:#555;}
+  .val{color:#4ade80;}
+  .key{color:#60a5fa;}
+  ol{padding-left:20px;display:flex;flex-direction:column;gap:10px;}
+  ol li{font-size:14px;line-height:1.6;color:var(--ink);}
+  ol li strong{color:var(--accent);}
+  .env-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .env-table th{text-align:left;padding:9px 12px;background:#f9f8f5;border:1px solid var(--border);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .env-table td{padding:9px 12px;border:1px solid var(--border);}
+  .env-table td:first-child{font-family:'DM Mono',monospace;color:var(--accent);font-size:12px;}
+  .env-table td:last-child{color:var(--muted);}
+  .tip{background:#fff7f4;border:1px solid #fcd9cc;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;color:#92400e;}
+  .tip strong{color:var(--accent);}
+  .success-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;text-align:center;margin-top:32px;}
+  .success-box h3{font-family:'Syne',sans-serif;font-size:20px;color:var(--green);margin-bottom:6px;}
+  .success-box p{font-size:14px;color:#166534;}
+  .divider{border:none;border-top:1px solid var(--border);margin:40px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Invoice<span>IQ</span></div>
+  <div class="badge">Deployment Guide</div>
+</header>
+
+<div class="hero">
+  <h1>Deploy InvoiceIQ Online</h1>
+  <p>Deploy your backend to Railway and frontend to Vercel. Both are free to start. Total time: ~15 minutes.</p>
+  <div class="time-badge">⏱ ~15 minutes · Free tier available on both platforms</div>
+</div>
+
+<div class="content">
+
+  <!-- PREREQS -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">0</div>
+      <div>
+        <div class="step-title">Before You Start</div>
+        <div class="step-sub">Install these if you haven't already</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Required accounts & tools</div>
+      <div class="card-body">
+        <ol>
+          <li>Create a free account at <strong>railway.app</strong></li>
+          <li>Create a free account at <strong>vercel.com</strong></li>
+          <li>Create a free account at <strong>github.com</strong> (needed to deploy)</li>
+          <li>Install <strong>Git</strong> on your computer: git-scm.com</li>
+          <li>Get your <strong>Anthropic API key</strong> from console.anthropic.com</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- STEP 1: GitHub -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Push Code to GitHub</div>
+        <div class="step-sub">Both Railway and Vercel deploy from GitHub</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Terminal commands</div>
+      <div class="card-body">
+        <pre><span class="cmt"># 1. Go to github.com → New Repository → name it "invoiceiq"</span>
+<span class="cmt"># 2. Then run these commands inside your invoiceiq folder:</span>
+
+<span class="cmd">cd</span> invoiceiq
+<span class="cmd">git init</span>
+<span class="cmd">git add</span> .
+<span class="cmd">git commit</span> -m <span class="val">"Initial InvoiceIQ MVP"</span>
+<span class="cmd">git remote add</span> origin https://github.com/YOUR_USERNAME/invoiceiq.git
+<span class="cmd">git push</span> -u origin main</pre>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- STEP 2: Railway -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Deploy Backend to Railway</div>
+        <div class="step-sub">Railway hosts your Node.js + Claude API server</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Railway setup steps</div>
+      <div class="card-body">
+        <ol>
+          <li>Go to <strong>railway.app</strong> → Click <strong>New Project</strong></li>
+          <li>Choose <strong>Deploy from GitHub repo</strong> → select your <strong>invoiceiq</strong> repo</li>
+          <li>When asked for root directory, set it to: <strong>backend</strong></li>
+          <li>Click <strong>Deploy</strong> — Railway will auto-detect Node.js</li>
+          <li>Once deployed, go to <strong>Settings → Variables</strong> and add:</li>
+        </ol>
+        <br/>
+        <table class="env-table">
+          <tr><th>Variable</th><th>Value</th><th>Notes</th></tr>
+          <tr><td>ANTHROPIC_API_KEY</td><td>sk-ant-...</td><td>Your Claude API key</td></tr>
+          <tr><td>FRONTEND_URL</td><td>https://your-app.vercel.app</td><td>Add after Vercel deploy</td></tr>
+          <tr><td>PORT</td><td>4000</td><td>Railway sets this automatically</td></tr>
+        </table>
+        <br/>
+        <ol start="6">
+          <li>Go to <strong>Settings → Networking</strong> → click <strong>Generate Domain</strong></li>
+          <li>Copy your Railway URL — it looks like: <strong>invoiceiq-backend.up.railway.app</strong></li>
+        </ol>
+      </div>
+    </div>
+    <div class="tip"><strong>✓ Test it:</strong> Open your Railway URL + /health in browser. You should see: {"status":"ok"}</div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- STEP 3: Vercel -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Deploy Frontend to Vercel</div>
+        <div class="step-sub">Vercel hosts your React app with a global CDN</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Vercel setup steps</div>
+      <div class="card-body">
+        <ol>
+          <li>Go to <strong>vercel.com</strong> → Click <strong>Add New Project</strong></li>
+          <li>Import your <strong>invoiceiq</strong> GitHub repo</li>
+          <li>Set <strong>Root Directory</strong> to: <strong>frontend</strong></li>
+          <li>Framework preset will auto-detect as <strong>Vite</strong></li>
+          <li>Under <strong>Environment Variables</strong>, add:</li>
+        </ol>
+        <br/>
+        <table class="env-table">
+          <tr><th>Variable</th><th>Value</th></tr>
+          <tr><td>VITE_API_URL</td><td>https://your-app.up.railway.app</td></tr>
+        </table>
+        <br/>
+        <ol start="6">
+          <li>Click <strong>Deploy</strong> — Vercel builds and deploys in ~60 seconds</li>
+          <li>Copy your Vercel URL — like: <strong>invoiceiq.vercel.app</strong></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- STEP 4: Final config -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">Connect Frontend ↔ Backend</div>
+        <div class="step-sub">Update Railway with your Vercel URL to allow requests</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Final step</div>
+      <div class="card-body">
+        <ol>
+          <li>Go back to <strong>Railway</strong> → your project → <strong>Variables</strong></li>
+          <li>Update <strong>FRONTEND_URL</strong> to your actual Vercel URL:<br/>e.g. <code style="font-family:monospace;color:#e8531a">https://invoiceiq.vercel.app</code></li>
+          <li>Railway will auto-redeploy with the new variable</li>
+          <li>Open your Vercel URL — your app is live! 🎉</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="success-box">
+    <h3>🎉 Your app is live!</h3>
+    <p>Share your Vercel URL with potential customers for demos.<br/>Both Railway and Vercel have free tiers — no credit card needed to start.</p>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Future deploys -->
+  <div class="step-block">
+    <div class="step-header">
+      <div class="step-num">→</div>
+      <div>
+        <div class="step-title">Future Updates</div>
+        <div class="step-sub">Auto-deploy every time you push to GitHub</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Push updates</div>
+      <div class="card-body">
+        <pre><span class="cmt"># Make your changes, then:</span>
+<span class="cmd">git add</span> .
+<span class="cmd">git commit</span> -m <span class="val">"your update"</span>
+<span class="cmd">git push</span>
+
+<span class="cmt"># Railway and Vercel auto-redeploy within ~60 seconds ✓</span></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
