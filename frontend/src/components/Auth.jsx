@@ -35,10 +35,7 @@ export default function Auth() {
   const handleGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: { prompt: "select_account" } // always show account chooser
-      }
+      options: { redirectTo: window.location.origin }
     });
   };
 
