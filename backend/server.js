@@ -18,6 +18,80 @@ app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","
 app.use(express.json());
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// ── DUPLICATE CHECK ─────────────────────────────────────────────
+app.post("/api/check-duplicate", async (req, res) => {
+  try {
+    const { invoiceNumber, vendorName, total, teamId, userId } = req.body;
+    let query = supabase.from("invoices").select("*").eq("user_id", userId);
+    if (teamId) query = query.eq("team_id", teamId);
+    if (invoiceNumber) query = query.eq("invoice_number", invoiceNumber);
+
+    const { data: existing } = await query;
+    if (existing && existing.length > 0) {
+      const dup = existing[0];
+
+      // Send duplicate notification email if enabled
+      try {
+        const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
+        const userEmail = await getUserEmail(userId);
+        if (settings?.notify_on_duplicate && userEmail && resend) {
+          await resend.emails.send({
+            from: "InvoiceIQ <notifications@invoiceiq.app>",
+            to: settings.notify_email || userEmail,
+            subject: `⚠️ Duplicate Invoice Detected — #${invoiceNumber}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+              <div style="background:#0a0f1e;padding:24px 32px;">
+                <div style="font-size:20px;font-weight:800;color:#fff;">Invoice<span style="color:#e8531a;">IQ</span></div>
+              </div>
+              <div style="padding:32px;">
+                <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+                <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">Duplicate Invoice Detected</h2>
+                <p style="font-size:14px;color:#7a7a6e;line-height:1.6;margin:0 0 20px;">
+                  Invoice <strong>#${invoiceNumber}</strong> from <strong>${vendorName || "Unknown Vendor"}</strong> 
+                  was already processed on <strong>${new Date(dup.created_at).toLocaleDateString()}</strong>.
+                </p>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                  <tr style="border-bottom:1px solid #f0ede8;">
+                    <td style="padding:10px 0;color:#7a7a6e;">Original ERP Ref</td>
+                    <td style="padding:10px 0;font-weight:600;text-align:right;">${dup.erp_reference || "N/A"}</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #f0ede8;">
+                    <td style="padding:10px 0;color:#7a7a6e;">Original Amount</td>
+                    <td style="padding:10px 0;font-weight:600;text-align:right;">$${Number(dup.total||0).toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;color:#7a7a6e;">Processed On</td>
+                    <td style="padding:10px 0;font-weight:600;text-align:right;">${new Date(dup.created_at).toLocaleDateString()}</td>
+                  </tr>
+                </table>
+                <div style="margin-top:20px;padding:14px;background:#fff7f4;border-radius:8px;font-size:13px;color:#92400e;">
+                  ⚡ A user attempted to process this invoice again. Please verify before approving.
+                </div>
+                <div style="text-align:center;margin-top:24px;">
+                  <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">View Dashboard →</a>
+                </div>
+              </div>
+            </div>`
+          });
+        }
+      } catch (e) { console.error("Duplicate email error:", e.message); }
+
+      return res.json({
+        isDuplicate: true,
+        existing: {
+          invoiceNumber: dup.invoice_number,
+          vendorName: dup.vendor_name,
+          total: dup.total,
+          erpReference: dup.erp_reference,
+          processedAt: dup.created_at,
+        }
+      });
+    }
+
+    res.json({ isDuplicate: false });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── HELPERS ─────────────────────────────────────────────────────
 function readFile(path) { return fs.readFileSync(path); }
 function cleanJSON(text) {

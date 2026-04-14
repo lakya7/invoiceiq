@@ -85,6 +85,35 @@ export default function App() {
       const res = await fetch(`${API}/api/extract`, { method: "POST", body: formData });
       const result = await res.json();
       if (!result.success) throw new Error(result.error);
+
+      // ── DUPLICATE DETECTION ──────────────────────────────────────
+      const extracted = result.data;
+      if (extracted.invoiceNumber || extracted.vendor?.name) {
+        try {
+          let query = supabase.from("invoices").select("*").eq("user_id", user.id);
+          if (team) query = query.eq("team_id", team.id);
+          if (extracted.invoiceNumber) query = query.eq("invoice_number", extracted.invoiceNumber);
+          const { data: existing } = await query;
+
+          if (existing && existing.length > 0) {
+            const dup = existing[0];
+            const dupDate = new Date(dup.created_at).toLocaleDateString("en-US", { day:"numeric", month:"short", year:"numeric" });
+            const proceed = window.confirm(
+              `⚠️ Duplicate Invoice Detected!\n\n` +
+              `Invoice #${extracted.invoiceNumber} from ${extracted.vendor?.name || "this vendor"} ` +
+              `was already processed on ${dupDate}.\n` +
+              `ERP Ref: ${dup.erp_reference || "N/A"}\n\n` +
+              `Do you want to proceed anyway?`
+            );
+            if (!proceed) {
+              setStage(STAGES.UPLOAD);
+              return;
+            }
+          }
+        } catch (e) { console.error("Duplicate check error:", e); }
+      }
+      // ────────────────────────────────────────────────────────────
+
       setExtractedData(result.data);
       setStage(STAGES.REVIEW);
     } catch (err) { alert("Extraction error: " + err.message); setStage(STAGES.UPLOAD); }
