@@ -78,11 +78,11 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         <div className="sidebar-logo">Invoice<span>IQ</span></div>
 
         {/* Team selector */}
-        {teams.length > 0 && (
+        {teams?.length > 0 && (
           <div className="team-selector">
             <div className="team-selector-label">Workspace</div>
-            <select className="team-select" value={team?.id || ""} onChange={e => onTeamChange(teams.find(t=>t.id===e.target.value))}>
-              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            <select className="team-select" value={team?.id || ""} onChange={e => onTeamChange(teams?.find(t=>t.id===e.target.value))}>
+              {(teams || []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
         )}
