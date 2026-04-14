@@ -141,46 +141,18 @@ export default function ERPConnections({ user, team, onBack }) {
   };
 
   const erps = [
-    {
-      id: "quickbooks",
-      name: "QuickBooks Online",
-      icon: "💚",
-      desc: "Push invoices as Bills directly to QuickBooks",
-      color: "#2CA01C",
-      connected: connections.quickbooks?.status === "connected",
-      status: connections.quickbooks?.status || "disconnected",
-      updatedAt: connections.quickbooks?.updated_at,
-    },
-    {
-      id: "oracle",
-      name: "Oracle Fusion Cloud",
-      icon: "🔴",
-      desc: "Push invoices to Oracle Payables module",
-      color: "#C74634",
-      connected: connections.oracle?.status === "connected",
-      status: connections.oracle?.status || "disconnected",
-      updatedAt: connections.oracle?.updated_at,
-    },
-    {
-      id: "sap",
-      name: "SAP S/4HANA",
-      icon: "🔵",
-      desc: "Coming soon — SAP integration in development",
-      color: "#0070f3",
-      connected: false,
-      status: "coming_soon",
-      updatedAt: null,
-    },
-    {
-      id: "netsuite",
-      name: "NetSuite",
-      icon: "🟠",
-      desc: "Coming soon — NetSuite integration in development",
-      color: "#F57F17",
-      connected: false,
-      status: "coming_soon",
-      updatedAt: null,
-    },
+    { id: "quickbooks",  name: "QuickBooks Online",      icon: "💚", desc: "Push invoices as Bills directly to QuickBooks",               color: "#2CA01C", connected: connections.quickbooks?.status === "connected",  status: connections.quickbooks?.status  || "disconnected", updatedAt: connections.quickbooks?.updated_at },
+    { id: "oracle",      name: "Oracle Fusion Cloud",     icon: "🔴", desc: "Push invoices to Oracle Payables module",                    color: "#C74634", connected: connections.oracle?.status === "connected",      status: connections.oracle?.status      || "disconnected", updatedAt: connections.oracle?.updated_at },
+    { id: "sap",         name: "SAP S/4HANA",             icon: "🔵", desc: "Coming soon — SAP integration in development",               color: "#0070f3", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "sap_ariba",   name: "SAP Ariba",               icon: "🟣", desc: "Coming soon — SAP Ariba procurement integration",            color: "#6B46C1", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "dynamics",    name: "Microsoft Dynamics 365",  icon: "🟦", desc: "Coming soon — Dynamics 365 Finance integration",            color: "#0078D4", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "netsuite",    name: "NetSuite",                icon: "🟠", desc: "Coming soon — NetSuite integration in development",          color: "#F57F17", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "xero",        name: "Xero",                    icon: "🔷", desc: "Coming soon — Xero accounting integration",                  color: "#13B5EA", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "zoho",        name: "Zoho Books",              icon: "🟡", desc: "Coming soon — Zoho Books integration",                       color: "#E8A803", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "coupa",       name: "Coupa",                   icon: "🟤", desc: "Coming soon — Coupa procurement integration",                color: "#D4622A", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "rillion",     name: "Rillion",                 icon: "⚫", desc: "Coming soon — Rillion AP automation integration",            color: "#374151", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "stampli",     name: "Stampli",                 icon: "🔶", desc: "Coming soon — Stampli invoice management integration",       color: "#F59E0B", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "mock",        name: "Mock (Demo)",             icon: "⚫", desc: "Demo mode — simulates ERP push for testing",                 color: "#6B7280", connected: connections.mock?.status === "connected",  status: connections.mock?.status || "disconnected", updatedAt: connections.mock?.updated_at },
   ];
 
   const handleConnect = (erpId) => {
