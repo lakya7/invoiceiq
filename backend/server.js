@@ -179,6 +179,27 @@ app.post("/api/push-erp", async (req, res) => {
     const erpReference = `ERP-${Date.now()}`;
     const timestamp = new Date().toISOString();
 
+    // Check if real ERP is connected for this team
+    let erpType = "mock";
+    let validationStatus = "mock";
+    let validationMessage = "Invoice saved to InvoiceIQ. No real ERP connected.";
+
+    if (teamId) {
+      const { data: connections } = await supabase
+        .from("erp_connections")
+        .select("erp_type, status")
+        .eq("team_id", teamId)
+        .eq("status", "connected");
+
+      if (connections && connections.length > 0) {
+        erpType = connections[0].erp_type;
+        validationStatus = "needs_validation";
+        validationMessage = erpType === "oracle"
+          ? "Invoice submitted to Oracle Fusion Payables. Go to Payables → Invoices → Validate to complete."
+          : "Invoice submitted to ERP. Awaiting validation.";
+      }
+    }
+
     // Update PO status if matched
     if (matchResult?.matchedPoId && matchResult.matchStatus === "matched") {
       await supabase.from("purchase_orders").update({ status: "fully_matched" }).eq("id", matchResult.matchedPoId);
@@ -197,7 +218,7 @@ app.post("/api/push-erp", async (req, res) => {
       } catch (e) { console.error("Email error:", e.message); }
     }
 
-    res.json({ success: true, erpReference, timestamp });
+    res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -444,5 +465,126 @@ app.get("/api/billing/check/:teamId", async (req, res) => {
   try {
     const usage = await billing.checkUsageLimit(req.params.teamId);
     res.json({ success: true, ...usage });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── ERP INTEGRATIONS ────────────────────────────────────────────
+const qb = require("./quickbooks");
+const oracle = require("./oracle");
+
+// ── QUICKBOOKS ──────────────────────────────────────────────────
+// Get QB auth URL
+app.get("/api/erp/quickbooks/auth/:teamId", (req, res) => {
+  try {
+    const url = qb.getAuthUrl(req.params.teamId);
+    res.json({ success: true, url });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// QB OAuth callback
+app.get("/api/erp/quickbooks/callback", async (req, res) => {
+  try {
+    const { code, state: teamId, realmId } = req.query;
+    await qb.exchangeCode(code, teamId, realmId);
+    res.redirect(`${process.env.FRONTEND_URL}/?qb_connected=true`);
+  } catch (err) {
+    res.redirect(`${process.env.FRONTEND_URL}/?qb_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+// QB connection status
+app.get("/api/erp/quickbooks/status/:teamId", async (req, res) => {
+  try {
+    const status = await qb.getConnectionStatus(req.params.teamId);
+    res.json({ success: true, ...status });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// QB disconnect
+app.post("/api/erp/quickbooks/disconnect", async (req, res) => {
+  try {
+    await qb.disconnect(req.body.teamId);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── ORACLE FUSION ───────────────────────────────────────────────
+// Save Oracle credentials
+app.post("/api/erp/oracle/connect", async (req, res) => {
+  try {
+    const { teamId, baseUrl, username, password } = req.body;
+    const result = await oracle.saveConnection(teamId, { baseUrl, username, password });
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Oracle connection status
+app.get("/api/erp/oracle/status/:teamId", async (req, res) => {
+  try {
+    const status = await oracle.getConnectionStatus(req.params.teamId);
+    res.json({ success: true, ...status });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Oracle disconnect
+app.post("/api/erp/oracle/disconnect", async (req, res) => {
+  try {
+    await oracle.disconnect(req.body.teamId);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── SMART ERP PUSH (routes to right ERP) ───────────────────────
+app.post("/api/erp/push", async (req, res) => {
+  try {
+    const { invoiceData, teamId, erpType } = req.body;
+
+    let result;
+    if (erpType === "quickbooks") {
+      result = await qb.pushInvoice(teamId, invoiceData);
+    } else if (erpType === "oracle") {
+      result = await oracle.pushInvoice(teamId, invoiceData);
+    } else {
+      // Mock ERP fallback
+      await new Promise(r => setTimeout(r, 1000));
+      result = {
+        success: true,
+        erpReference: `ERP-${Date.now()}`,
+        erpType: "mock",
+        details: { message: "Pushed to mock ERP (connect QuickBooks or Oracle for real sync)" }
+      };
+    }
+
+    // Save to Supabase
+    if (teamId) {
+      await supabase.from("invoices").insert({
+        user_id: req.body.userId,
+        team_id: teamId,
+        invoice_number: invoiceData.invoiceNumber,
+        vendor_name: invoiceData.vendor?.name,
+        invoice_date: invoiceData.invoiceDate,
+        due_date: invoiceData.dueDate,
+        total: invoiceData.total,
+        status: "pushed",
+        erp_reference: result.erpReference,
+        raw_data: invoiceData,
+      });
+    }
+
+    res.json({ success: true, timestamp: new Date().toISOString(), ...result });
+  } catch (err) {
+    console.error("ERP push error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET ALL ERP CONNECTIONS FOR TEAM ───────────────────────────
+app.get("/api/erp/connections/:teamId", async (req, res) => {
+  try {
+    const { data } = await supabase
+      .from("erp_connections")
+      .select("erp_type, status, updated_at")
+      .eq("team_id", req.params.teamId);
+    res.json({ success: true, connections: data || [] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
