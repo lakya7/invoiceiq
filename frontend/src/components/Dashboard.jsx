@@ -195,12 +195,14 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                   {filtered.map(inv => {
                     const sc = STATUS_COLORS[inv.status] || STATUS_COLORS.pending;
                     const mc = MATCH_COLORS[inv.match_status] || MATCH_COLORS.unmatched;
+                    const cur = inv.raw_data?.currency || "USD";
+                    const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
                     return (
                       <tr key={inv.id}>
                         <td className="inv-num">{inv.invoice_number||"—"}</td>
                         <td className="inv-vendor">{inv.vendor_name||"—"}</td>
                         <td className="inv-date">{inv.invoice_date||"—"}</td>
-                        <td className="inv-amount">${Number(inv.total||0).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
+                        <td className="inv-amount">{sym}{Number(inv.total||0).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
                         <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{(inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
                         <td><span className="status-badge" style={{background:sc.bg,color:sc.color}}>{inv.status}</span></td>
                         <td className="inv-erp">{inv.erp_reference||"—"}</td>
