@@ -93,6 +93,7 @@ export default function Review({ data, filePreview, onApprove, onBack }) {
                 </>
               );
             })()}
+          </div>
         </div>
 
         {/* Right: document preview */}
