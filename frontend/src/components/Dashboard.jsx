@@ -150,7 +150,15 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         {/* Stats */}
         <div className="stats-grid">
           <StatCard icon="📄" label="Total Invoices" value={invoices.length} sub="All time" accent="#e8531a" />
-          <StatCard icon="💰" label="Total Processed" value={`$${totalAmount.toLocaleString("en-US",{minimumFractionDigits:0})}`} sub="This month" accent="#1a6be8" />
+          <StatCard icon="💰" label="Total Processed" value={(() => {
+            const byCurrency = invoices.reduce((acc, inv) => {
+              const cur = inv.raw_data?.currency || "USD";
+              const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
+              acc[sym] = (acc[sym] || 0) + (inv.total || 0);
+              return acc;
+            }, {});
+            return Object.entries(byCurrency).map(([sym, amt]) => `${sym}${amt.toLocaleString("en-US",{minimumFractionDigits:2})}`).join(" + ") || "$0";
+          })()} sub="This month" accent="#1a6be8" />
           <StatCard icon="✅" label="PO Matched" value={matched} sub={`of ${invoices.length} invoices`} accent="#16a34a" />
           <StatCard icon="⏳" label="Pending Review" value={pending} sub={pending>0?"Needs attention":"All clear!"} accent="#f59e0b" />
         </div>
