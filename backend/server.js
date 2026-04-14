@@ -36,7 +36,7 @@ app.post("/api/check-duplicate", async (req, res) => {
         const userEmail = await getUserEmail(userId);
         if (settings?.notify_on_duplicate && userEmail && resend) {
           await resend.emails.send({
-            from: "InvoiceIQ <notifications@invoiceiq.app>",
+            from: "APFlow <notifications@apflow.app>",
             to: settings.notify_email || userEmail,
             subject: `⚠️ Duplicate Invoice Detected — #${invoiceNumber}`,
             html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
@@ -360,7 +360,7 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     // Send invite email
     const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/invite/${token}`;
     await resend.emails.send({
-      from: "InvoiceIQ <notifications@invoiceiq.app>",
+      from: "APFlow <notifications@apflow.app>",
       to: email,
       subject: `${inviterEmail} invited you to join ${team?.name || "a team"} on InvoiceIQ`,
       html: `
@@ -440,7 +440,7 @@ app.post("/api/settings/test-email", async (req, res) => {
   try {
     const { email } = req.body;
     await resend.emails.send({
-      from: "InvoiceIQ <notifications@invoiceiq.app>", to: email,
+      from: "APFlow <notifications@apflow.app>", to: email,
       subject: "✅ InvoiceIQ Test Notification",
       html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e2ddd4;"><div style="font-size:20px;font-weight:800;margin-bottom:16px;">Invoice<span style="color:#e8531a;">IQ</span></div><h2 style="font-size:18px;margin-bottom:8px;">Test notification working! 🎉</h2><p style="color:#7a7a6e;font-size:14px;line-height:1.6;">Email notifications are configured correctly.</p></div>`
     });
@@ -461,7 +461,7 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
   }[matchResult.matchStatus] || "" : "";
 
   await resend.emails.send({
-    from: "InvoiceIQ <notifications@invoiceiq.app>", to: recipients,
+    from: "APFlow <notifications@apflow.app>", to: recipients,
     subject: `✅ Invoice ${invoiceData.invoiceNumber||"N/A"} Approved — ${total}`,
     html: `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;"><div style="font-size:20px;font-weight:800;color:#fff;">Invoice<span style="color:#e8531a;">IQ</span></div></div>
