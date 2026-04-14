@@ -20,6 +20,8 @@ export default function Review({ data, filePreview, onApprove, onBack }) {
   const setVendor = (key, val) => setForm((f) => ({ ...f, vendor: { ...f.vendor, [key]: val } }));
 
   const confidence = Math.round((form.confidence || 0.9) * 100);
+  const currency = form.currency || "USD";
+  const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
 
   return (
     <div className="review-page">
@@ -60,39 +62,31 @@ export default function Review({ data, filePreview, onApprove, onBack }) {
 
           <div className="form-section">
             <div className="form-section-title">📦 Line Items</div>
-            {(() => {
-              const currency = form.currency || "USD";
-              const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
-              return (
-                <>
-                  <table className="line-items-table">
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th>Qty</th>
-                        <th>Unit Price</th>
-                        <th>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(form.lineItems || []).map((item, i) => (
-                        <tr key={i}>
-                          <td>{item.description}</td>
-                          <td>{item.quantity}</td>
-                          <td>{sym}{Number(item.unitPrice || 0).toFixed(2)}</td>
-                          <td>{sym}{Number(item.amount || 0).toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="totals">
-                    <div className="total-row"><span>Subtotal</span><span>{sym}{Number(form.subtotal || 0).toFixed(2)}</span></div>
-                    <div className="total-row"><span>Tax</span><span>{sym}{Number(form.tax || 0).toFixed(2)}</span></div>
-                    <div className="total-row total-grand"><span>Total</span><span>{sym}{Number(form.total || 0).toFixed(2)}</span></div>
-                  </div>
-                </>
-              );
-            })()}
+            <table className="line-items-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(form.lineItems || []).map((item, i) => (
+                  <tr key={i}>
+                    <td>{item.description}</td>
+                    <td>{item.quantity}</td>
+                    <td>{sym}{Number(item.unitPrice || 0).toFixed(2)}</td>
+                    <td>{sym}{Number(item.amount || 0).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="totals">
+              <div className="total-row"><span>Subtotal</span><span>{sym}{Number(form.subtotal || 0).toFixed(2)}</span></div>
+              <div className="total-row"><span>Tax</span><span>{sym}{Number(form.tax || 0).toFixed(2)}</span></div>
+              <div className="total-row total-grand"><span>Total</span><span>{sym}{Number(form.total || 0).toFixed(2)}</span></div>
+            </div>
           </div>
         </div>
 
