@@ -8,7 +8,7 @@ const PLANS = [
     name: "Free",
     price: "$0",
     period: "/month",
-    desc: "Try InvoiceIQ with no commitment",
+    desc: "Try APFlow with no commitment",
     docs: 50,
     features: ["50 documents/month", "1 ERP integration", "Basic AI extraction", "Email support"],
     cta: "Current Plan",
@@ -269,7 +269,7 @@ export default function Billing({ user, team, onBack }) {
             {/* Security note */}
             <div className="billing-security">
               <span>🔒</span>
-              <span>Payments are processed securely by Stripe. InvoiceIQ never stores your card details.</span>
+              <span>Payments are processed securely by Stripe. APFlow never stores your card details.</span>
             </div>
           </>
         )}

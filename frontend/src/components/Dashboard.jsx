@@ -75,7 +75,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     <div className="dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">Invoice<span>IQ</span></div>
+        <div className="sidebar-logo">AP<span>Flow</span></div>
 
         {/* Team selector */}
         {teams?.length > 0 && (
