@@ -225,15 +225,80 @@ export default function App() {
   );
 
   // Invoice processing flow
+  const [showAIPopup, setShowAIPopup] = useState(false);
+
   return (
     <div className="app">
       <header className="header">
         <div className="logo" style={{ cursor:"pointer" }} onClick={() => setView("dashboard")}>AP<span>Flow</span></div>
         <div className="header-right">
           <button className="reset-btn" onClick={() => setView("dashboard")}>← Dashboard</button>
-          <span className="ai-badge">⚡ AI Powered</span>
+          <span className="ai-badge" style={{ cursor:"pointer" }} onClick={() => setShowAIPopup(true)}>⚡ AI Powered</span>
         </div>
       </header>
+
+      {/* AI Features Popup */}
+      {showAIPopup && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={() => setShowAIPopup(false)}>
+          <div style={{ background:"#fff", borderRadius:16, padding:32, maxWidth:520, width:"100%", fontFamily:"DM Sans, sans-serif" }} onClick={e => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24 }}>
+              <div>
+                <div style={{ fontFamily:"Syne, sans-serif", fontWeight:800, fontSize:22, marginBottom:4 }}>⚡ Powered by Claude AI</div>
+                <div style={{ fontSize:13, color:"#7a7a6e" }}>Anthropic's Claude Vision — the world's most accurate document AI</div>
+              </div>
+              <button onClick={() => setShowAIPopup(false)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#7a7a6e" }}>×</button>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:24 }}>
+              {[
+                { num:"92%", label:"Less manual entry" },
+                { num:"4 sec", label:"Per invoice" },
+                { num:"$40K", label:"Saved per year" },
+              ].map((s,i) => (
+                <div key={i} style={{ background:"#f5f2eb", borderRadius:10, padding:"14px 12px", textAlign:"center" }}>
+                  <div style={{ fontFamily:"Syne, sans-serif", fontWeight:800, fontSize:22, color:"#e8531a" }}>{s.num}</div>
+                  <div style={{ fontSize:11, color:"#7a7a6e", marginTop:2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Features */}
+            <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
+              {[
+                { icon:"🔍", title:"AI Data Extraction", desc:"Reads any invoice in 4 seconds — PDFs, scans, photos. Extracts vendor, amounts, dates, line items automatically." },
+                { icon:"🔗", title:"Smart PO Matching", desc:"Automatically matches invoices against your purchase orders. Flags mismatches before you approve payment." },
+                { icon:"⚠️", title:"Duplicate Detection", desc:"Catches duplicate invoices before they're paid. Saves companies thousands in accidental double payments." },
+                { icon:"🚀", title:"ERP Integration", desc:"One-click push to Oracle Fusion, QuickBooks, SAP and more. No copy-pasting, no manual entry." },
+              ].map((f,i) => (
+                <div key={i} style={{ display:"flex", gap:12, alignItems:"flex-start", padding:"12px 14px", background:"#faf9f7", borderRadius:10, border:"1px solid #e2ddd4" }}>
+                  <div style={{ fontSize:20, flexShrink:0 }}>{f.icon}</div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:13, marginBottom:2 }}>{f.title}</div>
+                    <div style={{ fontSize:12, color:"#7a7a6e", lineHeight:1.5 }}>{f.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Demo video link */}
+            <a
+              href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:"#0a0f1e", color:"#fff", borderRadius:10, padding:"12px 20px", textDecoration:"none", fontSize:14, fontWeight:500, marginBottom:12 }}
+            >
+              ▶ Watch Demo Video
+            </a>
+
+            <button onClick={() => setShowAIPopup(false)} style={{ width:"100%", background:"transparent", border:"1px solid #e2ddd4", color:"#7a7a6e", borderRadius:10, padding:"11px 20px", fontSize:14, cursor:"pointer", fontFamily:"DM Sans, sans-serif" }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div className="progress-bar">
         {["Upload","Extract","Review","Push to ERP"].map((label, i) => (
           <div key={i} className={`progress-step ${i<=stageIndex?"active":""} ${i<stageIndex?"done":""}`}>
