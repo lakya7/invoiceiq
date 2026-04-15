@@ -31,6 +31,7 @@ export default function App() {
   const [matchResult, setMatchResult] = useState(null);
   const [erpResult, setErpResult] = useState(null);
   const [statusMsg, setStatusMsg] = useState("");
+  const [showAIPopup, setShowAIPopup] = useState(false);
 
   // Auth listener
   useEffect(() => {
@@ -225,8 +226,6 @@ export default function App() {
   );
 
   // Invoice processing flow
-  const [showAIPopup, setShowAIPopup] = useState(false);
-
   return (
     <div className="app">
       <header className="header">
