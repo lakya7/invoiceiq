@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, sub, accent }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -97,6 +97,11 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item" onClick={onSettings}>⚙️ Settings</div>
         </nav>
 
+        <div style={{ padding: "0 16px 12px", display: "flex", gap: 12, fontSize: 11 }}>
+          <span style={{ color: "rgba(245,242,235,0.3)", cursor: "pointer" }} onClick={onPrivacy}>Privacy</span>
+          <span style={{ color: "rgba(245,242,235,0.3)" }}>·</span>
+          <span style={{ color: "rgba(245,242,235,0.3)", cursor: "pointer" }} onClick={onTerms}>Terms</span>
+        </div>
         <div className="sidebar-user">
           <div className="sidebar-avatar">{firstName?.[0]?.toUpperCase()}</div>
           <div className="sidebar-user-info">

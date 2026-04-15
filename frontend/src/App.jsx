@@ -11,6 +11,7 @@ import Upload from "./components/Upload";
 import Processing from "./components/Processing";
 import Review from "./components/Review";
 import Success from "./components/Success";
+import Legal from "./components/Legal";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -196,6 +197,8 @@ export default function App() {
   const stageIndex = { upload:0, processing:1, review:2, matching:2, success:3 }[stage];
 
   // Route views
+  if (view === "privacy") return <Legal page="privacy" onBack={() => setView("dashboard")} />;
+  if (view === "terms") return <Legal page="terms" onBack={() => setView("dashboard")} />;
   if (view === "erp") return (
     <ERPConnections user={user} team={team} onBack={() => setView("dashboard")} />
   );
@@ -217,6 +220,7 @@ export default function App() {
       onSettings={() => setView("settings")}
       onTeam={() => setView("team")}
       onPOs={() => setView("pos")} onBilling={() => setView("billing")} onERP={() => setView("erp")}
+      onPrivacy={() => setView("privacy")} onTerms={() => setView("terms")}
     />
   );
 

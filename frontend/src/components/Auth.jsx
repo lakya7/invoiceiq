@@ -100,6 +100,11 @@ export default function Auth() {
             {!forgotMode && <>Don't have an account? <button onClick={() => { setForgotMode(false); }}>Sign up free</button></>}
             {forgotMode && <button onClick={() => { setForgotMode(false); setError(null); setMessage(null); }}>← Back to sign in</button>}
           </div>
+          <div style={{ marginTop: 16, fontSize: 12, color: "#7a7a6e", textAlign: "center" }}>
+            By signing in you agree to our{" "}
+            <a href="/terms" style={{ color: "#e8531a", textDecoration: "none" }}>Terms of Service</a>{" "}and{" "}
+            <a href="/privacy" style={{ color: "#e8531a", textDecoration: "none" }}>Privacy Policy</a>
+          </div>
         </div>
       </div>
     </div>
