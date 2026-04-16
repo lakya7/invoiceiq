@@ -454,6 +454,10 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 </footer>
 
 <script>
+// If user arrives with access_token in URL hash (after Google OAuth), redirect to login page
+if (window.location.hash.includes('access_token')) {
+  window.location.href = '/login' + window.location.hash;
+}
 const reveals = document.querySelectorAll('.reveal');
 const obs = new IntersectionObserver(entries => {
   entries.forEach((e, i) => {
