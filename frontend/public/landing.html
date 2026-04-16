@@ -458,6 +458,21 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 if (window.location.hash.includes('access_token')) {
   window.location.href = '/login' + window.location.hash;
 }
+
+// Check if user already has an active session → redirect to login (app)
+const SUPABASE_URL = 'https://cwsubqfynnntrzfshldy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c3VicWZ5bm5udHJ6ZnNobGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1MDQ0NzcsImV4cCI6MjA2MDA4MDQ3N30.B-yFJGOhqKuVmFOC6JFdU1HVoGOEUZyAFqO-9NqMiRk';
+
+fetch(`${SUPABASE_URL}/auth/v1/user`, {
+  headers: {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token') ? JSON.parse(localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token'))?.access_token : ''}`
+  }
+}).then(r => r.json()).then(data => {
+  if (data?.id) {
+    window.location.href = '/login';
+  }
+}).catch(() => {});
 const reveals = document.querySelectorAll('.reveal');
 const obs = new IntersectionObserver(entries => {
   entries.forEach((e, i) => {
