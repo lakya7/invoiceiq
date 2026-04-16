@@ -939,3 +939,12 @@ app.post("/api/agent/email/gmail/auth-url", async (req, res) => {
     res.json({ success: true, url });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// Debug endpoint - check email agent log
+app.get("/api/debug/email-log/:teamId", async (req, res) => {
+  try {
+    const { data: logs } = await supabase.from("email_agent_log").select("*").eq("team_id", req.params.teamId).order("processed_at", { ascending: false }).limit(10);
+    const { data: invoices } = await supabase.from("invoices").select("*").like("erp_reference", "EMAIL-%").limit(10);
+    res.json({ logs, invoices });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
