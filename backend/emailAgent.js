@@ -92,7 +92,9 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
       }
     }
 
-    return { processed: results.flat().filter(r => !r?.skipped).length, emails: results.flat().filter(Boolean) };
+    const flat = results.flat().filter(Boolean);
+    const processedCount = flat.filter(r => !r?.skipped && r?.erpRef).length;
+    return { processed: processedCount, emails: flat };
   } catch (err) {
     console.error("Gmail check error:", err.message);
     throw err;
@@ -131,12 +133,13 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
 
   if (!attachments.length && !zipAttachments.length) return null;
 
-  // Check if already processed by gmail_message_id
+  // Check if already processed — but only block if a non-ZIP non-duplicate log exists
   const { data: existingLogs } = await supabase
     .from("email_agent_log")
-    .select("id")
+    .select("id, erp_reference")
     .eq("gmail_message_id", messageId)
-    .not("erp_reference", "like", "DUPLICATE%");
+    .not("erp_reference", "like", "DUPLICATE%")
+    .not("erp_reference", "like", "ZIP-BATCH%");
 
   if (existingLogs && existingLogs.length > 0) {
     console.log(`Email ${messageId} already processed — skipping`);
