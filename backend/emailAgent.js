@@ -26,10 +26,17 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
     const gmail = await createGmailClient(accessToken, refreshToken);
     const after = lastChecked ? Math.floor(new Date(lastChecked).getTime() / 1000) : Math.floor(Date.now() / 1000) - 3600;
 
-    // Search for emails with PDF attachments
+    // Search for emails with PDF attachments AND invoice-related subjects
+    const invoiceKeywords = [
+      "invoice", "bill", "payment", "receipt", "purchase order",
+      "statement", "remittance", "due", "amount due", "tax invoice"
+    ];
+    const subjectQuery = invoiceKeywords.map(k => `subject:${k}`).join(" OR ");
+    const query = `has:attachment filename:pdf (${subjectQuery}) after:${after}`;
+
     const { data } = await gmail.users.messages.list({
       userId: "me",
-      q: `has:attachment filename:pdf after:${after}`,
+      q: query,
       maxResults: 10,
     });
 
@@ -142,6 +149,32 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
 
 async function extractInvoiceFromBase64(base64Data, subject, from) {
   try {
+    // ── STEP 1: Claude pre-check — is this actually an invoice? ──
+    const preCheck = await claude.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 100,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: base64Data }
+          },
+          {
+            type: "text",
+            text: `Is this PDF an invoice, bill, or payment request? Reply with ONLY "YES" or "NO".`
+          }
+        ]
+      }]
+    });
+
+    const isInvoice = preCheck.content[0]?.text?.trim().toUpperCase().startsWith("YES");
+    if (!isInvoice) {
+      console.log(`Skipping non-invoice PDF from "${from}" — subject: "${subject}"`);
+      return null;
+    }
+
+    // ── STEP 2: Full extraction ──────────────────────────────────
     const response = await claude.messages.create({
       model: "claude-opus-4-6",
       max_tokens: 1000,
