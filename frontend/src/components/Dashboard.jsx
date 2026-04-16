@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, sub, accent }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -91,6 +91,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item active">📊 Dashboard</div>
           <div className="nav-item" onClick={onNewInvoice}>📄 New Invoice</div>
           <div className="nav-item" onClick={onPOs}>📋 Purchase Orders</div>
+          <div className="nav-item" onClick={onAnalytics}>📈 Analytics</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onTeam}>👥 Team</div>}
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
