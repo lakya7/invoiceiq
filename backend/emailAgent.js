@@ -51,21 +51,38 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
 
         const subject = headers.payload.headers.find(h => h.name === "Subject")?.value?.toLowerCase() || "";
         const hasInvoiceKeyword = invoiceKeywords.some(k => subject.includes(k));
-        const hasZip = headers.payload.headers.find(h => h.name === "Subject"); // Will check attachment type later
 
-        // Allow if has invoice keyword OR if email has ZIP (will be checked in processGmailMessage)
+        // ── FIX: If no invoice keyword in subject, check if email actually has a ZIP attachment ──
         if (!hasInvoiceKeyword) {
-          // Check if it might be a ZIP by fetching message metadata
-          const { data: fullHeaders } = await gmail.users.messages.get({
-            userId: "me", id: msg.id, format: "metadata",
-            metadataHeaders: ["Subject", "From", "Content-Type"],
+          const { data: fullMsg } = await gmail.users.messages.get({
+            userId: "me", id: msg.id, format: "full",
           });
-          const contentType = fullHeaders.payload.mimeType || "";
-          const isZipEmail = contentType.includes("zip") || subject.includes("invoice") || subject.includes("batch");
-          if (!isZipEmail) {
-            console.log(`Skipping email - no invoice keyword in subject: "${subject}"`);
+
+          // Recursively walk message parts to find any ZIP attachment
+          const hasZipAttachment = (function findZip(parts) {
+            if (!parts) return false;
+            for (const part of parts) {
+              if (
+                part.mimeType === "application/zip" ||
+                part.mimeType === "application/x-zip-compressed" ||
+                part.mimeType === "application/octet-stream" ||
+                part.filename?.toLowerCase().endsWith(".zip")
+              ) return true;
+              if (part.parts && findZip(part.parts)) return true;
+            }
+            return false;
+          })(fullMsg.payload.parts || [fullMsg.payload]);
+
+          if (!hasZipAttachment) {
+            console.log(`Skipping email - no invoice keyword and no ZIP attachment: "${subject}"`);
             continue;
           }
+
+          // Has ZIP — process directly using the already-fetched full message
+          console.log(`ZIP email detected (no invoice keyword in subject): "${subject}" — processing`);
+          const result = await processGmailMessage({ gmail, messageId: msg.id, teamId, userId });
+          if (result) results.push(result);
+          continue;
         }
 
         const result = await processGmailMessage({ gmail, messageId: msg.id, teamId, userId });
@@ -99,7 +116,12 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
       if (part.mimeType === "application/pdf" || part.filename?.toLowerCase().endsWith(".pdf")) {
         attachments.push({ ...part, type: "pdf" });
       }
-      if (part.mimeType === "application/zip" || part.mimeType === "application/x-zip-compressed" || part.filename?.toLowerCase().endsWith(".zip")) {
+      if (
+        part.mimeType === "application/zip" ||
+        part.mimeType === "application/x-zip-compressed" ||
+        part.mimeType === "application/octet-stream" ||
+        part.filename?.toLowerCase().endsWith(".zip")
+      ) {
         zipAttachments.push({ ...part, type: "zip" });
       }
       if (part.parts) findParts(part.parts);
@@ -167,6 +189,7 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
           continue;
         }
       }
+
       const { data: savedInvoice, error: insertError } = await supabase.from("invoices").insert({
         user_id: userId,
         team_id: teamId,
