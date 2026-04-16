@@ -108,6 +108,11 @@ export default function EmailAgent({ user, team, onBack }) {
               <div style={{ fontSize: 13, color: "#6b7280" }}>
                 {result.processed > 0 ? "Check your dashboard to see the processed invoices." : "No new PDF attachments found since last check."}
               </div>
+              {result.emails?.flat?.()?.some(e => e?.skipped) && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "#d97706", background: "#fef9c3", padding: "6px 12px", borderRadius: 8 }}>
+                  ⚠️ {result.emails.flat().filter(e => e?.skipped).length} duplicate invoice(s) skipped — already processed before.
+                </div>
+              )}
             </div>
           )}
 

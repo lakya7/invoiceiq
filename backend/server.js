@@ -852,9 +852,10 @@ app.post("/api/agent/email/check", async (req, res) => {
       await supabase.from("email_agent_config").update({ last_checked: new Date().toISOString() }).eq("team_id", teamId);
 
       // Send summary email if invoices found
-      if (result.processed > 0) {
+      if (result.processed > 0 || result.emails?.some(e => e?.flat?.()?.some(i => i?.skipped))) {
+        const skipped = result.emails?.flat?.()?.filter(i => i?.skipped)?.length || 0;
         const adminEmail = await getUserEmail(userId);
-        if (adminEmail) {
+        if (adminEmail && result.processed > 0) {
           await sendEmail({
             to: adminEmail,
             subject: `📧 Email Agent: ${result.processed} invoice(s) auto-processed`,

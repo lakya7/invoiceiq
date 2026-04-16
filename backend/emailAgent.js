@@ -121,6 +121,35 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
 
       // Save to database
       const erpRef = `EMAIL-${Date.now()}`;
+
+      // ── DUPLICATE CHECK ──────────────────────────────────────
+      if (extracted.invoiceNumber) {
+        const { data: duplicate } = await supabase
+          .from("invoices")
+          .select("id, erp_reference, created_at")
+          .eq("invoice_number", extracted.invoiceNumber)
+          .eq("team_id", teamId)
+          .single();
+
+        if (duplicate) {
+          console.log(`Duplicate invoice detected: #${extracted.invoiceNumber} already processed on ${duplicate.created_at}`);
+          // Log it but skip saving
+          await supabase.from("email_agent_log").insert({
+            team_id: teamId,
+            gmail_message_id: messageId,
+            from_email: from,
+            subject,
+            filename: att.filename,
+            invoice_number: extracted.invoiceNumber,
+            vendor_name: extracted.vendor?.name,
+            amount: extracted.total,
+            erp_reference: `DUPLICATE-${duplicate.erp_reference}`,
+            processed_at: new Date().toISOString(),
+          });
+          results.push({ subject, from, invoiceNumber: extracted.invoiceNumber, skipped: true, reason: "Duplicate invoice" });
+          continue;
+        }
+      }
       const { data: savedInvoice, error: insertError } = await supabase.from("invoices").insert({
         user_id: userId,
         team_id: teamId,
