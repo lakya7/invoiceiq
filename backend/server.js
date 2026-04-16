@@ -787,3 +787,27 @@ app.post("/api/agent/settings", async (req, res) => {
     res.json({ success: true, settings: data });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── MONTHLY REPORT AGENT ────────────────────────────────────────
+const { generateMonthlyReport } = require("./reportAgent");
+
+// Generate and send report manually
+app.post("/api/agent/report", async (req, res) => {
+  try {
+    const { teamId, userId } = req.body;
+
+    const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).single();
+    const adminEmail = await getUserEmail(userId);
+
+    if (!adminEmail) throw new Error("Could not find admin email");
+
+    const result = await generateMonthlyReport({
+      teamId,
+      teamName: team?.name || "Your Team",
+      sendEmail,
+      adminEmail,
+    });
+
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});

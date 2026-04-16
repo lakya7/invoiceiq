@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, sub, accent }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -124,6 +124,9 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             {!team && teams?.length === 0 && (
               <button className="btn-secondary-action" onClick={() => setCreatingTeam(true)}>+ Create Team</button>
+            )}
+            {team && team.role === "admin" && (
+              <button className="btn-secondary-action" onClick={onReport}>📊 Monthly Report</button>
             )}
             <button className="btn-approve" onClick={onNewInvoice}>+ Process Invoice</button>
           </div>

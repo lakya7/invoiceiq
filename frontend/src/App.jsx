@@ -250,6 +250,19 @@ export default function App() {
       onTeam={() => setView("team")}
       onPOs={() => setView("pos")} onBilling={() => setView("billing")} onERP={() => setView("erp")}
       onPrivacy={() => setView("privacy")} onTerms={() => setView("terms")}
+      onReport={async () => {
+        if (!team) return alert("Please create a team first");
+        try {
+          const res = await fetch(`${API}/api/agent/report`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ teamId: team.id, userId: user.id })
+          });
+          const data = await res.json();
+          if (data.success) alert("📊 Monthly report sent to your email!");
+          else alert("Error: " + data.error);
+        } catch (e) { alert("Failed to generate report"); }
+      }}
     />
   );
 
