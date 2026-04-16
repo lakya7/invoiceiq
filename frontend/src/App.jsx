@@ -45,9 +45,26 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load teams when user logs in
+  // Load teams when user logs in + handle invite token
   useEffect(() => {
-    if (user) loadTeams();
+    if (user) {
+      loadTeams();
+      // Check for invite token in URL
+      const params = new URLSearchParams(window.location.search);
+      const inviteToken = params.get("invite");
+      if (inviteToken) {
+        fetch(`${API}/api/invite/accept`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: inviteToken, userId: user.id })
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            window.history.replaceState({}, "", "/");
+            loadTeams();
+          }
+        }).catch(console.error);
+      }
+    }
   }, [user]);
 
   const loadTeams = async () => {

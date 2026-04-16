@@ -381,7 +381,7 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     await supabase.from("team_members").insert({ team_id: teamId, email, role, status: "pending", invited_by: invitedBy });
 
     // Send invite email
-    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/invite/${token}`;
+    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
     await sendEmail({
       to: email,
       subject: `${inviterEmail} invited you to join ${team?.name || "a team"} on APFlow`,
