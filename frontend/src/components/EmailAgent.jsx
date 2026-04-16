@@ -110,9 +110,16 @@ export default function EmailAgent({ user, team, onBack }) {
               </div>
               {result.emails?.flat?.()?.some(e => e?.skipped) && (
                 <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {result.emails.flat().filter(e => e?.skipped).map((e, i) => (
+                  {Object.entries(
+                    result.emails.flat().filter(e => e?.skipped).reduce((acc, e) => {
+                      const key = e.invoiceNumber || "Unknown";
+                      if (!acc[key]) acc[key] = { ...e, count: 0 };
+                      acc[key].count++;
+                      return acc;
+                    }, {})
+                  ).map(([invoiceNum, e], i) => (
                     <div key={i} style={{ fontSize: 12, color: "#92400e", background: "#fef9c3", border: "1px solid #fde68a", padding: "8px 12px", borderRadius: 8 }}>
-                      ⚠️ <strong>#{e.invoiceNumber || "Unknown"}</strong> is a duplicate — already processed on <strong>{e.originalDate || "a previous date"}</strong>. Skipped.
+                      ⚠️ <strong>#{invoiceNum}</strong> is a duplicate — already processed on <strong>{e.originalDate || "a previous date"}</strong>. Skipped {e.count > 1 ? `(${e.count} emails)` : ""}.
                     </div>
                   ))}
                 </div>
