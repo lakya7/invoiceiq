@@ -35,6 +35,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;d
 .nav-links a:hover{color:var(--text)}
 .nav-cta{background:var(--orange)!important;color:white!important;padding:9px 22px;border-radius:100px;font-weight:500!important;transition:all 0.2s!important}
 .nav-cta:hover{background:var(--orange-light)!important;transform:translateY(-1px)!important;box-shadow:0 8px 24px rgba(232,83,26,0.25)!important}
+.nav-signin{border:1.5px solid var(--border)!important;color:var(--text)!important;padding:8px 20px;border-radius:100px;font-weight:400!important;transition:all 0.2s!important}
+.nav-signin:hover{border-color:#d1d5db!important;background:var(--cream)!important}
 
 /* HERO — Light */
 .hero{background:var(--cream);padding:140px 60px 100px;text-align:center;position:relative;overflow:hidden}
@@ -183,7 +185,7 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
     <li><a href="#features">Features</a></li>
     <li><a href="#agents">Agents</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="/login" class="nav-cta">Start Free →</a></li>
+    <li><a href="/login" class="nav-signin">Sign In</a></li><li><a href="/login?signup=true" class="nav-cta">Start Free →</a></li>
   </ul>
 </nav>
 
@@ -197,8 +199,8 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
   </h1>
   <p class="hero-sub">APFlow extracts every field from any invoice in 4 seconds, matches it against your POs, and pushes it to your ERP automatically.</p>
   <div class="hero-btns">
-    <a href="/login" class="btn-orange">Start Free Trial →</a>
-    <a href="#how" class="btn-outline">See how it works</a>
+    <a href="/login?signup=true" class="btn-orange">Start Free Trial →</a>
+    <a href="/login" class="btn-outline">Sign In →</a>
   </div>
   <div class="stats-row">
     <div class="stat-box"><div class="stat-val">4<span>sec</span></div><div class="stat-lbl">Per invoice</div></div>
@@ -430,8 +432,9 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 <section class="cta-section">
   <h2 class="cta-h reveal">Ready to transform<br>your <span>AP process?</span></h2>
   <p class="cta-p reveal">Join finance teams saving 10+ hours every week with APFlow.</p>
-  <div class="reveal">
-    <a href="/login" class="btn-orange" style="font-size:16px;padding:18px 40px">Start Free Trial →</a>
+  <div class="reveal" style="display:flex;align-items:center;justify-content:center;gap:14px">
+    <a href="/login?signup=true" class="btn-orange" style="font-size:16px;padding:18px 40px">Start Free Trial →</a>
+    <a href="/login" class="btn-outline" style="font-size:16px;padding:18px 32px;background:transparent;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2)">Sign In</a>
   </div>
   <p class="cta-note reveal">No credit card required · 14-day free trial · Cancel anytime</p>
 </section>

@@ -2,8 +2,11 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 
 export default function Auth() {
+  const isSignup = new URLSearchParams(window.location.search).get("signup") === "true";
+  const [mode, setMode] = useState(isSignup ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
@@ -13,11 +16,13 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true); setError(null); setMessage(null);
     if (forgotMode) {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
       if (error) setError(error.message);
       else setMessage("Password reset link sent to your email!");
+    } else if (mode === "signup") {
+      const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
+      if (error) setError(error.message);
+      else setMessage("Check your email to confirm your account!");
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
@@ -58,8 +63,8 @@ export default function Auth() {
 
       <div className="auth-right">
         <div className="auth-card">
-          <div className="auth-card-title">{forgotMode ? "Reset password" : "Welcome back"}</div>
-          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : "Sign in to your APFlow account"}</div>
+          <div className="auth-card-title">{forgotMode ? "Reset password" : mode === "signup" ? "Create your account" : "Welcome back"}</div>
+          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : mode === "signup" ? "Start your 14-day free trial" : "Sign in to your APFlow account"}</div>
 
           {!forgotMode && (
             <>
@@ -72,6 +77,12 @@ export default function Auth() {
           )}
 
           <form onSubmit={handle}>
+            {mode === "signup" && !forgotMode && (
+              <div className="auth-field">
+                <label>Full Name</label>
+                <input type="text" placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} required />
+              </div>
+            )}
             <div className="auth-field">
               <label>Work Email</label>
               <input type="email" placeholder="jane@company.com" value={email} onChange={e => setEmail(e.target.value)} required />
@@ -80,9 +91,7 @@ export default function Auth() {
               <div className="auth-field">
                 <label>
                   Password
-                  <button type="button" className="forgot-link" onClick={() => { setForgotMode(true); setError(null); setMessage(null); }}>
-                    Forgot password?
-                  </button>
+                  {mode === "login" && <button type="button" className="forgot-link" onClick={() => { setForgotMode(true); setError(null); setMessage(null); }}>Forgot password?</button>}
                 </label>
                 <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
               </div>
@@ -92,17 +101,18 @@ export default function Auth() {
             {message && <div className="auth-message">{message}</div>}
 
             <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? "Please wait..." : forgotMode ? "Send Reset Link →" : "Sign In →"}
+              {loading ? "Please wait..." : forgotMode ? "Send Reset Link →" : mode === "signup" ? "Create Account →" : "Sign In →"}
             </button>
           </form>
 
           <div className="auth-switch">
-            {!forgotMode && <>Don't have an account? <button onClick={() => { setForgotMode(false); }}>Sign up free</button></>}
+            {!forgotMode && mode === "login" && <>Don't have an account? <button onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>Sign up free</button></>}
+            {!forgotMode && mode === "signup" && <>Already have an account? <button onClick={() => { setMode("login"); setError(null); setMessage(null); }}>Sign in</button></>}
             {forgotMode && <button onClick={() => { setForgotMode(false); setError(null); setMessage(null); }}>← Back to sign in</button>}
           </div>
           <div style={{ marginTop: 16, fontSize: 12, color: "#7a7a6e", textAlign: "center" }}>
-            By signing in you agree to our{" "}
-            <a href="/terms" style={{ color: "#e8531a", textDecoration: "none" }}>Terms of Service</a>{" "}and{" "}
+            By continuing you agree to our{" "}
+            <a href="/terms" style={{ color: "#e8531a", textDecoration: "none" }}>Terms</a>{" "}and{" "}
             <a href="/privacy" style={{ color: "#e8531a", textDecoration: "none" }}>Privacy Policy</a>
           </div>
         </div>
