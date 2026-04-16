@@ -26,8 +26,8 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
     const gmail = await createGmailClient(accessToken, refreshToken);
     const after = lastChecked ? Math.floor(new Date(lastChecked).getTime() / 1000) : Math.floor(Date.now() / 1000) - 3600;
 
-    // Search for emails with PDF attachments - broad search, Claude pre-check handles filtering
-    const query = `has:attachment filename:pdf after:${after}`;
+    // Search for emails with PDF or ZIP attachments
+    const query = `has:attachment (filename:pdf OR filename:zip) after:${after}`;
 
     const { data } = await gmail.users.messages.list({
       userId: "me",
@@ -51,10 +51,21 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
 
         const subject = headers.payload.headers.find(h => h.name === "Subject")?.value?.toLowerCase() || "";
         const hasInvoiceKeyword = invoiceKeywords.some(k => subject.includes(k));
+        const hasZip = headers.payload.headers.find(h => h.name === "Subject"); // Will check attachment type later
 
+        // Allow if has invoice keyword OR if email has ZIP (will be checked in processGmailMessage)
         if (!hasInvoiceKeyword) {
-          console.log(`Skipping email - no invoice keyword in subject: "${subject}"`);
-          continue;
+          // Check if it might be a ZIP by fetching message metadata
+          const { data: fullHeaders } = await gmail.users.messages.get({
+            userId: "me", id: msg.id, format: "metadata",
+            metadataHeaders: ["Subject", "From", "Content-Type"],
+          });
+          const contentType = fullHeaders.payload.mimeType || "";
+          const isZipEmail = contentType.includes("zip") || subject.includes("invoice") || subject.includes("batch");
+          if (!isZipEmail) {
+            console.log(`Skipping email - no invoice keyword in subject: "${subject}"`);
+            continue;
+          }
         }
 
         const result = await processGmailMessage({ gmail, messageId: msg.id, teamId, userId });
