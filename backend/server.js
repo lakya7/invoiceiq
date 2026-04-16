@@ -910,9 +910,10 @@ app.get("/api/agent/email/gmail/callback", async (req, res) => {
       enabled: true,
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}?emailAgentConnected=true`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?emailAgentConnected=true`);
   } catch (err) {
-    res.redirect(`${process.env.FRONTEND_URL}?emailAgentError=true`);
+    console.error("Gmail callback error:", err.message);
+    res.redirect(`${process.env.FRONTEND_URL}/login?emailAgentError=true`);
   }
 });
 

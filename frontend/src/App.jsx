@@ -54,6 +54,9 @@ export default function App() {
       // Check for invite token in URL
       const params = new URLSearchParams(window.location.search);
       const inviteToken = params.get("invite");
+      const emailAgentConnected = params.get("emailAgentConnected");
+      const emailAgentError = params.get("emailAgentError");
+
       if (inviteToken) {
         fetch(`${API}/api/invite/accept`, {
           method: "POST",
@@ -61,10 +64,20 @@ export default function App() {
           body: JSON.stringify({ token: inviteToken, userId: user.id })
         }).then(r => r.json()).then(data => {
           if (data.success) {
-            window.history.replaceState({}, "", "/");
+            window.history.replaceState({}, "", "/login");
             loadTeams();
           }
         }).catch(console.error);
+      }
+
+      if (emailAgentConnected) {
+        window.history.replaceState({}, "", "/login");
+        setView("emailAgent");
+      }
+
+      if (emailAgentError) {
+        window.history.replaceState({}, "", "/login");
+        alert("Gmail connection failed. Please try again.");
       }
     }
   }, [user]);
