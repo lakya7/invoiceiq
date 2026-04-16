@@ -9,11 +9,19 @@ const VALIDATION_STATUS = {
   mock:             { bg:"#dbeafe", color:"#1d4ed8", icon:"🔵", label:"Mock ERP",           desc:"No real ERP connected. Data saved to APFlow database only." },
 };
 
+const AGENT_STATUS = {
+  auto_approved: { bg:"#dcfce7", color:"#16a34a", icon:"🤖✅", label:"Auto Approved by Agent", desc:"Approval Agent automatically approved this invoice based on your rules." },
+  escalated:     { bg:"#fef9c3", color:"#92400e", icon:"🤖⚠️", label:"Escalated for Review",   desc:"Approval Agent flagged this invoice for manual review. Check your email." },
+  manual:        { bg:"#f3f4f6", color:"#6b7280", icon:"👤",   label:"Manual Review",           desc:"Approval Agent is disabled. Manual review required." },
+};
+
 export default function Success({ result, data, matchResult, onReset }) {
   const matchStatus = matchResult?.matchStatus || "unmatched";
   const erpType = result?.erpType || "mock";
   const validationStatus = result?.validationStatus || (erpType === "mock" ? "mock" : "needs_validation");
   const vs = VALIDATION_STATUS[validationStatus] || VALIDATION_STATUS.mock;
+  const agentDecision = result?.agentDecision;
+  const as = agentDecision ? AGENT_STATUS[agentDecision.decision] || AGENT_STATUS.manual : null;
 
   const currency = data?.currency || "USD";
   const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
@@ -24,6 +32,27 @@ export default function Success({ result, data, matchResult, onReset }) {
         <div className="success-icon">✅</div>
         <h2>Pushed to ERP Successfully</h2>
         <p>Invoice processed and synced to your ERP system.</p>
+
+        {/* Agent Decision */}
+        {as && (
+          <div style={{ background:as.bg, border:`1px solid ${as.color}30`, borderRadius:10, padding:"14px 16px", marginBottom:16, textAlign:"left" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+              <span style={{ fontSize:16 }}>{as.icon}</span>
+              <span style={{ fontWeight:700, color:as.color, fontSize:14 }}>Approval Agent: {as.label}</span>
+              {agentDecision.confidence && (
+                <span style={{ marginLeft:"auto", fontSize:11, color:"#888", background:"rgba(0,0,0,0.06)", padding:"2px 8px", borderRadius:10 }}>
+                  {agentDecision.confidence}% confidence
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{agentDecision.reason}</div>
+            {agentDecision.decision === "escalated" && (
+              <div style={{ marginTop:8, fontSize:12, color:"#92400e" }}>
+                📧 Escalation email sent to admin for review
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Validation Status */}
         <div style={{ background:vs.bg, border:`1px solid ${vs.color}30`, borderRadius:10, padding:"14px 16px", marginBottom:16, textAlign:"left" }}>

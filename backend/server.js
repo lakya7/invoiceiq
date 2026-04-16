@@ -7,6 +7,7 @@ const { createClient } = require("@supabase/supabase-js");
 const crypto = require("crypto");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
+const { runApprovalAgent, sendAgentDecisionEmail } = require("./approvalAgent");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -297,6 +298,36 @@ app.post("/api/push-erp", async (req, res) => {
       }
     }
 
+    // ── RUN APPROVAL AGENT ──────────────────────────────────────
+    let agentDecision = null;
+    if (teamId) {
+      try {
+        agentDecision = await runApprovalAgent({ invoiceData, matchResult, teamId, userId, sendEmail });
+
+        // Send agent decision email to admin
+        const adminEmail = await getUserEmail(userId);
+        if (adminEmail) {
+          await sendAgentDecisionEmail({
+            decision: agentDecision.decision,
+            reason: agentDecision.reason,
+            rule: agentDecision.rule,
+            invoiceData,
+            erpReference,
+            adminEmail,
+            sendEmail
+          });
+        }
+
+        // Save agent decision to invoice record
+        await supabase.from("invoices").update({
+          agent_decision: agentDecision.decision,
+          agent_reason: agentDecision.reason,
+          agent_rule: agentDecision.rule,
+        }).eq("erp_reference", erpReference);
+
+      } catch (e) { console.error("Agent error:", e.message); }
+    }
+
     // Update PO status if matched
     if (matchResult?.matchedPoId && matchResult.matchStatus === "matched") {
       await supabase.from("purchase_orders").update({ status: "fully_matched" }).eq("id", matchResult.matchedPoId);
@@ -315,7 +346,7 @@ app.post("/api/push-erp", async (req, res) => {
       } catch (e) { console.error("Email error:", e.message); }
     }
 
-    res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp });
+    res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp, agentDecision });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -705,5 +736,37 @@ app.get("/api/erp/connections/:teamId", async (req, res) => {
       .select("erp_type, status, updated_at")
       .eq("team_id", req.params.teamId);
     res.json({ success: true, connections: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── APPROVAL AGENT SETTINGS ─────────────────────────────────────
+app.get("/api/agent/settings/:teamId", async (req, res) => {
+  try {
+    const { data } = await supabase.from("agent_settings").select("*").eq("team_id", req.params.teamId).single();
+    res.json({ success: true, settings: data || {
+      team_id: req.params.teamId,
+      agent_enabled: true,
+      auto_approve_below: 500,
+      escalate_above: 5000,
+      require_po_match: false,
+      trusted_vendors: [],
+    }});
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/agent/settings", async (req, res) => {
+  try {
+    const { teamId, agentEnabled, autoApproveBelow, escalateAbove, requirePoMatch, trustedVendors } = req.body;
+    const { data, error } = await supabase.from("agent_settings").upsert({
+      team_id: teamId,
+      agent_enabled: agentEnabled,
+      auto_approve_below: autoApproveBelow,
+      escalate_above: escalateAbove,
+      require_po_match: requirePoMatch,
+      trusted_vendors: trustedVendors,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "team_id" }).select().single();
+    if (error) throw error;
+    res.json({ success: true, settings: data });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
