@@ -25,6 +25,23 @@ async function runAnomalyAgent({ invoiceData, teamId, userId }) {
 
     const pastInvoices = history || [];
 
+    // ── ANOMALY 0: Same invoice number already exists ────────────
+    if (invoiceNumber) {
+      const { data: sameInvNum } = await supabase
+        .from("invoices")
+        .select("id, vendor_name, total, created_at")
+        .eq("invoice_number", invoiceNumber)
+        .eq("team_id", teamId);
+
+      if (sameInvNum && sameInvNum.length > 0) {
+        anomalies.push({
+          type: "duplicate_invoice_number",
+          severity: "high",
+          message: `Invoice #${invoiceNumber} was already processed on ${new Date(sameInvNum[0].created_at).toLocaleDateString()}. This is a duplicate!`,
+        });
+      }
+    }
+
     // ── ANOMALY 1: Amount spike (3x average) ────────────────────
     if (pastInvoices.length >= 3) {
       const avgAmount = pastInvoices.reduce((s, i) => s + (i.total || 0), 0) / pastInvoices.length;
@@ -91,11 +108,17 @@ async function runAnomalyAgent({ invoiceData, teamId, userId }) {
       i.invoice_number !== invoiceNumber
     );
 
-    if (sameAmount.length > 0) {
+    if (sameAmount.length >= 2) {
+      anomalies.push({
+        type: "repeated_amount",
+        severity: "high",
+        message: `${sameAmount.length} previous invoices from ${vendor} have the exact same amount (${formatAmt(amount)}). High risk of duplicate payment!`,
+      });
+    } else if (sameAmount.length === 1) {
       warnings.push({
         type: "same_amount",
         severity: "medium",
-        message: `${sameAmount.length} previous invoice(s) from ${vendor} have the exact same amount (${formatAmt(amount)}). Verify this is not a duplicate.`,
+        message: `1 previous invoice from ${vendor} has the exact same amount (${formatAmt(amount)}). Verify this is not a duplicate.`,
       });
     }
 
