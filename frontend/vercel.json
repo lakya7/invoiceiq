@@ -1,8 +1,9 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/landing.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/app", "destination": "/index.html" },
-    { "source": "/app/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/login", "dest": "/index.html" },
+    { "src": "/app/(.*)", "dest": "/index.html" },
+    { "src": "/app", "dest": "/index.html" },
+    { "src": "/", "dest": "/landing.html" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
