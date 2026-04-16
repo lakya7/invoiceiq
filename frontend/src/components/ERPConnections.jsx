@@ -209,9 +209,22 @@ export default function ERPConnections({ user, team, onBack }) {
         <div style={{ background: "#fff", border: "1px solid #e2ddd4", borderRadius: 12, padding: 24, marginBottom: 20 }}>
           <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>🔴 Connect Oracle Fusion Cloud</div>
           <p style={{ fontSize: 13, color: "#7a7a6e", marginBottom: 20, lineHeight: 1.6 }}>
-            Enter your Oracle Fusion Cloud credentials. You need a user with Payables access.
+            Enter your Oracle Fusion Cloud credentials for your integration user.
           </p>
           <form onSubmit={connectOracle}>
+            <div style={{ background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 18 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 10 }}>⚠️ Before connecting — one-time IT setup required</div>
+              <p style={{ fontSize: 12, color: "#92400e", marginBottom: 10, lineHeight: 1.6 }}>
+                Ask your Oracle Fusion admin to grant your <strong>integration user</strong> these roles:
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                <div style={{ background: "rgba(146,64,14,0.08)", borderRadius: 6, padding: "6px 12px", fontFamily: "DM Mono, monospace", fontSize: 12, color: "#92400e" }}>Payables Invoice Entry</div>
+                <div style={{ background: "rgba(146,64,14,0.08)", borderRadius: 6, padding: "6px 12px", fontFamily: "DM Mono, monospace", fontSize: 12, color: "#92400e" }}>Payables Invoice Inquiry</div>
+              </div>
+              <p style={{ fontSize: 12, color: "#78350f", lineHeight: 1.5 }}>
+                ✅ This is a <strong>one-time setup</strong>. Team members uploading invoices do <strong>not</strong> need Oracle access.
+              </p>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
               <div>
                 <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Oracle Base URL *</label>
@@ -246,9 +259,6 @@ export default function ERPConnections({ user, team, onBack }) {
                   />
                 </div>
               </div>
-            </div>
-            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#1d4ed8", marginBottom: 16 }}>
-              ℹ️ The user needs: <strong>Payables Invoice Entry</strong> and <strong>Payables Invoice Inquiry</strong> roles in Oracle Fusion.
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" disabled={oracleLoading} style={{ background: "#C74634", color: "#fff", border: "none", padding: "11px 22px", borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
