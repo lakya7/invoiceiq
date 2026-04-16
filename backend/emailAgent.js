@@ -94,14 +94,17 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
 
   if (!attachments.length) return null;
 
-  // Check if already processed
-  const { data: existing } = await supabase
+  // Check if already processed by gmail_message_id
+  const { data: existingLogs } = await supabase
     .from("email_agent_log")
     .select("id")
     .eq("gmail_message_id", messageId)
-    .single();
+    .not("erp_reference", "like", "DUPLICATE%");
 
-  if (existing) return null; // Already processed
+  if (existingLogs && existingLogs.length > 0) {
+    console.log(`Email ${messageId} already processed — skipping`);
+    return null;
+  }
 
   const results = [];
   for (const att of attachments) {
