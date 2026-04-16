@@ -10,14 +10,14 @@ export default function EmailAgent({ user, team, onBack }) {
 
   useEffect(() => { if (team) fetchConfig(); }, [team]);
 
-  const fetchConfig = async () => {
-    setLoading(true);
+  const fetchConfig = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch(`${API}/api/agent/email/${team.id}`);
       const data = await res.json();
       setConfig(data.config);
     } catch (e) { console.error(e); }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   const connectGmail = async () => {
@@ -43,6 +43,7 @@ export default function EmailAgent({ user, team, onBack }) {
       });
       const data = await res.json();
       setResult(data);
+      await fetchConfig(true); // refresh last_checked timestamp silently
     } catch (e) { alert("Check failed: " + e.message); }
     setChecking(false);
   };
