@@ -26,25 +26,37 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
     const gmail = await createGmailClient(accessToken, refreshToken);
     const after = lastChecked ? Math.floor(new Date(lastChecked).getTime() / 1000) : Math.floor(Date.now() / 1000) - 3600;
 
-    // Search for emails with PDF attachments AND invoice-related subjects
-    const invoiceKeywords = [
-      "invoice", "bill", "payment", "receipt", "purchase order",
-      "statement", "remittance", "due", "amount due", "tax invoice"
-    ];
-    const subjectQuery = invoiceKeywords.map(k => `subject:${k}`).join(" OR ");
-    const query = `has:attachment filename:pdf (${subjectQuery}) after:${after}`;
+    // Search for emails with PDF attachments - broad search, Claude pre-check handles filtering
+    const query = `has:attachment filename:pdf after:${after}`;
 
     const { data } = await gmail.users.messages.list({
       userId: "me",
       q: query,
-      maxResults: 10,
+      maxResults: 20,
     });
 
     if (!data.messages?.length) return { processed: 0, emails: [] };
 
+    // Filter by subject keywords in JS (more reliable than Gmail query syntax)
+    const invoiceKeywords = ["invoice", "bill", "payment", "receipt", "purchase order", "statement", "remittance", "due", "tax"];
+
     const results = [];
     for (const msg of data.messages) {
       try {
+        // Get just headers first to check subject
+        const { data: headers } = await gmail.users.messages.get({
+          userId: "me", id: msg.id, format: "metadata",
+          metadataHeaders: ["Subject", "From"],
+        });
+
+        const subject = headers.payload.headers.find(h => h.name === "Subject")?.value?.toLowerCase() || "";
+        const hasInvoiceKeyword = invoiceKeywords.some(k => subject.includes(k));
+
+        if (!hasInvoiceKeyword) {
+          console.log(`Skipping email - no invoice keyword in subject: "${subject}"`);
+          continue;
+        }
+
         const result = await processGmailMessage({ gmail, messageId: msg.id, teamId, userId });
         if (result) results.push(result);
       } catch (e) {
