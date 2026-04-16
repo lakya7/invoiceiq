@@ -9,6 +9,35 @@ const path = require("path");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// ── ROBUST JSON EXTRACTOR ───────────────────────────────────────
+// Finds the first balanced {...} block in a string, ignoring extra text
+function extractJSON(text) {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, i + 1));
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 // ── PROCESS ZIP BUFFER ──────────────────────────────────────────
 async function processZipBuffer({ zipBuffer, teamId, userId, source = "manual" }) {
   const results = { processed: 0, skipped: 0, failed: 0, invoices: [] };
@@ -144,7 +173,7 @@ async function extractInvoiceData(base64Data, filename) {
           {
             type: "text",
             text: `Extract invoice data from this PDF (filename: "${filename}").
-Return ONLY valid JSON:
+Return ONLY valid JSON with no extra text before or after:
 {
   "invoiceNumber": "string",
   "invoiceDate": "YYYY-MM-DD",
@@ -160,9 +189,13 @@ Return ONLY valid JSON:
     });
 
     const text = response.content[0]?.text || "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    return JSON.parse(jsonMatch[0]);
+    // Use balanced-brace extractor instead of greedy regex
+    const parsed = extractJSON(text);
+    if (!parsed) {
+      console.error(`Could not parse JSON from Claude response for ${filename}. Raw: ${text.slice(0, 200)}`);
+      return null;
+    }
+    return parsed;
   } catch (e) {
     console.error("Extraction error:", e.message);
     return null;
