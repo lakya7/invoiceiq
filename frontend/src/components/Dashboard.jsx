@@ -125,7 +125,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             {!team && teams?.length === 0 && (
               <button className="btn-secondary-action" onClick={() => setCreatingTeam(true)}>+ Create Team</button>
             )}
-            {team && team.role === "admin" && (
+            {team && (
               <button className="btn-secondary-action" onClick={onReport}>📊 Monthly Report</button>
             )}
             <button className="btn-approve" onClick={onNewInvoice}>+ Process Invoice</button>
