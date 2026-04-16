@@ -851,28 +851,63 @@ app.post("/api/agent/email/check", async (req, res) => {
       // Update last checked
       await supabase.from("email_agent_config").update({ last_checked: new Date().toISOString() }).eq("team_id", teamId);
 
-      // Send summary email if invoices found
-      if (result.processed > 0 || result.emails?.some(e => e?.flat?.()?.some(i => i?.skipped))) {
-        const skipped = result.emails?.flat?.()?.filter(i => i?.skipped)?.length || 0;
-        const adminEmail = await getUserEmail(userId);
-        if (adminEmail && result.processed > 0) {
-          await sendEmail({
-            to: adminEmail,
-            subject: `📧 Email Agent: ${result.processed} invoice(s) auto-processed`,
-            html: `
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-  <div style="background:#0a0f1e;padding:24px 32px;">
+      // ── FIX: Count ALL processed invoices including those from ZIPs ──
+      const allItems = (result.emails || []).flat().filter(Boolean);
+      const processedItems = allItems.filter(i => !i.skipped && i.erpRef);
+      const skippedItems = allItems.filter(i => i.skipped);
+      const totalProcessed = processedItems.length;
+
+      // Send confirmation email if anything was processed
+      if (totalProcessed > 0) {
+        try {
+          const adminEmail = await getUserEmail(userId);
+          if (adminEmail) {
+            // Build per-invoice rows for email body
+            const invoiceRows = processedItems.map(inv => `
+              <tr style="border-bottom:1px solid #f0ede8;">
+                <td style="padding:10px 0;color:#0a0f1e;font-weight:600;">${inv.invoiceNumber ? `#${inv.invoiceNumber}` : "—"}</td>
+                <td style="padding:10px 0;color:#7a7a6e;">${inv.from?.match(/<(.+)>/)?.[1] || inv.from || "Unknown"}</td>
+                <td style="padding:10px 0;text-align:right;font-weight:600;color:#0a0f1e;">${inv.amount ? `$${Number(inv.amount).toLocaleString()}` : "—"}</td>
+              </tr>`).join("");
+
+            const skippedNote = skippedItems.length > 0
+              ? `<div style="margin-top:16px;padding:12px 16px;background:#fffbeb;border-radius:8px;font-size:13px;color:#92400e;">⚠️ ${skippedItems.length} duplicate invoice(s) detected and skipped.</div>`
+              : "";
+
+            await sendEmail({
+              to: adminEmail,
+              subject: `📧 APFlow: ${totalProcessed} invoice(s) auto-processed from email`,
+              html: `
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#0a0f1e;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;">
     <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
-    <div style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;margin-top:4px;">EMAIL INVOICE AGENT</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;">EMAIL INVOICE AGENT</div>
   </div>
   <div style="padding:32px;">
     <div style="font-size:36px;margin-bottom:12px;">📧</div>
-    <h2 style="font-size:20px;margin:0 0 8px;color:#0a0f1e;">${result.processed} Invoice(s) Auto-Processed</h2>
-    <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;">APFlow automatically detected and processed ${result.processed} invoice(s) from your email inbox.</p>
-    <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;">View Dashboard →</a>
+    <h2 style="font-size:20px;margin:0 0 8px;color:#0a0f1e;">${totalProcessed} Invoice(s) Auto-Processed</h2>
+    <p style="font-size:14px;color:#7a7a6e;margin:0 0 24px;">APFlow automatically detected and processed the following invoice(s) from your email inbox.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="border-bottom:2px solid #e5e7eb;">
+          <th style="padding:8px 0;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;">INVOICE #</th>
+          <th style="padding:8px 0;text-align:left;font-size:12px;color:#9ca3af;font-weight:600;">FROM</th>
+          <th style="padding:8px 0;text-align:right;font-size:12px;color:#9ca3af;font-weight:600;">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>${invoiceRows}</tbody>
+    </table>
+    ${skippedNote}
+    <div style="text-align:center;margin-top:28px;">
+      <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:14px;">View Dashboard →</a>
+    </div>
   </div>
 </div>`
-          });
+            });
+            console.log(`Confirmation email sent to ${adminEmail} for ${totalProcessed} invoices`);
+          }
+        } catch (emailErr) {
+          console.error("Confirmation email error:", emailErr.message);
         }
       }
 
