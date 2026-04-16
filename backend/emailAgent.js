@@ -64,7 +64,7 @@ async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId
       }
     }
 
-    return { processed: results.length, emails: results };
+    return { processed: results.flat().filter(r => !r?.skipped).length, emails: results.flat().filter(Boolean) };
   } catch (err) {
     console.error("Gmail check error:", err.message);
     throw err;
