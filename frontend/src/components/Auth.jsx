@@ -31,10 +31,14 @@ export default function Auth() {
   };
 
   const handleGoogle = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get("invite");
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: inviteToken
+          ? `${window.location.origin}/login?invite=${inviteToken}`
+          : `${window.location.origin}/login`,
         queryParams: { prompt: "select_account" }
       }
     });
