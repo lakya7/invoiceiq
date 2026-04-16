@@ -811,3 +811,130 @@ app.post("/api/agent/report", async (req, res) => {
     res.json(result);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── EMAIL INVOICE AGENT ─────────────────────────────────────────
+const { checkGmailForInvoices, saveEmailAgentConfig, getEmailAgentConfig } = require("./emailAgent");
+
+// Get email agent config
+app.get("/api/agent/email/:teamId", async (req, res) => {
+  try {
+    const config = await getEmailAgentConfig(req.params.teamId);
+    res.json({ success: true, config: config || null });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Save email agent config
+app.post("/api/agent/email/config", async (req, res) => {
+  try {
+    const { teamId, provider, accessToken, refreshToken, email, enabled } = req.body;
+    const config = await saveEmailAgentConfig({ teamId, provider, accessToken, refreshToken, email, enabled });
+    res.json({ success: true, config });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Manually trigger email check
+app.post("/api/agent/email/check", async (req, res) => {
+  try {
+    const { teamId, userId } = req.body;
+    const config = await getEmailAgentConfig(teamId);
+    if (!config?.enabled) return res.json({ success: false, message: "Email agent not enabled" });
+
+    if (config.provider === "gmail") {
+      const result = await checkGmailForInvoices({
+        accessToken: config.access_token,
+        refreshToken: config.refresh_token,
+        teamId,
+        userId,
+        lastChecked: config.last_checked,
+      });
+
+      // Update last checked
+      await supabase.from("email_agent_config").update({ last_checked: new Date().toISOString() }).eq("team_id", teamId);
+
+      // Send summary email if invoices found
+      if (result.processed > 0) {
+        const adminEmail = await getUserEmail(userId);
+        if (adminEmail) {
+          await sendEmail({
+            to: adminEmail,
+            subject: `📧 Email Agent: ${result.processed} invoice(s) auto-processed`,
+            html: `
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#0a0f1e;padding:24px 32px;">
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
+    <div style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;margin-top:4px;">EMAIL INVOICE AGENT</div>
+  </div>
+  <div style="padding:32px;">
+    <div style="font-size:36px;margin-bottom:12px;">📧</div>
+    <h2 style="font-size:20px;margin:0 0 8px;color:#0a0f1e;">${result.processed} Invoice(s) Auto-Processed</h2>
+    <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;">APFlow automatically detected and processed ${result.processed} invoice(s) from your email inbox.</p>
+    <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;">View Dashboard →</a>
+  </div>
+</div>`
+          });
+        }
+      }
+
+      res.json({ success: true, ...result });
+    } else {
+      res.json({ success: false, message: "Provider not supported yet" });
+    }
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Gmail OAuth callback
+app.get("/api/agent/email/gmail/callback", async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    const { teamId, userId } = JSON.parse(Buffer.from(state, "base64").toString());
+
+    const { google } = require("googleapis");
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GMAIL_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET,
+      process.env.GMAIL_REDIRECT_URI
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+    const { data: profile } = await gmail.users.getProfile({ userId: "me" });
+
+    await saveEmailAgentConfig({
+      teamId,
+      provider: "gmail",
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      email: profile.emailAddress,
+      enabled: true,
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}?emailAgentConnected=true`);
+  } catch (err) {
+    res.redirect(`${process.env.FRONTEND_URL}?emailAgentError=true`);
+  }
+});
+
+// Get Gmail OAuth URL
+app.post("/api/agent/email/gmail/auth-url", async (req, res) => {
+  try {
+    const { teamId, userId } = req.body;
+    const { google } = require("googleapis");
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GMAIL_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET,
+      process.env.GMAIL_REDIRECT_URI
+    );
+
+    const state = Buffer.from(JSON.stringify({ teamId, userId })).toString("base64");
+    const url = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: ["https://www.googleapis.com/auth/gmail.readonly"],
+      state,
+      prompt: "consent",
+    });
+
+    res.json({ success: true, url });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});

@@ -13,6 +13,7 @@ import Review from "./components/Review";
 import Success from "./components/Success";
 import Legal from "./components/Legal";
 import Analytics from "./components/Analytics";
+import EmailAgent from "./components/EmailAgent";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -227,6 +228,7 @@ export default function App() {
   const stageIndex = { upload:0, processing:1, review:2, matching:2, success:3 }[stage];
 
   // Route views
+  if (view === "emailAgent") return <EmailAgent user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "analytics") return <Analytics user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "privacy") return <Legal page="privacy" onBack={() => setView("dashboard")} />;
   if (view === "terms") return <Legal page="terms" onBack={() => setView("dashboard")} />;
@@ -252,6 +254,7 @@ export default function App() {
       onTeam={() => setView("team")}
       onPOs={() => setView("pos")} onBilling={() => setView("billing")} onERP={() => setView("erp")}
       onAnalytics={() => setView("analytics")}
+      onEmailAgent={() => setView("emailAgent")}
       onPrivacy={() => setView("privacy")} onTerms={() => setView("terms")}
       onReport={async () => {
         if (!team) return alert("Please create a team first");
