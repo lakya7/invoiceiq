@@ -3,59 +3,43 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>APFlow — AI Invoice Processing for Modern Finance Teams</title>
+<title>APFlow — Stop Processing Invoices Manually</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --orange:#e8531a;
-  --orange-light:#f87c4f;
-  --orange-pale:#fff4f0;
-  --black:#0f0f0f;
-  --white:#ffffff;
-  --cream:#faf8f5;
-  --gray:#6b7280;
-  --dark-bg:#111318;
-  --dark-card:#1a1d24;
-  --dark-border:rgba(255,255,255,0.07);
-  --text:#1a1a2e;
-  --text-muted:#6b7280;
-  --border:#e5e7eb;
-}
+:root{--orange:#e8531a;--orange-light:#f87c4f;--orange-pale:#fff4f0;--black:#0f0f0f;--white:#ffffff;--cream:#faf8f5;--gray:#6b7280;--dark-bg:#111318;--dark-card:#1a1d24;--dark-border:rgba(255,255,255,0.07);--text:#1a1a2e;--text-muted:#6b7280;--border:#e5e7eb;}
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;overflow-x:hidden;background:var(--white)}
-
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.06);transition:all 0.3s}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--text);letter-spacing:-0.5px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,0.06);transition:all 0.3s}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--text);}
 .nav-logo span{color:var(--orange)}
 .nav-links{display:flex;align-items:center;gap:32px;list-style:none}
-.nav-links a{color:var(--gray);text-decoration:none;font-size:14px;font-weight:400;transition:color 0.2s}
+.nav-links a{color:var(--gray);text-decoration:none;font-size:14px;transition:color 0.2s}
 .nav-links a:hover{color:var(--text)}
-.nav-cta{background:var(--orange)!important;color:white!important;padding:9px 22px;border-radius:100px;font-weight:500!important;transition:all 0.2s!important}
-.nav-cta:hover{background:var(--orange-light)!important;transform:translateY(-1px)!important;box-shadow:0 8px 24px rgba(232,83,26,0.25)!important}
 .nav-signin{border:1.5px solid var(--border)!important;color:var(--text)!important;padding:8px 20px;border-radius:100px;font-weight:400!important;transition:all 0.2s!important}
 .nav-signin:hover{border-color:#d1d5db!important;background:var(--cream)!important}
+.nav-cta{background:var(--orange)!important;color:white!important;padding:9px 22px;border-radius:100px;font-weight:500!important;transition:all 0.2s!important}
+.nav-cta:hover{background:var(--orange-light)!important;transform:translateY(-1px)!important}
 
-/* HERO — Light */
+/* HERO */
 .hero{background:var(--cream);padding:140px 60px 100px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(232,83,26,0.06) 0%,transparent 65%);pointer-events:none}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(232,83,26,0.05) 0%,transparent 65%);pointer-events:none}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;background:white;border:1px solid #fcd3c0;color:var(--orange);padding:6px 16px;border-radius:100px;font-size:12px;font-family:'DM Mono',monospace;margin-bottom:28px;box-shadow:0 2px 12px rgba(232,83,26,0.08)}
 .hero-badge::before{content:'';width:7px;height:7px;background:var(--orange);border-radius:50%;animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 .hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6.5vw,88px);font-weight:800;line-height:1.02;letter-spacing:-3px;color:var(--text);margin-bottom:24px}
 .hero-title .orange{color:var(--orange)}
 .hero-title .muted{color:#b0b8c8}
-.hero-sub{font-size:18px;color:var(--text-muted);max-width:500px;margin:0 auto 44px;line-height:1.7;font-weight:300}
+.hero-sub{font-size:18px;color:var(--text-muted);max-width:560px;margin:0 auto 44px;line-height:1.7;font-weight:300}
 .hero-btns{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:72px}
-.btn-orange{background:var(--orange);color:white;padding:15px 32px;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(232,83,26,0.3)}
+.btn-orange{background:var(--orange);color:white;padding:16px 32px;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;box-shadow:0 4px 20px rgba(232,83,26,0.3)}
 .btn-orange:hover{background:var(--orange-light);transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,83,26,0.35)}
-.btn-outline{color:var(--text);padding:15px 28px;border-radius:100px;font-size:15px;text-decoration:none;transition:all 0.2s;border:1.5px solid var(--border);font-family:'DM Sans',sans-serif}
+.btn-outline{color:var(--text);padding:16px 28px;border-radius:100px;font-size:15px;text-decoration:none;transition:all 0.2s;border:1.5px solid var(--border);font-family:'DM Sans',sans-serif}
 .btn-outline:hover{border-color:#d1d5db;background:white}
 
-/* Stats row */
-.stats-row{display:flex;align-items:center;justify-content:center;gap:0;background:white;border:1px solid var(--border);border-radius:20px;overflow:hidden;max-width:680px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+/* Stats */
+.stats-row{display:flex;align-items:center;justify-content:center;gap:0;background:white;border:1px solid var(--border);border-radius:20px;overflow:hidden;max-width:720px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
 .stat-box{flex:1;padding:28px 20px;text-align:center;border-right:1px solid var(--border)}
 .stat-box:last-child{border-right:none}
 .stat-val{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--text);line-height:1}
@@ -69,13 +53,15 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;d
 .ticker-item::before{content:'✦';color:rgba(255,255,255,0.5);font-size:8px}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* HOW IT WORKS — Light */
-.how-section{background:white;padding:120px 60px}
+/* Sections */
+section{padding:120px 60px}
 .section-eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2.5px;color:var(--orange);text-transform:uppercase;margin-bottom:14px}
 .section-h{font-family:'Syne',sans-serif;font-size:clamp(32px,3.5vw,52px);font-weight:800;letter-spacing:-2px;line-height:1.1;color:var(--text);margin-bottom:16px}
-.section-p{font-size:16px;color:var(--text-muted);line-height:1.7;font-weight:300;max-width:460px}
+.section-p{font-size:16px;color:var(--text-muted);line-height:1.7;font-weight:300;max-width:480px}
+
+/* HOW IT WORKS */
 .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:56px}
-.step-card{background:var(--cream);border-radius:20px;padding:36px 28px;position:relative;transition:all 0.3s;border:1px solid transparent}
+.step-card{background:var(--cream);border-radius:20px;padding:36px 28px;transition:all 0.3s;border:1px solid transparent}
 .step-card:hover{background:white;border-color:var(--border);box-shadow:0 12px 40px rgba(0,0,0,0.08);transform:translateY(-4px)}
 .step-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:20px;display:block}
 .step-emoji{font-size:36px;margin-bottom:18px;display:block}
@@ -83,23 +69,42 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;d
 .step-p{font-size:13px;color:var(--text-muted);line-height:1.7;font-weight:300}
 .step-badge{display:inline-block;margin-top:16px;background:var(--orange-pale);color:var(--orange);padding:4px 12px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace}
 
-/* FEATURES — Dark */
-.features-section{background:var(--dark-bg);padding:120px 60px}
-.features-section .section-h{color:white}
-.features-section .section-p{color:rgba(255,255,255,0.45)}
-.features-section .section-eyebrow{color:#fb8c6a}
-.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:56px;border-radius:24px;overflow:hidden}
+/* WHO IS IT FOR */
+.for-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:56px}
+.for-card{border-radius:20px;padding:40px 36px;position:relative;overflow:hidden}
+.for-card.buyer{background:linear-gradient(135deg,#0a0f1e,#1a2040);color:white}
+.for-card.supplier{background:var(--cream);border:1.5px solid var(--border)}
+.for-tag{display:inline-block;padding:5px 14px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;margin-bottom:20px}
+.for-card.buyer .for-tag{background:rgba(232,83,26,0.2);color:var(--orange-light)}
+.for-card.supplier .for-tag{background:rgba(22,163,74,0.1);color:#16a34a}
+.for-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:12px}
+.for-card.buyer .for-title{color:white}
+.for-card.supplier .for-title{color:var(--text)}
+.for-desc{font-size:14px;line-height:1.8;font-weight:300;margin-bottom:24px}
+.for-card.buyer .for-desc{color:rgba(255,255,255,0.55)}
+.for-card.supplier .for-desc{color:var(--text-muted)}
+.for-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.for-list li{font-size:13px;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.for-card.buyer .for-list li{color:rgba(255,255,255,0.7)}
+.for-card.supplier .for-list li{color:var(--text-muted)}
+.for-list li::before{content:'→';color:var(--orange);flex-shrink:0;font-size:12px;margin-top:1px}
+
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:56px}
 .feat-card{background:var(--dark-card);padding:48px 40px;transition:background 0.3s;position:relative;overflow:hidden}
+.feat-card:first-child{border-radius:20px 0 0 0}
+.feat-card:nth-child(2){border-radius:0 20px 0 0}
+.feat-card:nth-child(3){border-radius:0 0 0 20px}
+.feat-card:last-child{border-radius:0 0 20px 0}
 .feat-card:hover{background:#1f2330}
-.feat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,var(--orange),transparent);opacity:0;transition:opacity 0.3s}
-.feat-card:hover::after{opacity:1}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,var(--orange),transparent);opacity:0;transition:opacity 0.3s}
+.feat-card:hover::before{opacity:1}
 .feat-ico{width:52px;height:52px;background:rgba(232,83,26,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:22px}
 .feat-h{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:white;margin-bottom:12px}
 .feat-p{font-size:14px;color:rgba(255,255,255,0.45);line-height:1.8;font-weight:300}
 .feat-tag{display:inline-block;margin-top:18px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:4px 12px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.3)}
 
-/* AGENTS — Light with orange accents */
-.agents-section{background:var(--cream);padding:120px 60px}
+/* AGENTS */
 .agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
 .agent-card{background:white;border:1.5px solid var(--border);border-radius:20px;padding:32px 28px;transition:all 0.3s;position:relative}
 .agent-card:hover{border-color:#fcd3c0;box-shadow:0 16px 48px rgba(232,83,26,0.08);transform:translateY(-3px)}
@@ -111,26 +116,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;d
 .agent-h{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px}
 .agent-p{font-size:13px;color:var(--text-muted);line-height:1.7;font-weight:300}
 
-/* ERP — Dark */
-.erp-section{background:var(--dark-bg);padding:100px 60px;text-align:center}
-.erp-section .section-h{color:white}
-.erp-section .section-eyebrow{color:#fb8c6a}
-.erp-section .section-p{color:rgba(255,255,255,0.45);margin:0 auto}
+/* ERP */
 .erp-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:48px}
 .erp-pill{background:var(--dark-card);border:1px solid var(--dark-border);padding:10px 22px;border-radius:100px;font-size:13px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.4);transition:all 0.2s}
 .erp-pill:hover{color:white;border-color:rgba(232,83,26,0.4)}
 .erp-pill.hot{color:#fb8c6a;border-color:rgba(232,83,26,0.3);background:rgba(232,83,26,0.06)}
 
-/* PRICING — Light */
-.pricing-section{background:white;padding:120px 60px}
+/* PRICING */
 .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:56px}
 .price-card{background:var(--cream);border:1.5px solid var(--border);border-radius:24px;padding:36px 28px;position:relative;transition:all 0.3s}
 .price-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,0.08)}
 .price-card.pop{border-color:var(--orange);background:white;box-shadow:0 8px 32px rgba(232,83,26,0.12)}
-.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--orange);color:white;padding:4px 16px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--orange);color:white;padding:4px 16px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap}
 .plan-name{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gray);text-transform:uppercase;margin-bottom:16px}
 .plan-price{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;letter-spacing:-2px;color:var(--text);line-height:1;margin-bottom:4px}
-.plan-period{font-size:13px;color:var(--gray);margin-bottom:24px}
+.plan-period{font-size:13px;color:var(--gray);margin-bottom:8px}
+.plan-who{font-size:12px;color:var(--orange);font-weight:500;margin-bottom:20px;font-family:'DM Mono',monospace}
 .plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
 .plan-features li{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:8px;font-weight:300}
 .plan-features li::before{content:'→';color:var(--orange);font-size:11px;flex-shrink:0}
@@ -140,15 +141,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:68px;d
 .plan-btn-fill{background:var(--orange);color:white;box-shadow:0 4px 16px rgba(232,83,26,0.25)}
 .plan-btn-fill:hover{background:var(--orange-light)}
 
-/* CTA — Dark with orange */
+/* CTA */
 .cta-section{background:var(--dark-bg);padding:120px 60px;text-align:center;position:relative;overflow:hidden}
-.cta-section::before{content:'';position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(232,83,26,0.1) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%)}
+.cta-section::before{content:'';position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(232,83,26,0.08) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%)}
 .cta-h{font-family:'Syne',sans-serif;font-size:clamp(40px,5vw,68px);font-weight:800;letter-spacing:-3px;line-height:1.05;color:white;margin-bottom:20px;position:relative}
 .cta-h span{color:var(--orange)}
 .cta-p{font-size:16px;color:rgba(255,255,255,0.45);margin-bottom:40px;font-weight:300;position:relative}
-.cta-note{margin-top:20px;font-size:12px;color:rgba(255,255,255,0.25);font-family:'DM Mono',monospace;position:relative}
-
-/* FOOTER */
 footer{background:white;border-top:1px solid var(--border);padding:36px 60px;display:flex;align-items:center;justify-content:space-between}
 .foot-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
 .foot-logo span{color:var(--orange)}
@@ -156,203 +154,177 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 .foot-links a{color:var(--gray);text-decoration:none;font-size:13px;transition:color 0.2s}
 .foot-links a:hover{color:var(--text)}
 .foot-copy{font-size:12px;color:#9ca3af;font-family:'DM Mono',monospace}
-
-/* Reveal */
 .reveal{opacity:0;transform:translateY(28px);transition:all 0.65s ease}
 .reveal.show{opacity:1;transform:translateY(0)}
-
-@media(max-width:768px){
-  nav{padding:0 20px}
-  .nav-links{display:none}
-  .hero,.how-section,.features-section,.agents-section,.erp-section,.pricing-section,.cta-section{padding:80px 20px}
-  .hero-title{letter-spacing:-2px}
-  .steps-grid,.feat-grid,.agents-grid,.price-grid{grid-template-columns:1fr}
-  .feat-grid{gap:8px}
-  .stats-row{flex-direction:column}
-  .stat-box{border-right:none;border-bottom:1px solid var(--border)}
-  .stat-box:last-child{border-bottom:none}
-  footer{flex-direction:column;gap:20px;text-align:center;padding:28px 20px}
-  .foot-links{flex-wrap:wrap;justify-content:center}
-}
+@media(max-width:768px){nav{padding:0 20px}.nav-links{display:none}section{padding:80px 20px}.hero{padding:120px 24px 60px}.steps-grid,.feat-grid,.agents-grid,.price-grid,.for-grid{grid-template-columns:1fr}.stats-row{flex-direction:column}.stat-box{border-right:none;border-bottom:1px solid var(--border)}footer{flex-direction:column;gap:20px;text-align:center;padding:28px 20px}.foot-links{flex-wrap:wrap;justify-content:center}}
 </style>
 </head>
 <body>
+<script>
+if(window.location.hash.includes('access_token')){window.location.href='/login'+window.location.hash;}
+const SB_URL='https://cwsubqfynnntrzfshldy.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c3VicWZ5bm5udHJ6ZnNobGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1MDQ0NzcsImV4cCI6MjA2MDA4MDQ3N30.B-yFJGOhqKuVmFOC6JFdU1HVoGOEUZyAFqO-9NqMiRk';
+try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){const at=JSON.parse(t)?.access_token;if(at){fetch(`${SB_URL}/auth/v1/user`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${at}`}}).then(r=>r.json()).then(d=>{if(d?.id)window.location.href='/login';})}}}catch(e){}
+</script>
 
 <nav>
   <div class="nav-logo">AP<span>Flow</span></div>
   <ul class="nav-links">
     <li><a href="#how">How it works</a></li>
+    <li><a href="#for-who">Who it's for</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="#agents">Agents</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="/login" class="nav-signin">Sign In</a></li><li><a href="/login?signup=true" class="nav-cta">Start Free →</a></li>
+    <li><a href="/login" class="nav-signin">Sign In</a></li>
+    <li><a href="/login?signup=true" class="nav-cta">Get Started Free →</a></li>
   </ul>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">⚡ Powered by Claude AI · Now Live</div>
+  <div class="hero-badge">⚡ Used by finance teams · Zero setup required</div>
   <h1 class="hero-title">
-    Stop entering invoices<br>
-    <span class="orange">manually.</span>
-    <span class="muted">Let AI do it.</span>
+    Your suppliers send invoices.<br>
+    <span class="orange">APFlow processes them.</span>
+    <span class="muted">Automatically.</span>
   </h1>
-  <p class="hero-sub">APFlow extracts every field from any invoice in 4 seconds, matches it against your POs, and pushes it to your ERP automatically.</p>
+  <p class="hero-sub">Tell your suppliers to upload invoices to APFlow. AI extracts every field, matches your POs, catches duplicates, and pushes everything to Oracle or QuickBooks — with zero manual entry from your team.</p>
   <div class="hero-btns">
     <a href="/login?signup=true" class="btn-orange">Start Free Trial →</a>
-    <a href="/login" class="btn-outline">Sign In →</a>
+    <a href="/login" class="btn-outline">Sign In</a>
   </div>
   <div class="stats-row">
+    <div class="stat-box"><div class="stat-val">$40<span>K</span></div><div class="stat-lbl">Saved per year</div></div>
     <div class="stat-box"><div class="stat-val">4<span>sec</span></div><div class="stat-lbl">Per invoice</div></div>
     <div class="stat-box"><div class="stat-val">92<span>%</span></div><div class="stat-lbl">Less manual work</div></div>
-    <div class="stat-box"><div class="stat-val">$40<span>K</span></div><div class="stat-lbl">Saved per year</div></div>
     <div class="stat-box"><div class="stat-val">12<span>+</span></div><div class="stat-lbl">ERP integrations</div></div>
+    <div class="stat-box"><div class="stat-val">0<span>h</span></div><div class="stat-lbl">Manual entry needed</div></div>
   </div>
 </section>
 
 <!-- TICKER -->
 <div class="ticker-wrap">
   <div class="ticker">
+    <span class="ticker-item">Zero Manual Entry</span>
     <span class="ticker-item">AI Invoice Extraction</span>
     <span class="ticker-item">Smart PO Matching</span>
     <span class="ticker-item">Duplicate Detection</span>
     <span class="ticker-item">Oracle Fusion</span>
     <span class="ticker-item">QuickBooks Sync</span>
-    <span class="ticker-item">Multi-Currency</span>
-    <span class="ticker-item">Team Collaboration</span>
     <span class="ticker-item">Auto Approvals</span>
-    <span class="ticker-item">Anomaly Detection</span>
+    <span class="ticker-item">Supplier Portal</span>
+    <span class="ticker-item">Zero Manual Entry</span>
     <span class="ticker-item">AI Invoice Extraction</span>
     <span class="ticker-item">Smart PO Matching</span>
     <span class="ticker-item">Duplicate Detection</span>
     <span class="ticker-item">Oracle Fusion</span>
     <span class="ticker-item">QuickBooks Sync</span>
-    <span class="ticker-item">Multi-Currency</span>
-    <span class="ticker-item">Team Collaboration</span>
     <span class="ticker-item">Auto Approvals</span>
-    <span class="ticker-item">Anomaly Detection</span>
+    <span class="ticker-item">Supplier Portal</span>
   </div>
 </div>
 
 <!-- HOW IT WORKS -->
-<section class="how-section" id="how">
+<section id="how">
   <div class="section-eyebrow reveal">How it works</div>
-  <h2 class="section-h reveal">From invoice to ERP<br>in under 10 seconds.</h2>
-  <p class="section-p reveal">Upload any invoice — PDF, scan, or photo. APFlow handles everything else automatically.</p>
+  <h2 class="section-h reveal">From supplier invoice<br>to ERP in 4 steps.</h2>
+  <p class="section-p reveal">Your suppliers upload. APFlow does everything else. Your team reviews exceptions only.</p>
   <div class="steps-grid">
     <div class="step-card reveal">
-      <span class="step-n">01 — UPLOAD</span>
-      <span class="step-emoji">📄</span>
-      <div class="step-h">Upload Invoice</div>
-      <div class="step-p">Drop any PDF, image or scan. Works with any format from any vendor worldwide — no templates needed.</div>
-      <span class="step-badge">2 seconds</span>
+      <span class="step-n">01 — SUPPLIER</span>
+      <span class="step-emoji">📤</span>
+      <div class="step-h">Supplier Uploads</div>
+      <div class="step-p">Your suppliers upload their invoice PDF to APFlow. Free for them. Takes 30 seconds. No training needed.</div>
+      <span class="step-badge">Supplier does this</span>
     </div>
     <div class="step-card reveal">
-      <span class="step-n">02 — EXTRACT</span>
+      <span class="step-n">02 — AI EXTRACTS</span>
       <span class="step-emoji">🤖</span>
-      <div class="step-h">AI Extracts Data</div>
-      <div class="step-p">Claude AI reads every field — vendor, amounts, dates, line items, tax — with extraordinary accuracy.</div>
+      <div class="step-h">AI Reads Everything</div>
+      <div class="step-p">Claude AI extracts every field — vendor, amounts, dates, line items, tax — from any invoice format with 99% accuracy.</div>
       <span class="step-badge">4 seconds</span>
     </div>
     <div class="step-card reveal">
-      <span class="step-n">03 — MATCH</span>
-      <span class="step-emoji">🎯</span>
-      <div class="step-h">Match & Validate</div>
-      <div class="step-p">Automatically matches against your POs, catches duplicates, and flags anomalies before approval.</div>
-      <span class="step-badge">1 second</span>
+      <span class="step-n">03 — VALIDATE</span>
+      <span class="step-emoji">✅</span>
+      <div class="step-h">Match & Approve</div>
+      <div class="step-p">APFlow matches against your open POs, detects duplicates, catches anomalies, and auto-approves invoices within your rules.</div>
+      <span class="step-badge">Instant</span>
     </div>
     <div class="step-card reveal">
-      <span class="step-n">04 — PUSH</span>
+      <span class="step-n">04 — ERP SYNC</span>
       <span class="step-emoji">🚀</span>
-      <div class="step-h">Push to ERP</div>
-      <div class="step-p">One click pushes to Oracle Fusion, QuickBooks, SAP, NetSuite — validated and ready for payment.</div>
-      <span class="step-badge">Instant</span>
+      <div class="step-h">Lands in Your ERP</div>
+      <div class="step-p">Validated invoices are automatically pushed to Oracle Fusion or QuickBooks. Your AP team only reviews exceptions.</div>
+      <span class="step-badge">Zero manual entry</span>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IS IT FOR -->
+<section id="for-who" style="background:#0d0d0d;border-top:1px solid rgba(255,255,255,0.06);">
+  <div class="section-eyebrow reveal" style="color:#fb8c6a">Who it's for</div>
+  <h2 class="section-h reveal" style="color:white">Built for the team<br><span style="color:var(--orange)">receiving invoices.</span></h2>
+  <p class="section-p reveal" style="color:rgba(255,255,255,0.45)">APFlow is paid for by the company that receives and processes invoices — and free for the suppliers who send them.</p>
+  <div class="for-grid reveal">
+    <div class="for-card buyer">
+      <span class="for-tag">💳 PAYS SUBSCRIPTION</span>
+      <div class="for-title">Finance & AP Teams</div>
+      <div class="for-desc">You receive hundreds of invoices every month. Your team spends hours on manual entry, chasing PO matches, and fixing duplicate payments. APFlow eliminates all of that.</div>
+      <ul class="for-list">
+        <li>Receives invoices from suppliers automatically</li>
+        <li>Zero manual data entry into ERP</li>
+        <li>AI agents approve low-risk invoices automatically</li>
+        <li>Only reviews flagged exceptions</li>
+        <li>Full analytics and monthly reports</li>
+      </ul>
+    </div>
+    <div class="for-card supplier">
+      <span class="for-tag" style="background:rgba(22,163,74,0.1);color:#16a34a">✅ COMPLETELY FREE</span>
+      <div class="for-title">Suppliers & Vendors</div>
+      <div class="for-desc">You send invoices to your buyers. APFlow makes this faster, more reliable, and completely free for you — no subscription needed.</div>
+      <ul class="for-list">
+        <li>Upload invoices in 30 seconds</li>
+        <li>Track payment status in real time</li>
+        <li>Get paid faster — no chasing emails</li>
+        <li>Works with any invoice format</li>
+        <li>Always free — no credit card</li>
+      </ul>
     </div>
   </div>
 </section>
 
 <!-- FEATURES -->
-<section class="features-section" id="features">
-  <div class="section-eyebrow reveal">Features</div>
-  <h2 class="section-h reveal">Built for finance teams<br>who mean business.</h2>
+<section id="features" style="background:#111318;border-top:1px solid rgba(255,255,255,0.06);">
+  <div class="section-eyebrow reveal" style="color:#fb8c6a">Features</div>
+  <h2 class="section-h reveal" style="color:white">Everything your AP team<br>needs. Nothing they don't.</h2>
   <div class="feat-grid reveal">
-    <div class="feat-card">
-      <div class="feat-ico">🔍</div>
-      <div class="feat-h">AI Data Extraction</div>
-      <div class="feat-p">Claude Vision reads any invoice — handwritten, scanned, or digital PDF. Extracts every field with 99% accuracy. No manual entry, no templates, no training required.</div>
-      <span class="feat-tag">claude-vision</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-ico">🎯</div>
-      <div class="feat-h">Smart PO Matching</div>
-      <div class="feat-p">Automatically compares every invoice against your purchase orders. Catches vendor mismatches, amount discrepancies, and line item differences before a single payment is made.</div>
-      <span class="feat-tag">3-way matching</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-ico">⚠️</div>
-      <div class="feat-h">Duplicate Detection</div>
-      <div class="feat-p">APFlow blocks duplicate invoices before they reach your ERP. Finance teams save an average of $40K per year by catching accidental double payments automatically.</div>
-      <span class="feat-tag">fraud prevention</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-ico">🌍</div>
-      <div class="feat-h">Multi-Currency Support</div>
-      <div class="feat-p">Process invoices in USD, EUR, GBP, INR and more. Currency is detected automatically from the document and displayed correctly across your entire dashboard.</div>
-      <span class="feat-tag">global ready</span>
-    </div>
+    <div class="feat-card"><div class="feat-ico">🔍</div><div class="feat-h">AI Data Extraction</div><div class="feat-p">Claude Vision reads any invoice — handwritten, scanned, or digital PDF — and extracts every field with 99% accuracy. No templates, no training.</div><span class="feat-tag">claude-vision</span></div>
+    <div class="feat-card"><div class="feat-ico">🎯</div><div class="feat-h">Smart PO Matching</div><div class="feat-p">Automatically compares every invoice against your purchase orders. Catches vendor mismatches, amount discrepancies, and line item differences instantly.</div><span class="feat-tag">3-way matching</span></div>
+    <div class="feat-card"><div class="feat-ico">⚠️</div><div class="feat-h">Duplicate Detection</div><div class="feat-p">APFlow blocks duplicate invoices before they reach your ERP. Finance teams save an average of $40K per year in accidental double payments.</div><span class="feat-tag">fraud prevention</span></div>
+    <div class="feat-card"><div class="feat-ico">🌍</div><div class="feat-h">Multi-Currency</div><div class="feat-p">Process invoices in USD, EUR, GBP, INR and more. Currency detected automatically and displayed correctly across your entire dashboard.</div><span class="feat-tag">global ready</span></div>
   </div>
 </section>
 
 <!-- AGENTS -->
-<section class="agents-section" id="agents">
+<section style="background:var(--cream);border-top:1px solid var(--border);">
   <div class="section-eyebrow reveal">AI Agents</div>
-  <h2 class="section-h reveal">Your AP department,<br><span style="color:var(--orange)">running on autopilot.</span></h2>
-  <p class="section-p reveal">APFlow agents work 24/7 — approving, flagging, and reporting so your team can focus on strategy, not paperwork.</p>
+  <h2 class="section-h reveal">Your AP team,<br><span style="color:var(--orange)">on autopilot.</span></h2>
+  <p class="section-p reveal">APFlow agents work 24/7 — approving, flagging, and reporting so your team only touches what needs a human eye.</p>
   <div class="agents-grid">
-    <div class="agent-card live reveal">
-      <span class="agent-dot green">● COMING SOON</span>
-      <span class="agent-emoji">✅</span>
-      <div class="agent-h">Approval Agent</div>
-      <div class="agent-p">Auto-approves low-risk invoices under your set threshold. Escalates anything unusual to your team instantly.</div>
-    </div>
-    <div class="agent-card live reveal">
-      <span class="agent-dot green">● COMING SOON</span>
-      <span class="agent-emoji">🚨</span>
-      <div class="agent-h">Anomaly Detection</div>
-      <div class="agent-p">Monitors every invoice for suspicious patterns — unusual amounts, new bank details, vendor changes. Flags instantly.</div>
-    </div>
-    <div class="agent-card live reveal">
-      <span class="agent-dot green">● COMING SOON</span>
-      <span class="agent-emoji">📊</span>
-      <div class="agent-h">Monthly Report Agent</div>
-      <div class="agent-p">Emails your CFO a complete AP summary every month — invoices processed, totals, savings, and key insights.</div>
-    </div>
-    <div class="agent-card reveal">
-      <span class="agent-dot gray">○ ROADMAP</span>
-      <span class="agent-emoji">📧</span>
-      <div class="agent-h">Email Invoice Agent</div>
-      <div class="agent-p">Monitors your inbox for invoices automatically. Extracts and processes them — zero human touch needed.</div>
-    </div>
-    <div class="agent-card reveal">
-      <span class="agent-dot gray">○ ROADMAP</span>
-      <span class="agent-emoji">💬</span>
-      <div class="agent-h">Vendor Communication</div>
-      <div class="agent-p">Automatically emails vendors when invoices have issues. Follows up politely if no response in 3 days.</div>
-    </div>
-    <div class="agent-card reveal">
-      <span class="agent-dot gray">○ ROADMAP</span>
-      <span class="agent-emoji">🔄</span>
-      <div class="agent-h">ERP Sync Agent</div>
-      <div class="agent-p">Checks your ERP hourly, updates invoice statuses automatically. Marks invoices as paid when ERP confirms.</div>
-    </div>
+    <div class="agent-card live reveal"><span class="agent-dot green">● LIVE</span><span class="agent-emoji">✅</span><div class="agent-h">Approval Agent</div><div class="agent-p">Auto-approves invoices under your threshold from trusted vendors. Escalates anything unusual to your team instantly via email.</div></div>
+    <div class="agent-card live reveal"><span class="agent-dot green">● LIVE</span><span class="agent-emoji">🚨</span><div class="agent-h">Anomaly Detection</div><div class="agent-p">Monitors every invoice for suspicious patterns — amount spikes, duplicate numbers, future dates. Flags high-risk invoices instantly.</div></div>
+    <div class="agent-card live reveal"><span class="agent-dot green">● LIVE</span><span class="agent-emoji">📊</span><div class="agent-h">Monthly Report Agent</div><div class="agent-p">Emails your CFO a complete AP summary — invoices processed, amounts, time saved, duplicates caught, AI agent performance.</div></div>
+    <div class="agent-card reveal"><span class="agent-dot gray">○ COMING SOON</span><span class="agent-emoji">📧</span><div class="agent-h">Email Invoice Agent</div><div class="agent-p">Monitors your inbox for supplier invoices. Extracts and processes them automatically — zero human touch needed.</div></div>
+    <div class="agent-card reveal"><span class="agent-dot gray">○ COMING SOON</span><span class="agent-emoji">💬</span><div class="agent-h">Supplier Communication</div><div class="agent-p">Automatically notifies suppliers when invoices have issues. Follows up if no response in 3 days.</div></div>
+    <div class="agent-card reveal"><span class="agent-dot gray">○ COMING SOON</span><span class="agent-emoji">🔄</span><div class="agent-h">ERP Sync Agent</div><div class="agent-p">Checks your ERP hourly, updates invoice statuses automatically. Notifies suppliers when payment is confirmed.</div></div>
   </div>
 </section>
 
 <!-- ERP -->
-<section class="erp-section">
-  <div class="section-eyebrow reveal">Integrations</div>
-  <h2 class="section-h reveal">Works with your ERP.<br>All of them.</h2>
-  <p class="section-p reveal">Connect to any ERP in minutes. No IT team, no 6-month implementation. Just plug in and go.</p>
+<section style="background:var(--dark-bg);border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+  <div class="section-eyebrow reveal" style="color:#fb8c6a">Integrations</div>
+  <h2 class="section-h reveal" style="color:white">Works with your ERP.<br>All of them.</h2>
+  <p class="section-p reveal" style="color:rgba(255,255,255,0.45);margin:0 auto">Connect once. All supplier invoices flow in automatically. No IT project needed.</p>
   <div class="erp-pills reveal">
     <div class="erp-pill hot">Oracle Fusion ✓</div>
     <div class="erp-pill hot">QuickBooks ✓</div>
@@ -369,55 +341,62 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 </section>
 
 <!-- PRICING -->
-<section class="pricing-section" id="pricing">
+<section id="pricing">
   <div class="section-eyebrow reveal">Pricing</div>
-  <h2 class="section-h reveal">Simple, transparent pricing.<br>No surprises.</h2>
+  <h2 class="section-h reveal">Simple pricing for<br>finance teams.</h2>
+  <p class="section-p reveal">Suppliers always use APFlow for free. You pay only for what your team processes.</p>
   <div class="price-grid">
     <div class="price-card reveal">
-      <div class="plan-name">Free</div>
+      <div class="plan-name">Starter</div>
       <div class="plan-price">$0</div>
       <div class="plan-period">forever</div>
+      <div class="plan-who">For small teams getting started</div>
       <ul class="plan-features">
-        <li>50 documents/month</li>
+        <li>50 invoices/month</li>
         <li>1 ERP integration</li>
         <li>AI extraction</li>
-        <li>Email support</li>
+        <li>Supplier portal</li>
       </ul>
-      <a href="/login" class="plan-btn plan-btn-outline">Get Started</a>
+      <a href="/login?signup=true" class="plan-btn plan-btn-outline">Get Started Free</a>
     </div>
     <div class="price-card pop reveal">
       <div class="pop-badge">Most Popular</div>
-      <div class="plan-name">Starter</div>
+      <div class="plan-name">Growth</div>
       <div class="plan-price">$299</div>
       <div class="plan-period">/month</div>
+      <div class="plan-who">For growing AP teams</div>
       <ul class="plan-features">
-        <li>500 documents/month</li>
+        <li>500 invoices/month</li>
         <li>1 ERP integration</li>
         <li>PO matching</li>
         <li>Duplicate detection</li>
+        <li>AI Agents (3 live)</li>
         <li>14-day free trial</li>
       </ul>
-      <a href="/login" class="plan-btn plan-btn-fill">Start Free Trial →</a>
+      <a href="/login?signup=true" class="plan-btn plan-btn-fill">Start Free Trial →</a>
     </div>
     <div class="price-card reveal">
-      <div class="plan-name">Growth</div>
+      <div class="plan-name">Scale</div>
       <div class="plan-price">$799</div>
       <div class="plan-period">/month</div>
+      <div class="plan-who">For high-volume AP teams</div>
       <ul class="plan-features">
-        <li>2,000 documents/month</li>
+        <li>2,000 invoices/month</li>
         <li>3 ERP integrations</li>
         <li>All AI Agents</li>
         <li>Team management</li>
         <li>Analytics dashboard</li>
+        <li>Priority support</li>
       </ul>
-      <a href="/login" class="plan-btn plan-btn-outline">Start Trial →</a>
+      <a href="/login?signup=true" class="plan-btn plan-btn-outline">Start Trial →</a>
     </div>
     <div class="price-card reveal">
       <div class="plan-name">Enterprise</div>
       <div class="plan-price" style="font-size:36px">Custom</div>
       <div class="plan-period">contact us</div>
+      <div class="plan-who">For large finance teams</div>
       <ul class="plan-features">
-        <li>Unlimited documents</li>
+        <li>Unlimited invoices</li>
         <li>Unlimited ERPs</li>
         <li>All AI Agents</li>
         <li>Dedicated CSM</li>
@@ -430,21 +409,20 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 
 <!-- CTA -->
 <section class="cta-section">
-  <h2 class="cta-h reveal">Ready to transform<br>your <span>AP process?</span></h2>
-  <p class="cta-p reveal">Join finance teams saving 10+ hours every week with APFlow.</p>
+  <h2 class="cta-h reveal">Ready to eliminate<br>manual invoice <span>processing?</span></h2>
+  <p class="cta-p reveal">Join finance teams saving 40+ hours per month with APFlow. Suppliers use it free. You just connect your ERP.</p>
   <div class="reveal" style="display:flex;align-items:center;justify-content:center;gap:14px">
     <a href="/login?signup=true" class="btn-orange" style="font-size:16px;padding:18px 40px">Start Free Trial →</a>
     <a href="/login" class="btn-outline" style="font-size:16px;padding:18px 32px;background:transparent;color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2)">Sign In</a>
   </div>
-  <p class="cta-note reveal">No credit card required · 14-day free trial · Cancel anytime</p>
+  <p style="margin-top:20px;font-size:12px;color:rgba(255,255,255,0.25);font-family:'DM Mono',monospace;position:relative">No credit card required · 14-day free trial · Suppliers always free</p>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="foot-logo">AP<span>Flow</span></div>
   <ul class="foot-links">
     <li><a href="#how">How it works</a></li>
-    <li><a href="#features">Features</a></li>
+    <li><a href="#for-who">Who it's for</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="/login">Privacy Policy</a></li>
     <li><a href="/login">Terms of Service</a></li>
@@ -454,42 +432,10 @@ footer{background:white;border-top:1px solid var(--border);padding:36px 60px;dis
 </footer>
 
 <script>
-// If user arrives with access_token in URL hash (after Google OAuth), redirect to login page
-if (window.location.hash.includes('access_token')) {
-  window.location.href = '/login' + window.location.hash;
-}
-
-// Check if user already has an active session → redirect to login (app)
-const SUPABASE_URL = 'https://cwsubqfynnntrzfshldy.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c3VicWZ5bm5udHJ6ZnNobGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1MDQ0NzcsImV4cCI6MjA2MDA4MDQ3N30.B-yFJGOhqKuVmFOC6JFdU1HVoGOEUZyAFqO-9NqMiRk';
-
-fetch(`${SUPABASE_URL}/auth/v1/user`, {
-  headers: {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token') ? JSON.parse(localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token'))?.access_token : ''}`
-  }
-}).then(r => r.json()).then(data => {
-  if (data?.id) {
-    window.location.href = '/login';
-  }
-}).catch(() => {});
-const reveals = document.querySelectorAll('.reveal');
-const obs = new IntersectionObserver(entries => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('show'), i * 70);
-      obs.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.08 });
-reveals.forEach(el => obs.observe(el));
-
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
-  });
-});
+const reveals=document.querySelectorAll('.reveal');
+const obs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('show'),i*70);obs.unobserve(e.target);}});},{threshold:0.08});
+reveals.forEach(el=>obs.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'});});});
 </script>
 </body>
 </html>
