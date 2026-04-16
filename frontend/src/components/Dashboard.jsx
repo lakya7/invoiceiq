@@ -108,6 +108,22 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <span style={{ color: "rgba(245,242,235,0.3)" }}>·</span>
           <span style={{ color: "rgba(245,242,235,0.3)", cursor: "pointer" }} onClick={onTerms}>Terms</span>
         </div>
+
+        {/* Need Help Button */}
+        <div style={{ padding: "0 16px 12px" }}>
+          <a
+            href={`mailto:help@apflow.app?subject=Support Request — APFlow&body=Hi APFlow Support,%0A%0AI need help with:%0A%0A[Describe your issue here]%0A%0AAccount: ${user?.email}%0ATeam: ${team?.name || "No team"}%0A%0AThanks`}
+            style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,83,26,0.12)", border:"1px solid rgba(232,83,26,0.25)", color:"#f87c4f", padding:"10px 14px", borderRadius:10, fontSize:13, fontWeight:500, textDecoration:"none", transition:"all 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(232,83,26,0.2)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(232,83,26,0.12)"}
+          >
+            <span style={{ fontSize:16 }}>🆘</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600 }}>Need Help?</div>
+              <div style={{ fontSize:11, color:"rgba(248,124,79,0.7)", marginTop:1 }}>help@apflow.app</div>
+            </div>
+          </a>
+        </div>
         <div className="sidebar-user">
           <div className="sidebar-avatar">{firstName?.[0]?.toUpperCase()}</div>
           <div className="sidebar-user-info">
