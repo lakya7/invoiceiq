@@ -121,7 +121,7 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
 
       // Save to database
       const erpRef = `EMAIL-${Date.now()}`;
-      await supabase.from("invoices").insert({
+      const { data: savedInvoice, error: insertError } = await supabase.from("invoices").insert({
         user_id: userId,
         team_id: teamId,
         invoice_number: extracted.invoiceNumber,
@@ -135,6 +135,13 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
         agent_decision: "email_auto_processed",
         agent_reason: `Auto-processed from email: "${subject}" from ${from}`,
       });
+
+      if (insertError) {
+        console.error("Invoice insert error:", JSON.stringify(insertError));
+        continue;
+      }
+
+      console.log("Invoice saved successfully:", erpRef);
 
       // Log processed email
       await supabase.from("email_agent_log").insert({
