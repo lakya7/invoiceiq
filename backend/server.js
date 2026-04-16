@@ -341,7 +341,30 @@ app.post("/api/teams", async (req, res) => {
 app.get("/api/teams/user/:userId", async (req, res) => {
   try {
     const userEmail = await getUserEmail(req.params.userId);
-    const { data: memberships } = await supabase.from("team_members").select("team_id, role, status").eq("user_id", req.params.userId).eq("status", "active");
+
+    // Search by user_id OR email (handles both invite flows)
+    let { data: memberships } = await supabase.from("team_members")
+      .select("team_id, role, status, email")
+      .eq("user_id", req.params.userId)
+      .eq("status", "active");
+
+    // If no results by user_id, try by email
+    if (!memberships?.length && userEmail) {
+      const { data: emailMemberships } = await supabase.from("team_members")
+        .select("team_id, role, status, email")
+        .eq("email", userEmail)
+        .eq("status", "active");
+
+      if (emailMemberships?.length) {
+        // Update the records to include user_id for future lookups
+        await supabase.from("team_members")
+          .update({ user_id: req.params.userId })
+          .eq("email", userEmail)
+          .eq("status", "active");
+        memberships = emailMemberships;
+      }
+    }
+
     if (!memberships?.length) return res.json({ success: true, teams: [] });
     const teamIds = memberships.map(m => m.team_id);
     const { data: teams } = await supabase.from("teams").select("*").in("id", teamIds);
