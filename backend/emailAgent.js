@@ -131,7 +131,8 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
           .eq("team_id", teamId);
 
         if (duplicates && duplicates.length > 0) {
-          console.log(`Duplicate invoice detected: #${extracted.invoiceNumber} already exists (${duplicates.length} copies)`);
+          const originalDate = new Date(duplicates[0].created_at).toLocaleDateString("en-US", { year:"numeric", month:"short", day:"numeric" });
+          console.log(`Duplicate invoice detected: #${extracted.invoiceNumber} already processed on ${originalDate}`);
           await supabase.from("email_agent_log").insert({
             team_id: teamId,
             gmail_message_id: messageId + `-dup-${Date.now()}`,
@@ -144,7 +145,7 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
             erp_reference: `DUPLICATE-SKIPPED`,
             processed_at: new Date().toISOString(),
           });
-          results.push({ subject, from, invoiceNumber: extracted.invoiceNumber, skipped: true, reason: "Duplicate invoice" });
+          results.push({ subject, from, invoiceNumber: extracted.invoiceNumber, skipped: true, reason: "Duplicate invoice", originalDate });
           continue;
         }
       }
