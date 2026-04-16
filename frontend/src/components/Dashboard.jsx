@@ -18,12 +18,20 @@ const MATCH_COLORS = {
   no_po:     { bg:"#f3f4f6", color:"#6b7280" },
 };
 
-function StatCard({ icon, label, value, sub, accent }) {
+function StatCard({ icon, label, value, sub, accent, multiLine }) {
   return (
     <div className="stat-card">
       <div className="stat-card-icon" style={{ background:accent+"18", color:accent }}>{icon}</div>
       <div className="stat-card-body">
-        <div className="stat-card-value">{value}</div>
+        {multiLine ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+            {value.map((v, i) => (
+              <div key={i} style={{ fontSize: value.length > 2 ? 16 : 20, fontWeight:800, color:"var(--ink)", lineHeight:1.2 }}>{v}</div>
+            ))}
+          </div>
+        ) : (
+          <div className="stat-card-value">{value}</div>
+        )}
         <div className="stat-card-label">{label}</div>
         {sub && <div className="stat-card-sub">{sub}</div>}
       </div>
@@ -181,14 +189,15 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         {/* Stats */}
         <div className="stats-grid">
           <StatCard icon="📄" label="Total Invoices" value={invoices.length} sub="All time" accent="#e8531a" />
-          <StatCard icon="💰" label="Total Processed" value={(() => {
+          <StatCard icon="💰" label="Total Processed" multiLine value={(() => {
             const byCurrency = invoices.reduce((acc, inv) => {
               const cur = inv.raw_data?.currency || "USD";
               const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
               acc[sym] = (acc[sym] || 0) + (inv.total || 0);
               return acc;
             }, {});
-            return Object.entries(byCurrency).map(([sym, amt]) => `${sym}${amt.toLocaleString("en-US",{minimumFractionDigits:2})}`).join(" + ") || "$0";
+            const lines = Object.entries(byCurrency).map(([sym, amt]) => `${sym}${amt.toLocaleString("en-US",{minimumFractionDigits:2})}`);
+            return lines.length ? lines : ["$0"];
           })()} sub="This month" accent="#1a6be8" />
           <StatCard icon="✅" label="PO Matched" value={matched} sub={`of ${invoices.length} invoices`} accent="#16a34a" />
           <StatCard icon="⏳" label="Pending Review" value={pending} sub={pending>0?"Needs attention":"All clear!"} accent="#f59e0b" />
