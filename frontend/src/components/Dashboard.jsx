@@ -91,9 +91,9 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item active">📊 Dashboard</div>
           <div className="nav-item" onClick={onNewInvoice}>📄 New Invoice</div>
           <div className="nav-item" onClick={onPOs}>📋 Purchase Orders</div>
-          {team && <div className="nav-item" onClick={onTeam}>👥 Team</div>}
+          {team && team.role === "admin" && <div className="nav-item" onClick={onTeam}>👥 Team</div>}
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
-          <div className="nav-item" onClick={onBilling}>💳 Billing</div>
+          {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
           <div className="nav-item" onClick={onSettings}>⚙️ Settings</div>
         </nav>
 
