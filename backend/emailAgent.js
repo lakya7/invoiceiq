@@ -79,20 +79,24 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
   const from = headers.find(h => h.name === "From")?.value || "Unknown";
   const date = headers.find(h => h.name === "Date")?.value;
 
-  // Find PDF attachments
+  // Find PDF and ZIP attachments
   const attachments = [];
+  const zipAttachments = [];
   const findParts = (parts) => {
     if (!parts) return;
     for (const part of parts) {
-      if (part.mimeType === "application/pdf" || part.filename?.endsWith(".pdf")) {
-        attachments.push(part);
+      if (part.mimeType === "application/pdf" || part.filename?.toLowerCase().endsWith(".pdf")) {
+        attachments.push({ ...part, type: "pdf" });
+      }
+      if (part.mimeType === "application/zip" || part.mimeType === "application/x-zip-compressed" || part.filename?.toLowerCase().endsWith(".zip")) {
+        zipAttachments.push({ ...part, type: "zip" });
       }
       if (part.parts) findParts(part.parts);
     }
   };
   findParts(msg.payload.parts || [msg.payload]);
 
-  if (!attachments.length) return null;
+  if (!attachments.length && !zipAttachments.length) return null;
 
   // Check if already processed by gmail_message_id
   const { data: existingLogs } = await supabase
@@ -191,6 +195,40 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
       results.push({ subject, from, invoiceNumber: extracted.invoiceNumber, amount: extracted.total, erpRef });
     } catch (e) {
       console.error("Attachment processing error:", e.message);
+    }
+  }
+
+  // ── PROCESS ZIP ATTACHMENTS ─────────────────────────────────
+  for (const zip of zipAttachments) {
+    try {
+      const { data: attData } = await gmail.users.messages.attachments.get({
+        userId: "me", messageId, id: zip.body.attachmentId,
+      });
+      const zipBuffer = Buffer.from(attData.data.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+      const { processZipBuffer } = require("./batchProcessor");
+      const batchResult = await processZipBuffer({ zipBuffer, teamId, userId, source: "email" });
+
+      // Log the ZIP processing
+      await supabase.from("email_agent_log").insert({
+        team_id: teamId,
+        gmail_message_id: messageId + `-zip-${Date.now()}`,
+        from_email: from,
+        subject,
+        filename: zip.filename,
+        invoice_number: `BATCH:${batchResult.processed}`,
+        vendor_name: `ZIP: ${batchResult.processed} processed, ${batchResult.skipped} skipped`,
+        amount: 0,
+        erp_reference: `ZIP-BATCH`,
+        processed_at: new Date().toISOString(),
+      });
+
+      batchResult.invoices?.forEach(inv => {
+        if (inv.status === "processed") {
+          results.push({ subject, from, invoiceNumber: inv.invoiceNumber, amount: inv.amount, erpRef: inv.erpRef });
+        }
+      });
+    } catch (e) {
+      console.error("ZIP processing error:", e.message);
     }
   }
 

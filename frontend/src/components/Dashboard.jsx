@@ -31,7 +31,7 @@ function StatCard({ icon, label, value, sub, accent }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent, onBatchUpload }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -94,6 +94,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         <nav className="sidebar-nav">
           <div className="nav-item active">📊 Dashboard</div>
           <div className="nav-item" onClick={onNewInvoice}>📄 New Invoice</div>
+          <div className="nav-item" onClick={onBatchUpload}>📦 Batch Upload</div>
           <div className="nav-item" onClick={onPOs}>📋 Purchase Orders</div>
           <div className="nav-item" onClick={onAnalytics}>📈 Analytics</div>
           <div className="nav-item" onClick={onEmailAgent}>📧 Email Agent</div>

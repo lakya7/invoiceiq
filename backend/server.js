@@ -949,3 +949,23 @@ app.get("/api/debug/email-log/:teamId", async (req, res) => {
     res.json({ logs, invoices });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+// ── BATCH ZIP PROCESSING ────────────────────────────────────────
+const { processZipBuffer } = require("./batchProcessor");
+
+app.post("/api/batch/upload", upload.single("zip"), async (req, res) => {
+  try {
+    const { teamId, userId } = req.body;
+    if (!req.file) return res.status(400).json({ error: "No ZIP file uploaded" });
+
+    const zipBuffer = require("fs").readFileSync(req.file.path);
+    const result = await processZipBuffer({ zipBuffer, teamId, userId, source: "manual" });
+
+    // Cleanup temp file
+    require("fs").unlinkSync(req.file.path);
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
