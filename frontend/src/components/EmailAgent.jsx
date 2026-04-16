@@ -7,7 +7,6 @@ export default function EmailAgent({ user, team, onBack }) {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState(null);
-  const [logs, setLogs] = useState([]);
 
   useEffect(() => { if (team) fetchConfig(); }, [team]);
 
@@ -60,6 +59,17 @@ export default function EmailAgent({ user, team, onBack }) {
     } catch (e) { alert("Failed: " + e.message); }
   };
 
+  // ── Parse result into flat list of invoice items ──────────────
+  const parseResultItems = (result) => {
+    if (!result) return { processed: [], skipped: [], failed: [] };
+    const all = (result.emails || []).flat().filter(Boolean);
+    return {
+      processed: all.filter(e => !e.skipped && e.erpRef),
+      skipped: all.filter(e => e.skipped),
+      failed: all.filter(e => e.failed),
+    };
+  };
+
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px", fontFamily: "DM Sans,sans-serif" }}>
       <button onClick={onBack} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 13, cursor: "pointer", marginBottom: 20, fontFamily: "DM Sans,sans-serif" }}>← Back</button>
@@ -94,53 +104,90 @@ export default function EmailAgent({ user, team, onBack }) {
               {config.last_checked && <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Last checked: {new Date(config.last_checked).toLocaleString()}</div>}
             </div>
             <button onClick={checkNow} disabled={checking} style={{ background: "#e8531a", color: "white", border: "none", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "DM Sans,sans-serif" }}>
-              {checking ? "Checking..." : "🔍 Check Now"}
+              {checking ? "⏳ Checking..." : "🔍 Check Now"}
             </button>
             <button onClick={disconnectEmail} style={{ background: "transparent", color: "#dc2626", border: "1px solid #fca5a5", padding: "10px 16px", borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: "DM Sans,sans-serif" }}>Disconnect</button>
           </div>
 
-          {/* Check Result */}
-          {result && (
-            <div style={{ background: result.processed > 0 ? "#f0fdf4" : "#f9fafb", border: `1px solid ${result.processed > 0 ? "#bbf7d0" : "#e5e7eb"}`, borderRadius: 14, padding: "20px 24px", marginBottom: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: result.processed > 0 ? "#16a34a" : "#6b7280", marginBottom: 8 }}>
-                {result.processed > 0 ? `✅ ${result.processed} invoice(s) auto-processed!` : "📭 No new invoices found"}
-              </div>
-              <div style={{ fontSize: 13, color: "#6b7280" }}>
-                {result.processed > 0 ? "Check your dashboard to see the processed invoices." : "No new PDF attachments found since last check."}
-              </div>
-              {(() => {
-                const allItems = (result.emails || []).flat().filter(Boolean);
-                const skipped = allItems.filter(e => e?.skipped);
-                if (!skipped.length) return null;
+          {/* ── Check Result ── */}
+          {result && (() => {
+            const { processed, skipped } = parseResultItems(result);
+            const totalProcessed = result.processed || 0;
+            const hasResults = totalProcessed > 0 || skipped.length > 0;
 
-                // Group by invoice number
-                const grouped = skipped.reduce((acc, e) => {
-                  const key = e.invoiceNumber || "Unknown";
-                  if (!acc[key]) acc[key] = { ...e, count: 0 };
-                  acc[key].count++;
-                  return acc;
-                }, {});
+            return (
+              <div style={{ background: "white", border: `1px solid ${totalProcessed > 0 ? "#bbf7d0" : "#e5e7eb"}`, borderRadius: 14, padding: "20px 24px", marginBottom: 20 }}>
 
-                return (
-                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {Object.entries(grouped).map(([invoiceNum, e], i) => (
-                      <div key={i} style={{ fontSize: 12, color: "#92400e", background: "#fef9c3", border: "1px solid #fde68a", padding: "8px 12px", borderRadius: 8 }}>
-                        ⚠️ <strong>#{invoiceNum}</strong> is a duplicate — already processed on <strong>{e.originalDate || "a previous date"}</strong>. Skipped{e.count > 1 ? ` (${e.count} emails with same invoice)` : ""}.
+                {/* Summary header */}
+                <div style={{ display: "flex", gap: 16, marginBottom: hasResults ? 16 : 0 }}>
+                  <div style={{ flex: 1, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#16a34a" }}>{totalProcessed}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Processed</div>
+                  </div>
+                  <div style={{ flex: 1, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#d97706" }}>{skipped.length}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Duplicates</div>
+                  </div>
+                  <div style={{ flex: 1, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#dc2626" }}>{result.failed || 0}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Failed</div>
+                  </div>
+                </div>
+
+                {/* No results */}
+                {!hasResults && (
+                  <div style={{ fontSize: 13, color: "#6b7280", textAlign: "center", paddingTop: 8 }}>
+                    📭 No new PDF attachments found since last check.
+                  </div>
+                )}
+
+                {/* Per-invoice rows */}
+                {hasResults && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {/* Processed invoices */}
+                    {processed.map((inv, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb" }}>
+                        <span style={{ fontSize: 18 }}>✅</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>
+                            {inv.invoiceNumber ? `#${inv.invoiceNumber}` : "Invoice"} · {inv.from?.match(/<(.+)>/)?.[1] || inv.from || "Unknown sender"}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                            {inv.amount ? `$${Number(inv.amount).toLocaleString()}` : ""}{inv.subject ? ` · "${inv.subject}"` : ""}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#16a34a", background: "#dcfce7", padding: "3px 10px", borderRadius: 20 }}>PROCESSED</span>
+                      </div>
+                    ))}
+
+                    {/* Skipped/duplicate invoices */}
+                    {skipped.map((inv, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fde68a" }}>
+                        <span style={{ fontSize: 18 }}>⚠️</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>
+                            #{inv.invoiceNumber} — Duplicate
+                          </div>
+                          <div style={{ fontSize: 12, color: "#78350f", marginTop: 2 }}>
+                            Already processed on {inv.originalDate || "a previous date"}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#d97706", background: "#fef9c3", padding: "3px 10px", borderRadius: 20 }}>SKIPPED</span>
                       </div>
                     ))}
                   </div>
-                );
-              })()}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })()}
 
           {/* How it works */}
           <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 14, padding: "24px" }}>
             <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#1a1a2e", marginBottom: 16 }}>How it works</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { icon: "📨", text: "Supplier emails invoice PDF to your connected Gmail" },
-                { icon: "🤖", text: "APFlow detects the email every 5 minutes and downloads the PDF" },
+                { icon: "📨", text: "Supplier emails invoice PDF (or ZIP of invoices) to your connected Gmail" },
+                { icon: "🤖", text: "APFlow detects the email every 5 minutes and downloads the attachment" },
                 { icon: "🔍", text: "Claude AI extracts all invoice fields automatically" },
                 { icon: "✅", text: "Invoice is validated, matched to POs, and pushed to your ERP" },
                 { icon: "📊", text: "You receive a summary email of all auto-processed invoices" },
@@ -158,12 +205,12 @@ export default function EmailAgent({ user, team, onBack }) {
           {/* Connect Options */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
             {/* Gmail */}
-            <div style={{ background: "white", border: "1.5px solid #e5e7eb", borderRadius: 16, padding: "28px 24px", transition: "all 0.2s" }}>
+            <div style={{ background: "white", border: "1.5px solid #e5e7eb", borderRadius: 16, padding: "28px 24px" }}>
               <div style={{ fontSize: 36, marginBottom: 16 }}>📧</div>
               <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 18, color: "#1a1a2e", marginBottom: 8 }}>Connect Gmail</div>
-              <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 20 }}>Connect your Gmail inbox. APFlow will monitor it for invoice emails with PDF attachments and process them automatically.</p>
+              <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 20 }}>Connect your Gmail inbox. APFlow will monitor it for invoice emails with PDF or ZIP attachments and process them automatically.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-                {["Monitors inbox every 5 minutes", "Detects PDF invoice attachments", "Auto-extracts with Claude AI", "Pushes to ERP automatically"].map((f, i) => (
+                {["Monitors inbox every 5 minutes", "Detects PDF and ZIP attachments", "Auto-extracts with Claude AI", "Pushes to ERP automatically"].map((f, i) => (
                   <div key={i} style={{ fontSize: 12, color: "#16a34a", display: "flex", gap: 6 }}><span>✓</span>{f}</div>
                 ))}
               </div>
@@ -194,7 +241,7 @@ export default function EmailAgent({ user, team, onBack }) {
             <div style={{ fontWeight: 700, color: "#92400e", marginBottom: 12, fontSize: 14 }}>⚠️ Before connecting Gmail</div>
             <ol style={{ paddingLeft: 20, fontSize: 13, color: "#78350f", lineHeight: 2 }}>
               <li>Make sure you're connecting the Gmail account that receives supplier invoices</li>
-              <li>APFlow will only read emails with PDF attachments — it never reads other emails</li>
+              <li>APFlow will only read emails with PDF or ZIP attachments — it never reads other emails</li>
               <li>You can disconnect at any time from this page</li>
               <li>We recommend creating a dedicated <strong>ap@yourcompany.com</strong> address for invoices</li>
             </ol>
