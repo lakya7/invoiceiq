@@ -94,8 +94,12 @@ export default function Analytics({ user, team, onBack }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      let query = supabase.from("invoices").select("*").eq("user_id", user.id);
-      if (team) query = query.eq("team_id", team.id);
+      let query = supabase.from("invoices").select("*");
+      if (team) {
+        query = query.eq("team_id", team.id);
+      } else {
+        query = query.eq("user_id", user.id);
+      }
       const now = new Date();
       if (period === "week") query = query.gte("created_at", new Date(now - 7*24*60*60*1000).toISOString());
       else if (period === "month") query = query.gte("created_at", new Date(now.getFullYear(), now.getMonth(), 1).toISOString());

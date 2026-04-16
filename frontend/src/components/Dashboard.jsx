@@ -44,8 +44,12 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
 
   const fetchInvoices = async () => {
     setLoading(true);
-    let query = supabase.from("invoices").select("*").eq("user_id", user.id);
-    if (team) query = query.eq("team_id", team.id);
+    let query = supabase.from("invoices").select("*");
+    if (team) {
+      query = query.eq("team_id", team.id);
+    } else {
+      query = query.eq("user_id", user.id);
+    }
     const { data } = await query.order("created_at", { ascending: false });
     setInvoices(data || []);
     setLoading(false);
