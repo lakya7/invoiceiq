@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const nodemailer = require("nodemailer");
 const { runApprovalAgent, sendAgentDecisionEmail } = require("./approvalAgent");
+const { runAnomalyAgent, sendAnomalyEmail } = require("./anomalyAgent");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -298,6 +299,22 @@ app.post("/api/push-erp", async (req, res) => {
       }
     }
 
+    // ── RUN ANOMALY DETECTION AGENT ────────────────────────────
+    let anomalyResult = null;
+    if (teamId) {
+      try {
+        anomalyResult = await runAnomalyAgent({ invoiceData, teamId, userId });
+
+        // Send anomaly email if flags found
+        if (anomalyResult.totalFlags > 0) {
+          const adminEmail = await getUserEmail(userId);
+          if (adminEmail) {
+            await sendAnomalyEmail({ anomalyResult, invoiceData, adminEmail, sendEmail });
+          }
+        }
+      } catch (e) { console.error("Anomaly Agent error:", e.message); }
+    }
+
     // ── RUN APPROVAL AGENT ──────────────────────────────────────
     let agentDecision = null;
     if (teamId) {
@@ -346,7 +363,7 @@ app.post("/api/push-erp", async (req, res) => {
       } catch (e) { console.error("Email error:", e.message); }
     }
 
-    res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp, agentDecision });
+    res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp, agentDecision, anomalyResult });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -22,6 +22,7 @@ export default function Success({ result, data, matchResult, onReset }) {
   const vs = VALIDATION_STATUS[validationStatus] || VALIDATION_STATUS.mock;
   const agentDecision = result?.agentDecision;
   const as = agentDecision ? AGENT_STATUS[agentDecision.decision] || AGENT_STATUS.manual : null;
+  const anomaly = result?.anomalyResult;
 
   const currency = data?.currency || "USD";
   const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
@@ -32,6 +33,31 @@ export default function Success({ result, data, matchResult, onReset }) {
         <div className="success-icon">✅</div>
         <h2>Pushed to ERP Successfully</h2>
         <p>Invoice processed and synced to your ERP system.</p>
+
+        {/* Anomaly Detection */}
+        {anomaly && anomaly.totalFlags > 0 && (
+          <div style={{ background: anomaly.riskLevel === "high" ? "#fee2e2" : "#fef9c3", border:`1px solid ${anomaly.riskLevel === "high" ? "#dc262630" : "#d9770630"}`, borderRadius:10, padding:"14px 16px", marginBottom:16, textAlign:"left" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+              <span style={{ fontSize:16 }}>{anomaly.riskLevel === "high" ? "🔴" : "⚠️"}</span>
+              <span style={{ fontWeight:700, color: anomaly.riskLevel === "high" ? "#dc2626" : "#d97706", fontSize:14 }}>
+                Anomaly Agent: {anomaly.totalFlags} Flag{anomaly.totalFlags > 1 ? "s" : ""} Detected
+              </span>
+              <span style={{ marginLeft:"auto", fontSize:11, color:"#888", background:"rgba(0,0,0,0.06)", padding:"2px 8px", borderRadius:10 }}>
+                {anomaly.riskLevel.toUpperCase()} RISK
+              </span>
+            </div>
+            <div style={{ fontSize:13, color:"#555", marginBottom:8 }}>{anomaly.summary}</div>
+            {[...anomaly.anomalies, ...anomaly.warnings].map((flag, i) => (
+              <div key={i} style={{ fontSize:12, color:"#666", display:"flex", gap:6, marginBottom:4 }}>
+                <span style={{ color: flag.severity === "high" ? "#dc2626" : flag.severity === "medium" ? "#d97706" : "#6b7280", fontWeight:600, flexShrink:0 }}>•</span>
+                <span>{flag.message}</span>
+              </div>
+            ))}
+            {anomaly.totalFlags > 0 && (
+              <div style={{ marginTop:8, fontSize:12, color:"#92400e" }}>📧 Anomaly report sent to admin</div>
+            )}
+          </div>
+        )}
 
         {/* Agent Decision */}
         {as && (
