@@ -210,7 +210,18 @@ export default function App() {
     </div>
   );
 
-  if (!user) return <Auth />;
+  if (!user) {
+    // If on /login path or has invite token, show Auth
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+    const search = window.location.search;
+    if (path === "/login" || search.includes("invite=") || search.includes("signup=") || hash.includes("access_token")) {
+      return <Auth />;
+    }
+    // Otherwise redirect to landing page
+    window.location.href = "/landing.html";
+    return null;
+  }
 
   const stageIndex = { upload:0, processing:1, review:2, matching:2, success:3 }[stage];
 

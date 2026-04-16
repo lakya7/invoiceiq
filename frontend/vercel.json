@@ -5,8 +5,7 @@
     { "src": "/app/(.*)", "dest": "/index.html" },
     { "src": "/app", "dest": "/index.html" },
     { "src": "/dashboard", "dest": "/index.html" },
-    { "src": "/", "handle": "filesystem" },
-    { "src": "/", "dest": "/landing.html" },
+    { "src": "/", "dest": "/index.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
