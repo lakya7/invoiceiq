@@ -122,15 +122,15 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             <p className="dash-sub">{team ? `${team.name} workspace` : "Your invoice processing overview"}</p>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            {!team && (
+            {!team && teams?.length === 0 && (
               <button className="btn-secondary-action" onClick={() => setCreatingTeam(true)}>+ Create Team</button>
             )}
             <button className="btn-approve" onClick={onNewInvoice}>+ Process Invoice</button>
           </div>
         </div>
 
-        {/* Create team prompt */}
-        {!team && !creatingTeam && (
+        {/* Create team prompt - only show if user has no teams at all */}
+        {!team && !creatingTeam && teams?.length === 0 && (
           <div className="onboarding-card">
             <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
             <div style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:18, marginBottom:6 }}>Create a Team Workspace</div>
