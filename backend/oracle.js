@@ -1,4 +1,6 @@
 // oracle.js — Oracle Fusion Cloud Payables Integration
+// Includes pre-push validation to catch errors before they reach Oracle
+
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -15,15 +17,221 @@ async function getOracleToken(teamId) {
 
   if (!conn) throw new Error("Oracle Fusion not connected for this team");
 
-  // Oracle Fusion uses Basic Auth or OAuth depending on setup
-  // Basic Auth: base64(username:password)
   const credentials = Buffer.from(`${conn.username}:${conn.password}`).toString("base64");
   return { credentials, baseUrl: conn.base_url };
+}
+
+// ── PRE-PUSH VALIDATION ─────────────────────────────────────────
+// Validates invoice data before sending to Oracle Fusion
+// Returns { valid: bool, errors: [], warnings: [] }
+async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
+  const errors = [];
+  const warnings = [];
+
+  // ── 1. REQUIRED FIELDS ────────────────────────────────────────
+  if (!invoiceData.invoiceNumber) errors.push("Invoice number is required");
+  if (!invoiceData.total || invoiceData.total <= 0) errors.push("Invoice total must be greater than zero");
+  if (!invoiceData.invoiceDate) errors.push("Invoice date is required");
+  if (!invoiceData.vendor?.name) errors.push("Supplier/vendor name is required");
+
+  // ── 2. INVOICE DATE VALIDATION ────────────────────────────────
+  if (invoiceData.invoiceDate) {
+    const invDate = new Date(invoiceData.invoiceDate);
+    const today = new Date();
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(today.getFullYear() - 2);
+
+    if (invDate > today) {
+      errors.push(`Invoice date ${invoiceData.invoiceDate} is in the future — Oracle will reject this`);
+    }
+    if (invDate < twoYearsAgo) {
+      warnings.push(`Invoice date ${invoiceData.invoiceDate} is over 2 years old — verify this is correct`);
+    }
+  }
+
+  // ── 3. DUE DATE VALIDATION ────────────────────────────────────
+  if (invoiceData.dueDate && invoiceData.invoiceDate) {
+    const dueDate = new Date(invoiceData.dueDate);
+    const invDate = new Date(invoiceData.invoiceDate);
+    if (dueDate < invDate) {
+      errors.push(`Due date ${invoiceData.dueDate} is before invoice date ${invoiceData.invoiceDate}`);
+    }
+  }
+
+  // ── 4. CURRENCY VALIDATION ────────────────────────────────────
+  const validCurrencies = ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "SGD", "JPY", "CHF", "CNY"];
+  if (invoiceData.currency && !validCurrencies.includes(invoiceData.currency.toUpperCase())) {
+    warnings.push(`Currency "${invoiceData.currency}" may not be configured in your Oracle instance`);
+  }
+
+  // ── 5. AMOUNT BALANCE VALIDATION ─────────────────────────────
+  if (invoiceData.lineItems?.length > 0) {
+    const lineTotal = invoiceData.lineItems.reduce((sum, l) => sum + (l.amount || 0), 0);
+    const tax = invoiceData.tax || 0;
+    const expectedTotal = lineTotal + tax;
+    const tolerance = 0.02; // 2 cents tolerance for rounding
+
+    if (Math.abs(expectedTotal - invoiceData.total) > tolerance) {
+      errors.push(
+        `Amount mismatch: line items (${lineTotal.toFixed(2)}) + tax (${tax.toFixed(2)}) = ${expectedTotal.toFixed(2)}, ` +
+        `but invoice total is ${invoiceData.total}. Oracle requires these to balance.`
+      );
+    }
+  }
+
+  // ── 6. DUPLICATE CHECK IN ORACLE ─────────────────────────────
+  if (credentials && baseUrl && invoiceData.invoiceNumber && invoiceData.vendor?.name) {
+    try {
+      const dupRes = await axios.get(
+        `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices?q=InvoiceNumber=${encodeURIComponent(invoiceData.invoiceNumber)}`,
+        {
+          headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+          timeout: 8000,
+        }
+      );
+      const existing = dupRes.data?.items || [];
+      if (existing.length > 0) {
+        errors.push(
+          `Invoice #${invoiceData.invoiceNumber} already exists in Oracle Fusion ` +
+          `(Oracle Invoice ID: ${existing[0].InvoiceId}). Oracle will reject duplicates.`
+        );
+      }
+    } catch (e) {
+      warnings.push("Could not verify duplicate status in Oracle — proceeding with caution");
+    }
+  }
+
+  // ── 7. SUPPLIER VALIDATION IN ORACLE ─────────────────────────
+  if (credentials && baseUrl && invoiceData.vendor?.name) {
+    try {
+      const supplierRes = await axios.get(
+        `${baseUrl}/fscmRestApi/resources/11.13.18.05/suppliers?q=Supplier=${encodeURIComponent(invoiceData.vendor.name)}&limit=5`,
+        {
+          headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+          timeout: 8000,
+        }
+      );
+      const suppliers = supplierRes.data?.items || [];
+      if (suppliers.length === 0) {
+        warnings.push(
+          `Supplier "${invoiceData.vendor.name}" not found in Oracle Fusion. ` +
+          `Invoice will be created but may need manual supplier assignment.`
+        );
+      } else {
+        // Check for close name match
+        const exactMatch = suppliers.find(s =>
+          s.Supplier?.toLowerCase() === invoiceData.vendor.name.toLowerCase()
+        );
+        if (!exactMatch) {
+          warnings.push(
+            `Supplier name "${invoiceData.vendor.name}" has a partial match in Oracle: "${suppliers[0].Supplier}". ` +
+            `Verify the correct supplier before approving.`
+          );
+        }
+      }
+    } catch (e) {
+      // Supplier lookup failed — not critical, continue
+    }
+  }
+
+  // ── 8. PO VALIDATION ─────────────────────────────────────────
+  if (invoiceData.poNumber && credentials && baseUrl) {
+    try {
+      const poRes = await axios.get(
+        `${baseUrl}/fscmRestApi/resources/11.13.18.05/purchaseOrders?q=POHeaderId=${encodeURIComponent(invoiceData.poNumber)}&limit=1`,
+        {
+          headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+          timeout: 8000,
+        }
+      );
+      const pos = poRes.data?.items || [];
+      if (pos.length === 0) {
+        warnings.push(
+          `PO "${invoiceData.poNumber}" not found in Oracle Fusion. ` +
+          `Invoice will be unmatched — verify PO number is correct.`
+        );
+      } else {
+        const po = pos[0];
+        // Check PO amount tolerance (±10%)
+        if (po.OrderedAmount) {
+          const tolerance = po.OrderedAmount * 0.1;
+          if (invoiceData.total > po.OrderedAmount + tolerance) {
+            errors.push(
+              `Invoice total (${invoiceData.total}) exceeds PO amount (${po.OrderedAmount}) ` +
+              `by more than 10%. Oracle will block this for review.`
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // PO lookup failed — not critical
+    }
+  }
+
+  // ── 9. LINE ITEMS VALIDATION ──────────────────────────────────
+  if (invoiceData.lineItems?.length > 0) {
+    invoiceData.lineItems.forEach((line, i) => {
+      if (!line.amount || line.amount <= 0) {
+        errors.push(`Line item ${i + 1}: amount must be greater than zero`);
+      }
+      if (line.quantity && line.unitPrice) {
+        const expected = line.quantity * line.unitPrice;
+        if (Math.abs(expected - line.amount) > 0.02) {
+          warnings.push(
+            `Line item ${i + 1}: quantity (${line.quantity}) × unit price (${line.unitPrice}) = ${expected.toFixed(2)}, ` +
+            `but line amount is ${line.amount}`
+          );
+        }
+      }
+    });
+  }
+
+  // ── 10. INVOICE NUMBER FORMAT ─────────────────────────────────
+  if (invoiceData.invoiceNumber) {
+    if (invoiceData.invoiceNumber.length > 50) {
+      errors.push("Invoice number exceeds 50 characters — Oracle Fusion limit");
+    }
+    if (/[<>'"&]/.test(invoiceData.invoiceNumber)) {
+      errors.push("Invoice number contains invalid characters (<, >, ', \", &)");
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    summary: `${errors.length} error(s), ${warnings.length} warning(s)`,
+  };
 }
 
 // ── PUSH INVOICE TO ORACLE PAYABLES ────────────────────────────
 async function pushInvoice(teamId, invoiceData) {
   const { credentials, baseUrl } = await getOracleToken(teamId);
+
+  // ── RUN PRE-PUSH VALIDATION ────────────────────────────────
+  console.log(`Oracle validation: running pre-push checks for invoice #${invoiceData.invoiceNumber}`);
+  const validation = await validateInvoice({ invoiceData, teamId, credentials, baseUrl });
+
+  // Log validation results
+  if (validation.warnings.length > 0) {
+    console.warn("Oracle validation warnings:", validation.warnings);
+  }
+
+  // Block push if errors found
+  if (!validation.valid) {
+    console.error("Oracle validation failed:", validation.errors);
+
+    // Save validation failure to Supabase
+    await supabase.from("invoices").update({
+      status: "validation_failed",
+      agent_decision: "oracle_validation_failed",
+      agent_reason: `Oracle pre-validation failed: ${validation.errors.join("; ")}`,
+    }).eq("invoice_number", invoiceData.invoiceNumber).eq("team_id", teamId);
+
+    throw new Error(
+      `Invoice failed Oracle pre-validation:\n${validation.errors.map(e => `• ${e}`).join("\n")}`
+    );
+  }
 
   // Oracle Fusion Payables REST API endpoint
   const endpoint = `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices`;
@@ -36,12 +244,12 @@ async function pushInvoice(teamId, invoiceData) {
     InvoiceDate: invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
     DueDate: invoiceData.dueDate,
     PaymentTerms: invoiceData.paymentTerms || "NET30",
-    Description: `Processed by InvoiceIQ. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
+    Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
     SupplierName: invoiceData.vendor?.name,
     SupplierSite: invoiceData.vendor?.address,
     InvoiceType: "STANDARD",
-    Source: "InvoiceIQ",
+    Source: "APFlow",
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => ({
       LineNumber: i + 1,
       LineType: "ITEM",
@@ -72,20 +280,41 @@ async function pushInvoice(teamId, invoiceData) {
     });
 
     const oracle = res.data;
+
+    // Save validation warnings to invoice record
+    if (validation.warnings.length > 0) {
+      await supabase.from("invoices").update({
+        agent_reason: `Pushed to Oracle with ${validation.warnings.length} warning(s): ${validation.warnings.join("; ")}`,
+      }).eq("invoice_number", invoiceData.invoiceNumber).eq("team_id", teamId);
+    }
+
     return {
       success: true,
       erpReference: `ORA-${oracle.InvoiceId || Date.now()}`,
       erpType: "oracle",
+      validation, // include validation results in response
       details: {
         invoiceId: oracle.InvoiceId,
         invoiceNumber: oracle.InvoiceNumber,
         status: oracle.InvoiceStatus,
         amount: oracle.InvoiceAmount,
+        warnings: validation.warnings,
       }
     };
   } catch (err) {
     const msg = err.response?.data?.detail || err.response?.data?.title || err.message;
     throw new Error(`Oracle Fusion error: ${msg}`);
+  }
+}
+
+// ── VALIDATE ONLY (without pushing) ────────────────────────────
+async function validateOnly(teamId, invoiceData) {
+  try {
+    const { credentials, baseUrl } = await getOracleToken(teamId);
+    return await validateInvoice({ invoiceData, teamId, credentials, baseUrl });
+  } catch (err) {
+    // If Oracle not connected, run local validation only
+    return await validateInvoice({ invoiceData, teamId, credentials: null, baseUrl: null });
   }
 }
 
@@ -96,12 +325,11 @@ async function saveConnection(teamId, { baseUrl, username, password }) {
     erp_type: "oracle",
     base_url: baseUrl,
     username,
-    password, // In production: encrypt this!
+    password,
     status: "connected",
     updated_at: new Date().toISOString(),
   }, { onConflict: "team_id,erp_type" });
 
-  // Test connection
   try {
     const credentials = Buffer.from(`${username}:${password}`).toString("base64");
     await axios.get(`${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices?limit=1`, {
@@ -132,4 +360,4 @@ async function disconnect(teamId) {
   return { success: true };
 }
 
-module.exports = { pushInvoice, saveConnection, getConnectionStatus, disconnect };
+module.exports = { pushInvoice, saveConnection, getConnectionStatus, disconnect, validateOnly };

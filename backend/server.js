@@ -724,6 +724,15 @@ app.post("/api/erp/oracle/disconnect", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Oracle pre-validation endpoint (validate without pushing)
+app.post("/api/erp/oracle/validate", async (req, res) => {
+  try {
+    const { teamId, invoiceData } = req.body;
+    const result = await oracle.validateOnly(teamId, invoiceData);
+    res.json({ success: true, ...result });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── SMART ERP PUSH (routes to right ERP) ───────────────────────
 app.post("/api/erp/push", async (req, res) => {
   try {
