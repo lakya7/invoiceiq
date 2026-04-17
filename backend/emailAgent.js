@@ -21,6 +21,24 @@ async function createGmailClient(accessToken, refreshToken) {
   return google.gmail({ version: "v1", auth: oauth2Client });
 }
 
+// ── EXTRACT PLAIN TEXT BODY FROM EMAIL ─────────────────────────
+function extractEmailBody(payload) {
+  let body = "";
+  const decode = (data) => {
+    if (!data) return "";
+    return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+  };
+  const walk = (part) => {
+    if (!part) return;
+    if (part.mimeType === "text/plain" && part.body?.data) {
+      body += decode(part.body.data) + "\n";
+    }
+    if (part.parts) part.parts.forEach(walk);
+  };
+  walk(payload);
+  return body.trim().slice(0, 1000); // limit to 1000 chars
+}
+
 async function checkGmailForInvoices({ accessToken, refreshToken, teamId, userId, lastChecked }) {
   try {
     const gmail = await createGmailClient(accessToken, refreshToken);
@@ -109,6 +127,10 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
   const from = headers.find(h => h.name === "From")?.value || "Unknown";
   const date = headers.find(h => h.name === "Date")?.value;
 
+  // ── EXTRACT EMAIL BODY for PO number detection ──────────────
+  const emailBody = extractEmailBody(msg.payload);
+  if (emailBody) console.log(`Email body snippet: "${emailBody.slice(0, 100)}..."`);
+
   // Find PDF and ZIP attachments
   const attachments = [];
   const zipAttachments = [];
@@ -159,7 +181,7 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
       const base64Data = attData.data.replace(/-/g, "+").replace(/_/g, "/");
 
       // Extract invoice data with Claude
-      const extracted = await extractInvoiceFromBase64(base64Data, subject, from);
+      const extracted = await extractInvoiceFromBase64(base64Data, subject, from, emailBody);
       if (!extracted) continue;
 
       // Save to database
@@ -193,6 +215,26 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
         }
       }
 
+      // ── PO MATCH: if PO number found in email body or PDF ───────
+      let matchStatus = "unmatched";
+      let matchedPoId = null;
+      const poNumber = extracted.poNumber || null;
+      if (poNumber) {
+        const { data: matchedPo } = await supabase
+          .from("purchase_orders")
+          .select("id, po_number, status")
+          .eq("team_id", teamId)
+          .eq("po_number", poNumber)
+          .single();
+        if (matchedPo) {
+          matchStatus = "matched";
+          matchedPoId = matchedPo.id;
+          console.log(`PO Match found: Invoice #${extracted.invoiceNumber} → PO ${poNumber}`);
+          // Update PO status
+          await supabase.from("purchase_orders").update({ status: "fully_matched" }).eq("id", matchedPo.id);
+        }
+      }
+
       const { data: savedInvoice, error: insertError } = await supabase.from("invoices").insert({
         user_id: userId,
         team_id: teamId,
@@ -201,11 +243,11 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
         invoice_date: extracted.invoiceDate,
         total: extracted.total,
         status: "pushed",
-        match_status: "unmatched",
+        match_status: matchStatus,
         erp_reference: erpRef,
         raw_data: extracted,
         agent_decision: "email_auto_processed",
-        agent_reason: `Auto-processed from email: "${subject}" from ${from}`,
+        agent_reason: `Auto-processed from email: "${subject}" from ${from}${poNumber ? ` | PO: ${poNumber}` : ""}`,
       });
 
       if (insertError) {
@@ -272,7 +314,7 @@ async function processGmailMessage({ gmail, messageId, teamId, userId }) {
   return results.length ? results : null;
 }
 
-async function extractInvoiceFromBase64(base64Data, subject, from) {
+async function extractInvoiceFromBase64(base64Data, subject, from, emailBody = "") {
   try {
     // ── STEP 1: Claude pre-check — is this actually an invoice? ──
     const preCheck = await claude.messages.create({
@@ -312,7 +354,13 @@ async function extractInvoiceFromBase64(base64Data, subject, from) {
           },
           {
             type: "text",
-            text: `Extract invoice data from this PDF. Email subject: "${subject}", From: "${from}".
+            text: `Extract invoice data from this PDF.
+Email subject: "${subject}"
+From: "${from}"
+${emailBody ? `Email body: "${emailBody}"` : ""}
+
+IMPORTANT: If the email body mentions a PO number, purchase order number, or reference like "PO-123", "PO#456", "Purchase Order 789", extract it as poNumber even if it's not on the PDF itself.
+
 Return ONLY valid JSON with these fields:
 {
   "invoiceNumber": "string",
@@ -321,7 +369,8 @@ Return ONLY valid JSON with these fields:
   "vendor": { "name": "string", "email": "string or null" },
   "total": number,
   "currency": "USD/EUR/GBP/INR",
-  "lineItems": []
+  "lineItems": [],
+  "poNumber": "string or null"
 }`
           }
         ]
