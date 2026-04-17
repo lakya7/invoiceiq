@@ -15,6 +15,7 @@ import Legal from "./components/Legal";
 import Analytics from "./components/Analytics";
 import EmailAgent from "./components/EmailAgent";
 import BatchUpload from "./components/BatchUpload";
+import Support from "./components/Support";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -243,6 +244,7 @@ export default function App() {
 
   // Route views
   if (view === "batchUpload") return <BatchUpload user={user} team={team} onBack={() => setView("dashboard")} onDone={() => setView("dashboard")} />;
+  if (view === "support") return <Support user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "emailAgent") return <EmailAgent user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "analytics") return <Analytics user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "privacy") return <Legal page="privacy" onBack={() => setView("dashboard")} />;
@@ -271,6 +273,7 @@ export default function App() {
       onAnalytics={() => setView("analytics")}
       onEmailAgent={() => setView("emailAgent")}
       onBatchUpload={() => setView("batchUpload")}
+      onSupport={() => setView("support")}
       onPrivacy={() => setView("privacy")} onTerms={() => setView("terms")}
       onReport={async () => {
         if (!team) return alert("Please create a team first");

@@ -956,6 +956,65 @@ app.get("/api/debug/email-log/:teamId", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── SUPPORT CONTACT FORM ────────────────────────────────────────
+app.post("/api/support", async (req, res) => {
+  try {
+    const { name, email, issueType, message, teamId, teamName } = req.body;
+    if (!message || !email) return res.status(400).json({ error: "Email and message required" });
+
+    await sendEmail({
+      to: "help@apflow.app",
+      subject: `[${issueType}] Support Request from ${name || email}`,
+      html: `
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#0a0f1e;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;">SUPPORT REQUEST</div>
+  </div>
+  <div style="padding:32px;">
+    <h2 style="font-size:18px;margin:0 0 20px;color:#0a0f1e;">${issueType}</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
+      <tr style="border-bottom:1px solid #f0ede8;"><td style="padding:8px 0;color:#9ca3af;">From</td><td style="padding:8px 0;font-weight:600;text-align:right;">${name || "—"}</td></tr>
+      <tr style="border-bottom:1px solid #f0ede8;"><td style="padding:8px 0;color:#9ca3af;">Email</td><td style="padding:8px 0;font-weight:600;text-align:right;"><a href="mailto:${email}" style="color:#e8531a;">${email}</a></td></tr>
+      <tr style="border-bottom:1px solid #f0ede8;"><td style="padding:8px 0;color:#9ca3af;">Team</td><td style="padding:8px 0;font-weight:600;text-align:right;">${teamName || "—"}</td></tr>
+      <tr><td style="padding:8px 0;color:#9ca3af;">Issue type</td><td style="padding:8px 0;font-weight:600;text-align:right;">${issueType}</td></tr>
+    </table>
+    <div style="background:#f9fafb;border-radius:10px;padding:16px 20px;font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;">${message}</div>
+    <div style="margin-top:20px;">
+      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(issueType)} — APFlow Support" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Reply to ${name || email} →</a>
+    </div>
+  </div>
+</div>`
+    });
+
+    // Also send confirmation to user
+    await sendEmail({
+      to: email,
+      subject: `We received your support request — APFlow`,
+      html: `
+<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:#0a0f1e;padding:24px 32px;">
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
+  </div>
+  <div style="padding:32px;">
+    <div style="font-size:36px;margin-bottom:12px;">✅</div>
+    <h2 style="font-size:18px;margin:0 0 8px;color:#0a0f1e;">We got your message, ${name?.split(" ")[0] || "there"}!</h2>
+    <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;line-height:1.7;">Thanks for reaching out. We'll get back to you within 2 hours on business days. Your issue: <strong>${issueType}</strong>.</p>
+    <p style="font-size:13px;color:#9ca3af;margin:0;">In the meantime, check our FAQ in the Help & Support page inside APFlow.</p>
+    <div style="margin-top:24px;text-align:center;">
+      <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Back to APFlow →</a>
+    </div>
+  </div>
+</div>`
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Support email error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── SUPPLIER COMMUNICATION AGENT ────────────────────────────────
 
 // Manually trigger supplier notifications for a team

@@ -39,7 +39,7 @@ function StatCard({ icon, label, value, sub, accent, multiLine }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent, onBatchUpload }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent, onBatchUpload, onSupport }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -120,18 +120,18 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
 
         {/* Need Help Button */}
         <div style={{ padding: "0 16px 12px" }}>
-          <a
-            href={`mailto:help@apflow.app?subject=Support Request — APFlow&body=Hi APFlow Support,%0A%0AI need help with:%0A%0A[Describe your issue here]%0A%0AAccount: ${user?.email}%0ATeam: ${team?.name || "No team"}%0A%0AThanks`}
-            style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(232,83,26,0.12)", border:"1px solid rgba(232,83,26,0.25)", color:"#f87c4f", padding:"10px 14px", borderRadius:10, fontSize:13, fontWeight:500, textDecoration:"none", transition:"all 0.2s" }}
+          <button
+            onClick={onSupport}
+            style={{ width:"100%", display:"flex", alignItems:"center", gap:8, background:"rgba(232,83,26,0.12)", border:"1px solid rgba(232,83,26,0.25)", color:"#f87c4f", padding:"10px 14px", borderRadius:10, fontSize:13, fontWeight:500, textDecoration:"none", transition:"all 0.2s", cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(232,83,26,0.2)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(232,83,26,0.12)"}
           >
             <span style={{ fontSize:16 }}>🆘</span>
-            <div>
+            <div style={{ textAlign:"left" }}>
               <div style={{ fontSize:13, fontWeight:600 }}>Need Help?</div>
-              <div style={{ fontSize:11, color:"rgba(248,124,79,0.7)", marginTop:1 }}>help@apflow.app</div>
+              <div style={{ fontSize:11, color:"rgba(248,124,79,0.7)", marginTop:1 }}>Help & Support</div>
             </div>
-          </a>
+          </button>
         </div>
         <div className="sidebar-user">
           <div className="sidebar-avatar">{firstName?.[0]?.toUpperCase()}</div>
