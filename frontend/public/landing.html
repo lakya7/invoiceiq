@@ -212,6 +212,26 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
   footer{flex-direction:column;gap:16px;text-align:center;padding:24px 20px}
   .foot-links{flex-wrap:wrap;justify-content:center}
 }
+
+/* USE CASES */
+.uc-wrap{background:#f5f4f0;padding:100px 60px;border-top:1px solid #e5e7eb}
+.uc-center{text-align:center;margin-bottom:52px}
+.uc-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:#e8531a;text-transform:uppercase;margin-bottom:12px}
+.uc-title{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:#0a0f1e;margin-bottom:10px}
+.uc-title span{color:#e8531a}
+.uc-sub{font-size:15px;color:#6b7280;line-height:1.75;font-weight:300;max-width:520px;margin:0 auto}
+.uc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.uc-card{border-radius:20px;padding:28px 22px;transition:transform 0.2s;overflow:hidden}
+.uc-card:hover{transform:translateY(-3px)}
+.uc-num{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:16px;color:#0a0f1e;opacity:0.5}
+.uc-mini{width:100%;border-radius:12px;margin-bottom:16px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.uc-mini-row{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.7);border-radius:6px;padding:6px 8px}
+.uc-mini-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.uc-mini-text{font-size:10px;font-weight:500;color:#1a1a2e;flex:1}
+.uc-mini-badge{font-size:9px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:100px;white-space:nowrap}
+.uc-card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#0a0f1e;margin-bottom:8px;line-height:1.25}
+.uc-card-desc{font-size:12px;color:#4b5563;line-height:1.65;font-weight:300}
+@media(max-width:768px){.uc-grid{grid-template-columns:1fr}.uc-wrap{padding:72px 20px}}
 </style>
 </head>
 <body>
@@ -478,42 +498,221 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   </div>
 </section>
 
-<!-- INTEGRATIONS -->
-<section id="integrations" style="border-bottom:1px solid var(--border)">
-  <div class="eyebrow reveal">Integrations</div>
-  <h2 class="section-h reveal">Connect with your<br><span>existing software.</span></h2>
-  <p class="section-p reveal">Easily extend APFlow with your ERP, inbox, and communication tools. No IT project needed.</p>
-  <div class="int-grid reveal">
-    <div>
-      <div style="margin-bottom:16px;font-size:13px;color:var(--dim);font-family:'DM Mono',monospace">LIVE NOW</div>
-      <div class="int-logos" style="margin-bottom:24px">
-        <div class="int-pill live">Oracle Fusion ✓</div>
-        <div class="int-pill live">QuickBooks ✓</div>
-        <div class="int-pill live">Gmail ✓</div>
-        <div class="int-pill live">Slack ✓</div>
-        <div class="int-pill live">MS Teams ✓</div>
+<!-- AI BANNER -->
+<section style="border-bottom:1px solid var(--border);padding:80px 60px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;max-width:1000px;margin:0 auto">
+    <div class="reveal">
+      <div class="eyebrow">AI-powered AP automation</div>
+      <h2 class="section-h" style="font-size:clamp(28px,3.5vw,48px)">See where <span>AI automation</span><br>can take your AP team</h2>
+      <p style="font-size:15px;color:var(--muted);line-height:1.75;font-weight:300;margin-bottom:28px">From invoice receipt to ERP sync — APFlow eliminates every manual step. Your team focuses on exceptions only. Claude AI handles the rest.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Invoice processed in 4 seconds — not 4 minutes</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Supplier notified instantly via Slack when paid</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Zero manual entry into Oracle or QuickBooks</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>$40K saved per year on average</div>
       </div>
-      <div style="margin-bottom:12px;font-size:13px;color:var(--dim);font-family:'DM Mono',monospace">COMING SOON</div>
-      <div class="int-logos">
-        <div class="int-pill">SAP S/4HANA</div>
-        <div class="int-pill">NetSuite</div>
-        <div class="int-pill">Xero</div>
-        <div class="int-pill">Dynamics 365</div>
-        <div class="int-pill">Zoho Books</div>
-        <div class="int-pill">SAP Ariba</div>
-        <div class="int-pill">Coupa</div>
-      </div>
+      <a href="/login?signup=true" class="btn-primary">Start Free Trial →</a>
     </div>
-    <div class="int-right">
-      <div class="int-title">Connect everything in 5 minutes</div>
-      <div class="int-sub">No IT project. No implementation fee. Connect your Gmail, ERP, and Slack — then APFlow runs automatically 24/7.</div>
-      <div class="conn-item"><div class="conn-dot"></div><div class="conn-label">Gmail · gopalakrishna.rjv@gmail.com</div><div class="conn-status">● Active</div></div>
-      <div class="conn-item"><div class="conn-dot"></div><div class="conn-label">Oracle Fusion · REST API Connected</div><div class="conn-status">● Active</div></div>
-      <div class="conn-item"><div class="conn-dot"></div><div class="conn-label">Slack · #ap-invoices channel</div><div class="conn-status">● Active</div></div>
-      <div class="conn-item"><div class="conn-dot" style="background:#f59e0b"></div><div class="conn-label">QuickBooks · Not connected</div><div class="conn-status" style="color:#f59e0b">Connect →</div></div>
+    <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px">
+      <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:16px;letter-spacing:1px">PROCESSING NOW</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(34,197,94,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📧</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:white">Email received from ConIncorporated</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Invoice PDF detected in inbox · Processing...</div>
+          </div>
+          <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">● Live</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(232,83,26,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:white">Claude AI extracted invoice #0012820</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">£17,712.55 · Vendor matched · PO found</div>
+          </div>
+          <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">✓ Done</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(59,130,246,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:white">Pushed to ERP</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Oracle / QuickBooks · Payables validated</div>
+          </div>
+          <div style="font-size:10px;color:#60a5fa;font-family:'DM Mono',monospace;background:rgba(59,130,246,0.08);padding:3px 8px;border-radius:100px">ERP ✓</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:1px solid rgba(34,197,94,0.15);display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;background:rgba(34,197,94,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🔔</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:white">Teams / Slack alert sent</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Buyer & supplier notified · 4 seconds total</div>
+          </div>
+          <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">Sent ✓</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(232,83,26,0.06);border:1px solid rgba(232,83,26,0.15);border-radius:10px;font-size:12px;color:#fb8c6a;font-family:'DM Mono',monospace">⚡ Total time: 4 seconds · Zero manual steps</div>
     </div>
   </div>
 </section>
+
+<!-- INTEGRATIONS -->
+<section id="integrations" style="border-bottom:1px solid var(--border);text-align:center">
+  <div class="eyebrow reveal">Integrations</div>
+  <h2 class="section-h reveal" style="text-align:center">Pre-built integrations with<br><span>ERPs & communication tools</span></h2>
+  <p class="section-p reveal" style="margin:0 auto 48px;text-align:center">Connect once. Invoices flow in automatically. No IT project needed.</p>
+
+  <div class="reveal" style="display:flex;flex-wrap:wrap;gap:0;justify-content:center;max-width:900px;margin:0 auto;border:1px solid var(--border);border-radius:20px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);width:100%">
+      <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Oracle</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Fusion</div>
+        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">QuickBooks</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Online</div>
+        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Gmail</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Inbox Agent</div>
+        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Slack</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Alerts</div>
+        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">MS Teams</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Alerts</div>
+        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+      </div>
+      <div style="padding:28px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">SAP</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">S/4HANA</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">NetSuite</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Oracle</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Xero</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Accounting</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Dynamics</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">365</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Zoho</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Books</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Coupa</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Procurement</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+      <div style="padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Rillion</div>
+        <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">AP</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:16px" class="reveal">More ERPs added monthly · Request your ERP at hello@apflow.app</p>
+</section>
+
+<!-- USE CASES -->
+<div class="uc-wrap">
+  <div class="uc-center reveal">
+    <div class="uc-eyebrow">Real-world use cases</div>
+    <div class="uc-title">Problems APFlow<br><span>solves every day.</span></div>
+    <div class="uc-sub">Real scenarios from AP teams — and exactly how APFlow handles each one automatically, without your team lifting a finger.</div>
+  </div>
+
+  <div class="uc-grid reveal">
+    <div class="uc-card" style="background:#fff4f0">
+      <div class="uc-num">01 — EMAIL BODY</div>
+      <div class="uc-mini" style="background:#ffe8de">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#e8531a"></div><div class="uc-mini-text">Subject: Invoice attached</div></div>
+        <div class="uc-mini-row" style="background:rgba(232,83,26,0.1)"><div class="uc-mini-dot" style="background:#e8531a"></div><div class="uc-mini-text">Body: "re: PO-2024-001"</div><div class="uc-mini-badge" style="background:#e8531a;color:white">PO Found ✓</div></div>
+      </div>
+      <div class="uc-card-title">PO number in the email body, not on the invoice</div>
+      <div class="uc-card-desc">APFlow reads the email body, extracts the PO number, and matches it to your open POs automatically — even if it's not printed on the PDF.</div>
+    </div>
+    <div class="uc-card" style="background:#eff6ff">
+      <div class="uc-num">02 — BATCH ZIP</div>
+      <div class="uc-mini" style="background:#dbeafe">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#3b82f6"></div><div class="uc-mini-text">invoices_jan.zip</div><div class="uc-mini-badge" style="background:#3b82f6;color:white">50 PDFs</div></div>
+        <div class="uc-mini-row" style="background:rgba(59,130,246,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">All 50 processed</div><div class="uc-mini-badge" style="background:#22c55e;color:white">Done ✓</div></div>
+      </div>
+      <div class="uc-card-title">Supplier emails a ZIP of 50 invoices at once</div>
+      <div class="uc-card-desc">Email Agent detects the ZIP, extracts all PDFs, processes every invoice, and pushes to ERP — while your team sleeps.</div>
+    </div>
+    <div class="uc-card" style="background:#fef2f2">
+      <div class="uc-num">03 — DUPLICATE</div>
+      <div class="uc-mini" style="background:#fee2e2">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#dc2626"></div><div class="uc-mini-text">Invoice #1213 · $2,809</div></div>
+        <div class="uc-mini-row" style="background:rgba(220,38,38,0.1)"><div class="uc-mini-dot" style="background:#dc2626"></div><div class="uc-mini-text">Invoice #1213 · $2,809</div><div class="uc-mini-badge" style="background:#dc2626;color:white">Blocked ✗</div></div>
+      </div>
+      <div class="uc-card-title">Same invoice submitted twice by supplier</div>
+      <div class="uc-card-desc">Anomaly agent catches duplicates instantly, blocks before ERP, and automatically emails the supplier — saving $1,800 avg per incident.</div>
+    </div>
+    <div class="uc-card" style="background:#f5f3ff">
+      <div class="uc-num">04 — SCANNED PDF</div>
+      <div class="uc-mini" style="background:#ede9fe">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#7c3aed"></div><div class="uc-mini-text">Handwritten invoice.pdf</div></div>
+        <div class="uc-mini-row" style="background:rgba(124,58,237,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">All fields extracted</div><div class="uc-mini-badge" style="background:#7c3aed;color:white">99% accuracy</div></div>
+      </div>
+      <div class="uc-card-title">Scanned or handwritten invoice IDR can't read</div>
+      <div class="uc-card-desc">Claude Vision reads any format — handwritten, scanned, low-res, non-standard layouts. No templates, no training required.</div>
+    </div>
+  </div>
+
+  <div class="uc-grid reveal">
+    <div class="uc-card" style="background:#fffbeb">
+      <div class="uc-num">05 — OVERNIGHT</div>
+      <div class="uc-mini" style="background:#fef3c7">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#d97706"></div><div class="uc-mini-text">2:14 AM · 100 invoices</div></div>
+        <div class="uc-mini-row" style="background:rgba(217,119,6,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">9:00 AM · All processed</div><div class="uc-mini-badge" style="background:#d97706;color:white">24/7 ✓</div></div>
+      </div>
+      <div class="uc-card-title">100 invoices arrive overnight from global suppliers</div>
+      <div class="uc-card-desc">Email Agent runs every 5 minutes, 24/7. Dashboard ready when your team arrives. CFO gets an automatic summary at 9am.</div>
+    </div>
+    <div class="uc-card" style="background:#f0fdf4">
+      <div class="uc-num">06 — PAYMENT</div>
+      <div class="uc-mini" style="background:#dcfce7">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#16a34a"></div><div class="uc-mini-text">Oracle: Invoice #1213 PAID</div></div>
+        <div class="uc-mini-row" style="background:rgba(22,163,74,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">Teams/Slack: Supplier notified</div><div class="uc-mini-badge" style="background:#16a34a;color:white">Sent ✓</div></div>
+      </div>
+      <div class="uc-card-title">Supplier asking "have we been paid?" every week</div>
+      <div class="uc-card-desc">ERP Sync Agent detects payment in Oracle or QuickBooks. Supplier gets instant Slack or Teams notification. Zero chasing.</div>
+    </div>
+    <div class="uc-card" style="background:#f0fdfa">
+      <div class="uc-num">07 — AMOUNT SPIKE</div>
+      <div class="uc-mini" style="background:#ccfbf1">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#0f766e"></div><div class="uc-mini-text">Vendor usual: $15,000</div></div>
+        <div class="uc-mini-row" style="background:rgba(15,118,110,0.1)"><div class="uc-mini-dot" style="background:#dc2626"></div><div class="uc-mini-text">This invoice: $45,000</div><div class="uc-mini-badge" style="background:#dc2626;color:white">Flagged ⚠</div></div>
+      </div>
+      <div class="uc-card-title">Invoice 3x higher than usual from same vendor</div>
+      <div class="uc-card-desc">Anomaly agent flags the spike and sends a Slack or Teams alert to your AP manager instantly. Invoice held pending review.</div>
+    </div>
+    <div class="uc-card" style="background:#fdf2f8">
+      <div class="uc-num">08 — FUTURE DATE</div>
+      <div class="uc-mini" style="background:#fce7f3">
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#be185d"></div><div class="uc-mini-text">Invoice date: July 2027</div></div>
+        <div class="uc-mini-row" style="background:rgba(190,24,93,0.1)"><div class="uc-mini-dot" style="background:#dc2626"></div><div class="uc-mini-text">Blocked · Supplier notified</div><div class="uc-mini-badge" style="background:#be185d;color:white">Caught ✓</div></div>
+      </div>
+      <div class="uc-card-title">Invoice dated 3 months in the future</div>
+      <div class="uc-card-desc">Anomaly agent catches future-dated invoices instantly. Supplier automatically emailed to resubmit with the correct date.</div>
+    </div>
+  </div>
+</div>
 
 <!-- ERP IDR COMPARISON -->
 <section style="border-bottom:1px solid var(--border)">
