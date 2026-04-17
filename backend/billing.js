@@ -7,9 +7,9 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 // Plan config — update price IDs from your Stripe dashboard
 const PLANS = {
-  free:       { name: "Free",       docs: 50,       price: 0,    priceId: null },
-  starter:    { name: "Starter",    docs: 500,       price: 299,  priceId: process.env.STRIPE_PRICE_STARTER },
-  growth:     { name: "Growth",     docs: 2000,      price: 799,  priceId: process.env.STRIPE_PRICE_GROWTH },
+  free:       { name: "Starter",    docs: 50,       price: 0,    priceId: null },
+  growth:     { name: "Growth",     docs: 500,       price: 299,  priceId: process.env.STRIPE_PRICE_GROWTH },
+  scale:      { name: "Scale",      docs: 2000,      price: 799,  priceId: process.env.STRIPE_PRICE_SCALE },
   enterprise: { name: "Enterprise", docs: Infinity,  price: null, priceId: process.env.STRIPE_PRICE_ENTERPRISE },
 };
 
@@ -215,7 +215,7 @@ function getPlanFromPriceId(priceId) {
   for (const [plan, config] of Object.entries(PLANS)) {
     if (config.priceId === priceId) return plan;
   }
-  return "starter";
+  return "growth";
 }
 
 async function getTeamByCustomer(customerId) {

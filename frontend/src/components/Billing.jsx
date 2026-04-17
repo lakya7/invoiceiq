@@ -5,48 +5,48 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const PLANS = [
   {
     id: "free",
-    name: "Free",
+    name: "Starter",
     price: "$0",
     period: "/month",
     desc: "Try APFlow with no commitment",
     docs: 50,
-    features: ["50 documents/month", "1 ERP integration", "Basic AI extraction", "Email support"],
+    features: ["50 invoices/month", "1 ERP integration", "AI extraction", "Supplier portal"],
     cta: "Current Plan",
     color: "#6b7280",
     highlight: false,
   },
   {
-    id: "starter",
-    name: "Starter",
-    price: "$29",
-    period: "/month",
-    desc: "For growing finance teams",
-    docs: 500,
-    features: ["500 documents/month", "1 ERP integration", "PO matching", "Email notifications", "Priority support", "14-day free trial"],
-    cta: "Upgrade to Starter",
-    color: "#1a6be8",
-    highlight: false,
-  },
-  {
     id: "growth",
     name: "Growth",
-    price: "$99",
+    price: "$299",
     period: "/month",
-    desc: "For high-volume AP teams",
-    docs: 2000,
-    features: ["2,000 documents/month", "3 ERP integrations", "Advanced PO matching", "Team management", "Analytics dashboard", "Priority support", "14-day free trial"],
+    desc: "For growing AP teams",
+    docs: 500,
+    features: ["500 invoices/month", "1 ERP integration", "PO matching", "Duplicate detection", "AI Agents (7 live)", "14-day free trial"],
     cta: "Upgrade to Growth",
     color: "#e8531a",
     highlight: true,
   },
   {
+    id: "scale",
+    name: "Scale",
+    price: "$799",
+    period: "/month",
+    desc: "For high-volume AP teams",
+    docs: 2000,
+    features: ["2,000 invoices/month", "3 ERP integrations", "All AI Agents", "Team management", "Analytics dashboard", "Priority support", "14-day free trial"],
+    cta: "Upgrade to Scale",
+    color: "#1a6be8",
+    highlight: false,
+  },
+  {
     id: "enterprise",
     name: "Enterprise",
-    price: "$199",
-    period: "/month",
-    desc: "Unlimited scale, dedicated support",
+    price: "Custom",
+    period: "",
+    desc: "For large finance teams",
     docs: Infinity,
-    features: ["Unlimited documents", "Unlimited ERPs", "Custom AI training", "Dedicated CSM", "SLA guarantee", "On-premise option", "SSO / SAML"],
+    features: ["Unlimited invoices", "Unlimited ERPs", "All AI Agents", "Dedicated CSM", "SLA guarantee", "On-premise option", "SSO / SAML"],
     cta: "Contact Sales",
     color: "#7c3aed",
     highlight: false,
@@ -112,7 +112,7 @@ export default function Billing({ user, team, onBack }) {
 
   const checkout = async (planId) => {
     if (planId === "enterprise") {
-      window.open("mailto:sales@invoiceiq.app?subject=Enterprise Plan Inquiry", "_blank");
+      window.open("mailto:hello@apflow.app?subject=Enterprise Plan Inquiry", "_blank");
       return;
     }
     setCheckoutLoading(planId);
