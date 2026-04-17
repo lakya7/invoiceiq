@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-const SECTIONS = ["Notifications", "ERP & Integration", "Company", "Account", "Billing"];
+const SECTIONS = ["Notifications", "Chat Notifications", "ERP & Integration", "Company", "Account", "Billing"];
 
 function Toggle({ checked, onChange, label, sub }) {
   return (
@@ -41,6 +41,9 @@ export default function Settings({ user, onBack }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testSending, setTestSending] = useState(false);
+  const [notifSettings, setNotifSettings] = useState({ enabled: false, slack_webhook_url: "", teams_webhook_url: "", notify_on_uploaded: true, notify_on_processed: true, notify_on_matched: true, notify_on_flagged: true, notify_on_payment: true });
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(null);
   const [toast, setToast] = useState(null);
   const [profile, setProfile] = useState({ full_name: user.user_metadata?.full_name || "", email: user.email });
 
@@ -55,6 +58,11 @@ export default function Settings({ user, onBack }) {
       const data = await res.json();
       if (data.success) setSettings(data.settings);
     } catch (e) { showToast("Failed to load settings", "error"); }
+    try {
+      const nRes = await fetch(`${API}/api/notifications/settings/${user.id}`);
+      const nData = await nRes.json();
+      if (nData.success && nData.settings) setNotifSettings(s => ({ ...s, ...nData.settings }));
+    } catch (e) { console.error("Notif settings load error", e); }
     setLoading(false);
   };
 
@@ -97,6 +105,40 @@ export default function Settings({ user, onBack }) {
     else showToast("Password reset email sent!", "success");
   };
 
+  const saveNotifSettings = async () => {
+    setNotifSaving(true);
+    try {
+      const res = await fetch(`${API}/api/notifications/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, settings: notifSettings }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast("Notification settings saved!", "success");
+    } catch (e) { showToast(e.message, "error"); }
+    setNotifSaving(false);
+  };
+
+  const testWebhook = async (platform) => {
+    const url = platform === "slack" ? notifSettings.slack_webhook_url : notifSettings.teams_webhook_url;
+    if (!url) return showToast(`Please enter a ${platform === "slack" ? "Slack" : "Teams"} webhook URL first`, "error");
+    setTestingWebhook(platform);
+    try {
+      const res = await fetch(`${API}/api/notifications/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, webhookUrl: url }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast(`Test notification sent to ${platform === "slack" ? "Slack" : "Teams"}!`, "success");
+    } catch (e) { showToast("Test failed: " + e.message, "error"); }
+    setTestingWebhook(null);
+  };
+
+  const setN = (key, val) => setNotifSettings(s => ({ ...s, [key]: val }));
+
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
@@ -120,6 +162,7 @@ export default function Settings({ user, onBack }) {
               {s === "Company" && "🏢 "}
               {s === "Account" && "👤 "}
               {s === "Billing" && "💳 "}
+              {s === "Chat Notifications" && "💬 "}
               {s}
             </button>
           ))}
@@ -246,6 +289,68 @@ export default function Settings({ user, onBack }) {
                       sub="Flag invoices that don't match an open purchase order"
                     />
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* ── CHAT NOTIFICATIONS ──────────────────── */}
+            {activeSection === "Chat Notifications" && (
+              <>
+                <div className="settings-card">
+                  <div className="settings-card-title">Slack Integration</div>
+                  <div className="settings-card-sub">Get invoice notifications in your Slack channel</div>
+                  <div className="settings-card-body">
+                    <Toggle checked={notifSettings.enabled} onChange={v => setN("enabled", v)} label="Enable chat notifications" sub="Send invoice events to Slack and/or Microsoft Teams" />
+                    <SettingRow label="Slack Webhook URL" sub="Create an Incoming Webhook in your Slack workspace settings">
+                      <input className="settings-input" type="url" placeholder="https://hooks.slack.com/services/..." value={notifSettings.slack_webhook_url || ""} onChange={e => setN("slack_webhook_url", e.target.value)} />
+                    </SettingRow>
+                    <div style={{ marginTop: 8 }}>
+                      <button className="btn-secondary-action" onClick={() => testWebhook("slack")} disabled={testingWebhook === "slack"}>
+                        {testingWebhook === "slack" ? "Sending..." : "🧪 Test Slack"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-title">Microsoft Teams Integration</div>
+                  <div className="settings-card-sub">Get invoice notifications in your Teams channel</div>
+                  <div className="settings-card-body">
+                    <SettingRow label="Teams Webhook URL" sub="Add an Incoming Webhook connector to your Teams channel">
+                      <input className="settings-input" type="url" placeholder="https://your-org.webhook.office.com/..." value={notifSettings.teams_webhook_url || ""} onChange={e => setN("teams_webhook_url", e.target.value)} />
+                    </SettingRow>
+                    <div style={{ marginTop: 8 }}>
+                      <button className="btn-secondary-action" onClick={() => testWebhook("teams")} disabled={testingWebhook === "teams"}>
+                        {testingWebhook === "teams" ? "Sending..." : "🧪 Test Teams"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-title">Notification Events</div>
+                  <div className="settings-card-sub">Choose which events trigger a notification</div>
+                  <div className="settings-card-body">
+                    <Toggle checked={notifSettings.notify_on_uploaded} onChange={v => setN("notify_on_uploaded", v)} label="Invoice uploaded" sub="Notify when a new invoice is received" />
+                    <Toggle checked={notifSettings.notify_on_processed} onChange={v => setN("notify_on_processed", v)} label="Invoice processed & pushed to ERP" sub="Notify when an invoice is successfully processed" />
+                    <Toggle checked={notifSettings.notify_on_matched} onChange={v => setN("notify_on_matched", v)} label="Invoice matched to PO" sub="Notify when a PO match is found" />
+                    <Toggle checked={notifSettings.notify_on_flagged} onChange={v => setN("notify_on_flagged", v)} label="Invoice flagged or anomaly detected" sub="Notify when an invoice is flagged for review" />
+                    <Toggle checked={notifSettings.notify_on_payment} onChange={v => setN("notify_on_payment", v)} label="Payment confirmed" sub="Notify buyer and supplier when ERP sync detects payment" />
+                  </div>
+                </div>
+
+                <div className="settings-card" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                  <div className="settings-card-title" style={{ color: "#16a34a" }}>How to get webhook URLs</div>
+                  <div className="settings-card-body" style={{ fontSize: 13, color: "#15803d", lineHeight: 1.8 }}>
+                    <div><strong>Slack:</strong> Go to api.slack.com/apps → Create App → Incoming Webhooks → Add New Webhook → copy URL</div>
+                    <div style={{ marginTop: 8 }}><strong>Teams:</strong> Open a channel → ··· → Connectors → Incoming Webhook → Configure → copy URL</div>
+                  </div>
+                </div>
+
+                <div className="settings-save-row">
+                  <button className="btn-approve" onClick={saveNotifSettings} disabled={notifSaving}>
+                    {notifSaving ? "Saving..." : "Save Notification Settings"}
+                  </button>
                 </div>
               </>
             )}

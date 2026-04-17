@@ -11,6 +11,7 @@ const { runApprovalAgent, sendAgentDecisionEmail } = require("./approvalAgent");
 const { runAnomalyAgent, sendAnomalyEmail } = require("./anomalyAgent");
 const { notifySupplier, scanAndNotifySuppliers } = require("./supplierAgent");
 const { runErpSync, startErpSyncScheduler } = require("./erpSyncAgent");
+const { notify, EVENTS, getNotificationSettings, saveNotificationSettings, testWebhook: testNotifWebhook } = require("./notificationAgent");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -363,6 +364,22 @@ app.post("/api/push-erp", async (req, res) => {
           await sendApprovalEmail({ to: userEmail, notifyEmail: settings.notify_email || userEmail, invoiceData, erpReference, matchResult });
         }
       } catch (e) { console.error("Email error:", e.message); }
+    }
+
+    // ── NOTIFY BUYER via Teams/Slack ────────────────────────────
+    if (teamId) {
+      try {
+        const { data: savedInv } = await supabase.from("invoices").select("*").eq("erp_reference", erpReference).single();
+        if (savedInv) {
+          await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInv });
+          if (matchResult?.matchStatus === "matched") {
+            await notify({ teamId, event: EVENTS.INVOICE_PO_MATCHED, invoice: savedInv });
+          }
+          if (anomalyResult?.totalFlags > 0) {
+            await notify({ teamId, event: EVENTS.INVOICE_FLAGGED, invoice: { ...savedInv, flag_reason: anomalyResult.flags?.[0]?.description } });
+          }
+        }
+      } catch (e) { console.error("Notification error:", e.message); }
     }
 
     res.json({ success: true, erpReference, erpType, validationStatus, validationMessage, timestamp, agentDecision, anomalyResult });
@@ -956,6 +973,38 @@ app.get("/api/debug/email-log/:teamId", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── NOTIFICATION AGENT ROUTES ───────────────────────────────────
+
+// Get notification settings
+app.get("/api/notifications/settings/:userId", async (req, res) => {
+  try {
+    const { data: member } = await supabase.from("team_members").select("team_id").eq("user_id", req.params.userId).eq("status", "active").single();
+    if (!member) return res.json({ success: true, settings: null });
+    const settings = await getNotificationSettings(member.team_id);
+    res.json({ success: true, settings });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Save notification settings
+app.post("/api/notifications/settings", async (req, res) => {
+  try {
+    const { userId, settings } = req.body;
+    const { data: member } = await supabase.from("team_members").select("team_id").eq("user_id", userId).eq("status", "active").single();
+    if (!member) return res.status(404).json({ error: "Team not found" });
+    const saved = await saveNotificationSettings({ teamId: member.team_id, settings });
+    res.json({ success: true, settings: saved });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Test webhook
+app.post("/api/notifications/test", async (req, res) => {
+  try {
+    const { platform, webhookUrl } = req.body;
+    await testNotifWebhook({ platform, webhookUrl });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── SUPPORT CONTACT FORM ────────────────────────────────────────
 app.post("/api/support", async (req, res) => {
   try {
@@ -1064,6 +1113,20 @@ app.post("/api/agent/erp-sync", async (req, res) => {
   try {
     const { teamId } = req.body;
     const result = await runErpSync({ teamId });
+
+    // Notify for any newly paid invoices
+    if (result.totalUpdated > 0) {
+      const allDetails = [...(result.oracle?.details || []), ...(result.quickbooks?.details || [])];
+      for (const detail of allDetails) {
+        if (detail.newStatus === "paid") {
+          try {
+            const { data: inv } = await supabase.from("invoices").select("*").eq("invoice_number", detail.invoiceNumber).eq("team_id", teamId).single();
+            if (inv) await notify({ teamId, event: EVENTS.PAYMENT_CONFIRMED, invoice: inv });
+          } catch (e) { console.error("Payment notification error:", e.message); }
+        }
+      }
+    }
+
     res.json({ success: true, ...result });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
