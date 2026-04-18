@@ -88,7 +88,7 @@ export default function EmailAgent({ user, team, onBack }) {
           </div>
         </div>
         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          Connect your Gmail or Outlook inbox. APFlow checks every 5 minutes for emails with PDF invoice attachments, extracts the data automatically, and pushes to your ERP — zero human touch needed.
+          Connect your email inbox. APFlow checks every 5 minutes for emails with PDF and ZIP invoice attachments, extracts the data automatically, and pushes to your ERP — zero human touch needed.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export default function EmailAgent({ user, team, onBack }) {
           <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 14, padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ fontSize: 28 }}>✅</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, color: "#16a34a", fontSize: 15 }}>Gmail Connected</div>
+              <div style={{ fontWeight: 700, color: "#16a34a", fontSize: 15 }}>Email Inbox Connected</div>
               <div style={{ fontSize: 13, color: "#15803d", marginTop: 2 }}>Monitoring: <strong>{config.email}</strong></div>
               {config.last_checked && <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Last checked: {new Date(config.last_checked).toLocaleString()}</div>}
             </div>
@@ -187,7 +187,7 @@ export default function EmailAgent({ user, team, onBack }) {
             <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#1a1a2e", marginBottom: 16 }}>How it works</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { icon: "📨", text: "Supplier emails invoice PDF (or ZIP of invoices) to your connected Gmail" },
+                { icon: "📨", text: "Supplier emails invoice PDF (or ZIP of invoices) to your connected inbox" },
                 { icon: "🤖", text: "APFlow detects the email every 5 minutes and downloads the attachment" },
                 { icon: "🔍", text: "Claude AI extracts all invoice fields automatically" },
                 { icon: "✅", text: "Invoice is validated, matched to POs, and pushed to your ERP" },
@@ -208,15 +208,15 @@ export default function EmailAgent({ user, team, onBack }) {
             {/* Gmail */}
             <div style={{ background: "white", border: "1.5px solid #e5e7eb", borderRadius: 16, padding: "28px 24px" }}>
               <div style={{ fontSize: 36, marginBottom: 16 }}>📧</div>
-              <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 18, color: "#1a1a2e", marginBottom: 8 }}>Connect Gmail</div>
-              <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 20 }}>Connect your Gmail inbox. APFlow will monitor it for invoice emails with PDF or ZIP attachments and process them automatically.</p>
+              <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 18, color: "#1a1a2e", marginBottom: 8 }}>Connect Email</div>
+              <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 20 }}>Connect your email inbox. APFlow will monitor it for invoice emails with PDF or ZIP attachments and process them automatically. Supports Gmail and Outlook.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
                 {["Monitors inbox every 5 minutes", "Detects PDF and ZIP attachments", "Auto-extracts with Claude AI", "Pushes to ERP automatically"].map((f, i) => (
                   <div key={i} style={{ fontSize: 12, color: "#16a34a", display: "flex", gap: 6 }}><span>✓</span>{f}</div>
                 ))}
               </div>
               <button onClick={connectGmail} style={{ width: "100%", background: "#e8531a", color: "white", border: "none", padding: "13px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans,sans-serif" }}>
-                Connect Gmail →
+                Connect Email →
               </button>
             </div>
 
@@ -239,10 +239,10 @@ export default function EmailAgent({ user, team, onBack }) {
 
           {/* Setup Instructions */}
           <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 14, padding: "20px 24px" }}>
-            <div style={{ fontWeight: 700, color: "#92400e", marginBottom: 12, fontSize: 14 }}>⚠️ Before connecting Gmail</div>
+            <div style={{ fontWeight: 700, color: "#92400e", marginBottom: 12, fontSize: 14 }}>⚠️ Before connecting your inbox</div>
             <ol style={{ paddingLeft: 20, fontSize: 13, color: "#78350f", lineHeight: 2 }}>
-              <li>Make sure you're connecting the Gmail account that receives supplier invoices</li>
-              <li>APFlow will only read emails with PDF or ZIP attachments — it never reads other emails</li>
+              <li>Make sure you're connecting the inbox that receives supplier invoices (Gmail or Outlook)</li>
+              <li>APFlow will only read emails with PDF or ZIP invoice attachments — it never reads other emails</li>
               <li>You can disconnect at any time from this page</li>
               <li>We recommend creating a dedicated <strong>ap@yourcompany.com</strong> address for invoices</li>
             </ol>

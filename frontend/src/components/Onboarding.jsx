@@ -14,10 +14,10 @@ const STEPS = [
   {
     id: "gmail",
     icon: "📧",
-    title: "Connect your Gmail inbox",
-    desc: "APFlow monitors your inbox every 5 minutes for invoice emails — PDFs and ZIPs detected automatically.",
-    cta: "Connect Gmail",
-    done_label: "Gmail connected",
+    title: "Connect your email inbox",
+    desc: "APFlow monitors your inbox every 5 minutes for invoice emails — PDFs and ZIPs detected automatically. Supports Gmail and Outlook.",
+    cta: "Connect Email",
+    done_label: "Email inbox connected",
   },
   {
     id: "erp",
@@ -31,7 +31,7 @@ const STEPS = [
     id: "invoice",
     icon: "📄",
     title: "Process your first invoice",
-    desc: "Upload a PDF invoice or send one to your connected Gmail. Watch APFlow extract and push it in seconds.",
+    desc: "Upload a PDF invoice or send one to your connected email inbox. Watch APFlow extract and push it in seconds.",
     cta: "Process Invoice",
     done_label: "First invoice processed",
   },
@@ -84,7 +84,7 @@ export default function Onboarding({ user, team, teams, onCreateTeam, onEmailAge
             {/* What you'll get */}
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 36, textAlign: "left" }}>
               {[
-                { icon: "📧", text: "Auto-process invoices from your Gmail inbox" },
+                { icon: "📧", text: "Auto-process invoices from your email inbox (Gmail or Outlook)" },
                 { icon: "🤖", text: "Claude AI extracts every field in 4 seconds" },
                 { icon: "🎯", text: "PO matching — even from email body text" },
                 { icon: "🚀", text: "Push directly to Oracle or QuickBooks" },
