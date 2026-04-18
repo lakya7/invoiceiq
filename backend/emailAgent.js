@@ -361,6 +361,14 @@ ${emailBody ? `Email body: "${emailBody}"` : ""}
 
 IMPORTANT: If the email body mentions a PO number, purchase order number, or reference like "PO-123", "PO#456", "Purchase Order 789", extract it as poNumber even if it's not on the PDF itself.
 
+For each line item, set lineType:
+- "ITEM" for products, parts, services, labor
+- "FREIGHT" for freight, shipping, delivery, courier, carriage, postage
+- "MISCELLANEOUS" for handling, packing, insurance, surcharges, fuel surcharge
+- "TAX" for tax, GST, VAT, sales tax shown as a line item
+- "DISCOUNT" for discounts or rebates (use negative amount)
+If freight appears only as a summary field (not a line item), include it as a separate lineItem with lineType "FREIGHT".
+
 Return ONLY valid JSON with these fields:
 {
   "invoiceNumber": "string",
@@ -368,9 +376,21 @@ Return ONLY valid JSON with these fields:
   "dueDate": "YYYY-MM-DD or null",
   "vendor": { "name": "string", "email": "string or null" },
   "total": number,
+  "subtotal": number or null,
+  "tax": number or null,
   "currency": "USD/EUR/GBP/INR",
-  "lineItems": [],
-  "poNumber": "string or null"
+  "lineItems": [
+    {
+      "description": "string",
+      "quantity": number or null,
+      "unitPrice": number or null,
+      "amount": number,
+      "lineType": "ITEM|FREIGHT|MISCELLANEOUS|TAX|DISCOUNT"
+    }
+  ],
+  "poNumber": "string or null",
+  "hasFreight": true or false,
+  "freightAmount": number or null
 }`
           }
         ]

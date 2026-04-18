@@ -173,6 +173,16 @@ async function extractInvoiceData(base64Data, filename) {
           {
             type: "text",
             text: `Extract invoice data from this PDF (filename: "${filename}").
+
+IMPORTANT — for each line item set lineType:
+- "ITEM" → products, parts, services, labor
+- "FREIGHT" → freight, shipping, delivery, courier, carriage, postage
+- "MISCELLANEOUS" → handling, packing, insurance, surcharge, fuel surcharge
+- "TAX" → tax, GST, VAT, sales tax (if shown as a line item)
+- "DISCOUNT" → discounts, rebates, credits (use negative amount)
+
+If freight/shipping appears only as a summary field (not a line item), still include it as a separate lineItem with lineType "FREIGHT".
+
 Return ONLY valid JSON with no extra text before or after:
 {
   "invoiceNumber": "string",
@@ -180,8 +190,20 @@ Return ONLY valid JSON with no extra text before or after:
   "dueDate": "YYYY-MM-DD or null",
   "vendor": { "name": "string", "email": "string or null" },
   "total": number,
+  "subtotal": number,
+  "tax": number,
   "currency": "USD/EUR/GBP/INR",
-  "lineItems": []
+  "lineItems": [
+    {
+      "description": "string",
+      "quantity": number,
+      "unitPrice": number,
+      "amount": number,
+      "lineType": "ITEM|FREIGHT|MISCELLANEOUS|TAX|DISCOUNT"
+    }
+  ],
+  "hasFreight": true/false,
+  "freightAmount": number or null
 }`
           }
         ]
