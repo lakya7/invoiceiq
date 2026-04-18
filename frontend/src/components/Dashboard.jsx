@@ -39,7 +39,7 @@ function StatCard({ icon, label, value, sub, accent, multiLine }) {
   );
 }
 
-export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent, onBatchUpload, onSupport }) {
+export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoice, onSignOut, onSettings, onTeam, onPOs, onBilling, onERP, onPrivacy, onTerms, onReport, onAnalytics, onEmailAgent, onBatchUpload, onSupport, onOnboarding }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -78,6 +78,12 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   };
 
   const filtered = filter === "all" ? invoices : invoices.filter(i => i.status === filter);
+
+  // Setup completion for banner
+  const setupSteps = { team: !!team, gmail: false, erp: false, invoice: invoices.length > 0 };
+  const setupDone = Object.values(setupSteps).filter(Boolean).length;
+  const setupTotal = Object.keys(setupSteps).length;
+  const setupComplete = setupDone === setupTotal;
   const totalAmount = invoices.reduce((s,i) => s+(i.total||0), 0);
   const pending = invoices.filter(i=>i.status==="pending").length;
   const pushed = invoices.filter(i=>i.status==="pushed").length;
@@ -110,6 +116,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
           <div className="nav-item" onClick={onSettings}>⚙️ Settings</div>
+          <div className="nav-item" onClick={onOnboarding} style={{ color:"rgba(232,83,26,0.8)" }}>🚀 Setup Guide</div>
         </nav>
 
         <div style={{ padding: "0 16px 12px", display: "flex", gap: 12, fontSize: 11 }}>
@@ -162,6 +169,27 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             <button className="btn-approve" onClick={onNewInvoice}>+ Process Invoice</button>
           </div>
         </div>
+
+        {/* Setup progress banner — shows until all steps complete */}
+        {team && !setupComplete && (
+          <div style={{ background:"linear-gradient(135deg,#fff4f0,#fff8f5)", border:"1px solid #fcd3c0", borderRadius:14, padding:"16px 20px", marginBottom:20, display:"flex", alignItems:"center", gap:16 }}>
+            <div style={{ fontSize:24 }}>🚀</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:"#0a0f1e", marginBottom:4 }}>
+                Complete your setup — {setupDone} of {setupTotal} steps done
+              </div>
+              <div style={{ height:6, background:"#fcd3c0", borderRadius:100, overflow:"hidden", maxWidth:200 }}>
+                <div style={{ height:"100%", width:`${(setupDone/setupTotal)*100}%`, background:"#e8531a", borderRadius:100, transition:"width 0.4s" }} />
+              </div>
+            </div>
+            <button
+              onClick={onOnboarding}
+              style={{ background:"#e8531a", color:"white", border:"none", padding:"8px 16px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+            >
+              Continue Setup →
+            </button>
+            </div>
+        )}
 
         {/* Create team prompt - only show if user has no teams at all */}
         {!team && !creatingTeam && teams?.length === 0 && (

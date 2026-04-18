@@ -292,6 +292,7 @@ export default function App() {
       onEmailAgent={() => setView("emailAgent")}
       onBatchUpload={() => setView("batchUpload")}
       onSupport={() => setView("support")}
+      onOnboarding={() => setShowOnboarding(true)}
       onPrivacy={() => setView("privacy")} onTerms={() => setView("terms")}
       onReport={async () => {
         if (!team) return alert("Please create a team first");
