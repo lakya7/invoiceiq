@@ -116,7 +116,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
           <div className="nav-item" onClick={onSettings}>⚙️ Settings</div>
-          <div className="nav-item" onClick={onOnboarding} style={{ color:"rgba(232,83,26,0.8)" }}>🚀 Setup Guide</div>
+          {team && team.role === "admin" && <div className="nav-item" onClick={onOnboarding} style={{ color:"rgba(232,83,26,0.8)" }}>🚀 Setup Guide</div>}
         </nav>
 
         <div style={{ padding: "0 16px 12px", display: "flex", gap: 12, fontSize: 11 }}>
@@ -171,7 +171,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         </div>
 
         {/* Setup progress banner — shows until all steps complete */}
-        {team && !setupComplete && (
+        {team && team.role === "admin" && !setupComplete && (
           <div style={{ background:"linear-gradient(135deg,#fff4f0,#fff8f5)", border:"1px solid #fcd3c0", borderRadius:14, padding:"16px 20px", marginBottom:20, display:"flex", alignItems:"center", gap:16 }}>
             <div style={{ fontSize:24 }}>🚀</div>
             <div style={{ flex:1 }}>
