@@ -16,6 +16,7 @@ import Analytics from "./components/Analytics";
 import EmailAgent from "./components/EmailAgent";
 import BatchUpload from "./components/BatchUpload";
 import Support from "./components/Support";
+import Onboarding from "./components/Onboarding";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -36,6 +37,7 @@ export default function App() {
   const [erpResult, setErpResult] = useState(null);
   const [statusMsg, setStatusMsg] = useState("");
   const [showAIPopup, setShowAIPopup] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Auth listener
   useEffect(() => {
@@ -90,7 +92,10 @@ export default function App() {
       const data = await res.json();
       if (data.success && data.teams.length > 0) {
         setTeams(data.teams);
-        setTeam(data.teams[0]); // default to first team
+        setTeam(data.teams[0]);
+      } else {
+        // New user with no team — show onboarding
+        setShowOnboarding(true);
       }
     } catch (e) { console.error("Team load error:", e); }
   };
@@ -243,6 +248,19 @@ export default function App() {
   const stageIndex = { upload:0, processing:1, review:2, matching:2, success:3 }[stage];
 
   // Route views
+  if (showOnboarding && view === "dashboard") return (
+    <Onboarding
+      user={user}
+      team={team}
+      teams={teams}
+      onCreateTeam={() => setShowOnboarding(false)}
+      onEmailAgent={() => { setShowOnboarding(false); setView("emailAgent"); }}
+      onERP={() => { setShowOnboarding(false); setView("erp"); }}
+      onNewInvoice={() => { setShowOnboarding(false); startNewInvoice(); }}
+      onDismiss={() => setShowOnboarding(false)}
+    />
+  );
+
   if (view === "batchUpload") return <BatchUpload user={user} team={team} onBack={() => setView("dashboard")} onDone={() => setView("dashboard")} />;
   if (view === "support") return <Support user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "emailAgent") return <EmailAgent user={user} team={team} onBack={() => setView("dashboard")} />;
@@ -376,7 +394,7 @@ export default function App() {
       <main className="main">
         {stage === STAGES.UPLOAD && <Upload onFileSelected={handleFileSelected} />}
         {stage === STAGES.PROCESSING && <Processing statusMsg={statusMsg} />}
-        {stage === STAGES.REVIEW && <Review data={extractedData} filePreview={filePreview} onApprove={handleApprove} onBack={() => setStage(STAGES.UPLOAD)} />}
+        {stage === STAGES.REVIEW && <Review data={extractedData} filePreview={filePreview} onApprove={handleApprove} onBack={() => setStage(STAGES.UPLOAD)} team={team} />}
         {stage === STAGES.SUCCESS && <Success result={erpResult} data={extractedData} matchResult={matchResult} onReset={handleReset} />}
       </main>
     </div>
