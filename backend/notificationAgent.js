@@ -26,7 +26,9 @@ async function sendSlackNotification({ webhookUrl, event, invoice, recipient }) 
 
   const { emoji, title, color, fields } = buildMessageContent({ event, invoice, recipient });
 
-  const needsApproval = event === EVENTS.INVOICE_FLAGGED || invoice.status === "pending";
+  // Approve/Reject buttons ONLY for pending invoices (QuickBooks flow)
+  // For Oracle/NetSuite/Xero/Zoho/Dynamics — invoice already pushed, ERP handles approvals
+  const needsApproval = invoice.status === "pending" || event === EVENTS.INVOICE_NEEDS_APPROVAL;
   const backendUrl = process.env.BACKEND_URL || "https://invoiceiq-backend-w42q.onrender.com";
 
   const actionButtons = needsApproval && invoice.id ? [
