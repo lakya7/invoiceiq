@@ -326,6 +326,43 @@ app.post("/api/push-erp", async (req, res) => {
       try {
         agentDecision = await runApprovalAgent({ invoiceData, matchResult, teamId, userId, sendEmail });
 
+        // ── QUICKBOOKS: Hold for Slack approval ─────────────────
+        if (agentDecision?.decision === "pending_approval") {
+          // Save invoice as pending
+          const { data: pendingInv } = await supabase.from("invoices").insert({
+            user_id: userId,
+            team_id: teamId,
+            invoice_number: invoiceData.invoiceNumber,
+            vendor_name: invoiceData.vendor?.name,
+            invoice_date: invoiceData.invoiceDate,
+            due_date: invoiceData.dueDate,
+            total: invoiceData.total,
+            currency: invoiceData.currency || "USD",
+            status: "pending",
+            match_status: matchResult?.matchStatus || "unmatched",
+            erp_reference: null,
+            raw_data: invoiceData,
+            agent_decision: "pending_approval",
+            agent_reason: agentDecision.reason,
+            agent_rule: agentDecision.rule,
+          }).select().single();
+
+          // Send Slack with Approve/Reject buttons
+          if (pendingInv) {
+            try {
+              await notify({ teamId, event: EVENTS.INVOICE_NEEDS_APPROVAL || "invoice_needs_approval", invoice: pendingInv });
+            } catch (e) { console.error("Slack approval notify error:", e.message); }
+          }
+
+          return res.json({
+            success: true,
+            status: "pending_approval",
+            erpType: agentDecision.erpType || "quickbooks",
+            message: "Invoice saved as pending — Slack notification sent for approval",
+            agentDecision,
+          });
+        }
+
         // Send agent decision email to admin
         const adminEmail = await getUserEmail(userId);
         if (adminEmail) {
@@ -594,176 +631,6 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
 }
 
 const PORT = process.env.PORT || 4000;
-// ── INVOICE APPROVE / REJECT ─────────────────────────────────────
-app.post("/api/invoices/:invoiceId/approve", async (req, res) => {
-  try {
-    const { invoiceId } = req.params;
-    const { teamId } = req.body;
-
-    const { data: inv } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
-    if (!inv) return res.status(404).json({ error: "Invoice not found" });
-
-    // Push to ERP
-    let erpResult;
-    try {
-      const { data: conns } = await supabase.from("erp_connections").select("erp_type").eq("team_id", teamId).eq("status", "connected");
-      const erpType = conns?.[0]?.erp_type || "mock";
-      if (erpType === "oracle") erpResult = await oracle.pushInvoice(teamId, inv.raw_data || inv);
-      else if (erpType === "quickbooks") erpResult = await qb.pushInvoice(teamId, inv.raw_data || inv);
-      else if (erpType === "netsuite") erpResult = await netsuite.pushInvoice(teamId, inv.raw_data || inv);
-      else if (erpType === "xero") erpResult = await xero.pushInvoice(teamId, inv.raw_data || inv);
-      else if (erpType === "zoho") erpResult = await zoho.pushInvoice(teamId, inv.raw_data || inv);
-      else if (erpType === "dynamics") erpResult = await dynamics.pushInvoice(teamId, inv.raw_data || inv);
-      else erpResult = { success: true, erpReference: `APPROVED-${Date.now()}`, erpType: "mock" };
-    } catch (e) {
-      erpResult = { success: false, error: e.message };
-    }
-
-    await supabase.from("invoices").update({
-      status: erpResult.success ? "pushed" : "pending",
-      erp_reference: erpResult.erpReference,
-      agent_decision: "dashboard_approved",
-      agent_reason: "Manually approved from dashboard",
-    }).eq("id", invoiceId);
-
-    // Send Slack/Teams notification
-    await notificationAgent.notify({
-      teamId,
-      event: notificationAgent.EVENTS.INVOICE_PROCESSED,
-      invoice: { ...inv, erp_reference: erpResult.erpReference, status: "pushed" },
-    });
-
-    res.json({ success: true, erpResult });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post("/api/invoices/:invoiceId/reject", async (req, res) => {
-  try {
-    const { invoiceId } = req.params;
-    const { teamId } = req.body;
-
-    const { data: inv } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
-    if (!inv) return res.status(404).json({ error: "Invoice not found" });
-
-    await supabase.from("invoices").update({
-      status: "rejected",
-      agent_decision: "dashboard_rejected",
-      agent_reason: "Manually rejected from dashboard",
-    }).eq("id", invoiceId);
-
-    // Notify supplier if flagged
-    await notificationAgent.notify({
-      teamId,
-      event: notificationAgent.EVENTS.INVOICE_FLAGGED,
-      invoice: { ...inv, status: "rejected", agent_reason: "Invoice rejected by AP team" },
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// ── SLACK INTERACTIVE ACTIONS (Approve/Reject buttons) ──────────
-app.post("/api/slack/action", async (req, res) => {
-  try {
-    // Slack sends payload as form-encoded
-    const payload = JSON.parse(req.body.payload || "{}");
-    const action = payload.actions?.[0];
-    if (!action) return res.sendStatus(200);
-
-    const { invoiceId, teamId } = JSON.parse(action.value || "{}");
-    const actionId = action.action_id; // "approve_invoice" or "reject_invoice"
-    const slackUserId = payload.user?.id;
-    const slackUserName = payload.user?.name || "AP Manager";
-    const responseUrl = payload.response_url;
-
-    if (!invoiceId || !teamId) return res.sendStatus(200);
-
-    if (actionId === "approve_invoice") {
-      // Get invoice data
-      const { data: inv } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
-      if (!inv) return res.sendStatus(200);
-
-      // Push to ERP
-      let erpResult;
-      try {
-        const { data: conns } = await supabase.from("erp_connections").select("erp_type").eq("team_id", teamId).eq("status", "connected");
-        const erpType = conns?.[0]?.erp_type || "mock";
-
-        if (erpType === "oracle") erpResult = await oracle.pushInvoice(teamId, inv.raw_data || inv);
-        else if (erpType === "quickbooks") erpResult = await qb.pushInvoice(teamId, inv.raw_data || inv);
-        else if (erpType === "netsuite") erpResult = await netsuite.pushInvoice(teamId, inv.raw_data || inv);
-        else if (erpType === "xero") erpResult = await xero.pushInvoice(teamId, inv.raw_data || inv);
-        else if (erpType === "zoho") erpResult = await zoho.pushInvoice(teamId, inv.raw_data || inv);
-        else if (erpType === "dynamics") erpResult = await dynamics.pushInvoice(teamId, inv.raw_data || inv);
-        else erpResult = { success: true, erpReference: `SLACK-APPROVED-${Date.now()}`, erpType: "mock" };
-      } catch (e) {
-        erpResult = { success: false, error: e.message };
-      }
-
-      // Update invoice status
-      await supabase.from("invoices").update({
-        status: erpResult.success ? "pushed" : "pending",
-        erp_reference: erpResult.erpReference || inv.erp_reference,
-        agent_decision: "slack_approved",
-        agent_reason: `Approved via Slack by ${slackUserName}`,
-      }).eq("id", invoiceId);
-
-      // Update Slack message
-      if (responseUrl) {
-        await fetch(responseUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            replace_original: true,
-            text: erpResult.success
-              ? `✅ *Invoice #${inv.invoice_number}* approved by ${slackUserName} and pushed to ERP (${erpResult.erpReference})`
-              : `⚠️ *Invoice #${inv.invoice_number}* approved by ${slackUserName} but ERP push failed: ${erpResult.error}`,
-          }),
-        });
-      }
-
-      // Send confirmation notification
-      await notificationAgent.notify({
-        teamId,
-        event: notificationAgent.EVENTS.INVOICE_PROCESSED,
-        invoice: { ...inv, erp_reference: erpResult.erpReference, status: "pushed" },
-      });
-
-    } else if (actionId === "reject_invoice") {
-      // Update invoice status
-      await supabase.from("invoices").update({
-        status: "rejected",
-        agent_decision: "slack_rejected",
-        agent_reason: `Rejected via Slack by ${slackUserName}`,
-      }).eq("id", invoiceId);
-
-      // Update Slack message
-      if (responseUrl) {
-        const { data: inv } = await supabase.from("invoices").select("invoice_number").eq("id", invoiceId).single();
-        await fetch(responseUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            replace_original: true,
-            text: `❌ *Invoice #${inv?.invoice_number}* rejected by ${slackUserName}`,
-          }),
-        });
-      }
-    }
-
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("Slack action error:", err.message);
-    res.sendStatus(200); // Always return 200 to Slack
-  }
-});
-
-
 app.listen(PORT, () => {
   console.log(`InvoiceIQ backend on port ${PORT}`);
   // Start ERP Sync Agent scheduler

@@ -4,9 +4,32 @@
 const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+// ── ERP TYPE CHECKER ────────────────────────────────────────────
+async function getConnectedERP(teamId) {
+  try {
+    const { data: conns } = await supabase
+      .from("erp_connections")
+      .select("erp_type")
+      .eq("team_id", teamId)
+      .eq("status", "connected")
+      .limit(1);
+    return conns?.[0]?.erp_type || "mock";
+  } catch (e) {
+    return "mock";
+  }
+}
+
 // ── APPROVAL RULES ENGINE ───────────────────────────────────────
 async function runApprovalAgent({ invoiceData, matchResult, teamId, userId, sendEmail }) {
   try {
+    // ── CHECK CONNECTED ERP ──────────────────────────────────────
+    // QuickBooks has no built-in approval workflow — require manual approval
+    // Oracle, NetSuite, Xero, Zoho, Dynamics all have their own approval workflows
+    const erpType = await getConnectedERP(teamId);
+    const requiresManualApproval = erpType === "quickbooks";
+
+    console.log(`Approval Agent: ERP=${erpType}, requiresManualApproval=${requiresManualApproval}`);
+
     // Get team agent settings
     const { data: settings } = await supabase
       .from("agent_settings")
@@ -27,6 +50,39 @@ async function runApprovalAgent({ invoiceData, matchResult, teamId, userId, send
     if (!rules.agentEnabled) {
       return { decision: "manual", reason: "Approval Agent is disabled for this team" };
     }
+
+    // ── QUICKBOOKS: Route to manual Slack approval ───────────────
+    // QuickBooks has no built-in approval workflow so we hold invoices
+    // for manual approval via Slack before pushing
+    if (requiresManualApproval) {
+      const amount = invoiceData.total || 0;
+      // Still auto-approve very small amounts from trusted vendors even in QB
+      const isTrustedVendor = (settings?.trusted_vendors || []).some(v =>
+        (invoiceData.vendor?.name || "").toLowerCase().includes(v.toLowerCase())
+      );
+      if (isTrustedVendor && amount <= (settings?.auto_approve_below || 500)) {
+        return {
+          decision: "auto_approved",
+          reason: `QuickBooks: Trusted vendor under threshold — auto-approved without Slack review.`,
+          rule: "qb_trusted_auto",
+          erpType,
+          requiresManualApproval: false,
+        };
+      }
+      // All other QB invoices → pending, send to Slack for approval
+      return {
+        decision: "pending_approval",
+        reason: `QuickBooks connected — invoice held for manual approval via Slack before pushing to QuickBooks.`,
+        rule: "qb_manual_approval",
+        erpType,
+        requiresManualApproval: true,
+        slackMessage: `Invoice #${invoiceData.invoiceNumber} from ${invoiceData.vendor?.name} needs approval before pushing to QuickBooks.`,
+      };
+    }
+
+    // ── ORACLE/NETSUITE/XERO/ZOHO/DYNAMICS: Push directly ───────
+    // These ERPs have their own approval workflows — APFlow pushes immediately
+    // and ERP handles the approval routing internally
 
     const amount = invoiceData.total || 0;
     const vendor = invoiceData.vendor?.name || "";
@@ -182,4 +238,4 @@ function formatAmount(amount, currency) {
   return `${sym}${Number(amount).toFixed(2)}`;
 }
 
-module.exports = { runApprovalAgent, sendAgentDecisionEmail };
+module.exports = { runApprovalAgent, sendAgentDecisionEmail, getConnectedERP };
