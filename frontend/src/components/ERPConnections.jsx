@@ -60,6 +60,9 @@ export default function ERPConnections({ user, team, onBack }) {
   const [showOracleForm, setShowOracleForm] = useState(false);
   const [oracleForm, setOracleForm] = useState({ baseUrl: "", username: "", password: "" });
   const [oracleLoading, setOracleLoading] = useState(false);
+  const [showNetSuiteForm, setShowNetSuiteForm] = useState(false);
+  const [netsuiteForm, setNetsuiteForm] = useState({ accountId: "", consumerKey: "", consumerSecret: "", tokenId: "", tokenSecret: "" });
+  const [netsuiteLoading, setNetsuiteLoading] = useState(false);
   const [selectedERP, setSelectedERP] = useState(null); // for push routing
 
   useEffect(() => {
@@ -119,6 +122,24 @@ export default function ERPConnections({ user, team, onBack }) {
     setOracleLoading(false);
   };
 
+  const connectNetSuite = async (e) => {
+    e.preventDefault();
+    setNetsuiteLoading(true);
+    try {
+      const res = await fetch(`${API}/api/erp/netsuite/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team.id, ...netsuiteForm }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast("NetSuite connected successfully! 🎉", "success");
+      setShowNetSuiteForm(false);
+      fetchConnections();
+    } catch (e) { showToast(e.message, "error"); }
+    setNetsuiteLoading(false);
+  };
+
   const disconnect = async (erpType) => {
     setLoading(erpType);
     try {
@@ -146,7 +167,7 @@ export default function ERPConnections({ user, team, onBack }) {
     { id: "sap",         name: "SAP S/4HANA",             icon: "🔵", desc: "Coming soon — SAP integration in development",               color: "#0070f3", connected: false, status: "coming_soon", updatedAt: null },
     { id: "sap_ariba",   name: "SAP Ariba",               icon: "🟣", desc: "Coming soon — SAP Ariba procurement integration",            color: "#6B46C1", connected: false, status: "coming_soon", updatedAt: null },
     { id: "dynamics",    name: "Microsoft Dynamics 365",  icon: "🟦", desc: "Coming soon — Dynamics 365 Finance integration",            color: "#0078D4", connected: false, status: "coming_soon", updatedAt: null },
-    { id: "netsuite",    name: "NetSuite",                icon: "🟠", desc: "Coming soon — NetSuite integration in development",          color: "#F57F17", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "netsuite",    name: "NetSuite",                icon: "🟠", desc: "Push invoices to NetSuite as Vendor Bills — freight lines auto-mapped", color: "#F57F17", connected: connections.netsuite?.status === "connected", status: connections.netsuite?.status || "disconnected", updatedAt: connections.netsuite?.updated_at },
     { id: "xero",        name: "Xero",                    icon: "🔷", desc: "Coming soon — Xero accounting integration",                  color: "#13B5EA", connected: false, status: "coming_soon", updatedAt: null },
     { id: "zoho",        name: "Zoho Books",              icon: "🟡", desc: "Coming soon — Zoho Books integration",                       color: "#E8A803", connected: false, status: "coming_soon", updatedAt: null },
     { id: "coupa",       name: "Coupa",                   icon: "🟤", desc: "Coming soon — Coupa procurement integration",                color: "#D4622A", connected: false, status: "coming_soon", updatedAt: null },
@@ -158,6 +179,7 @@ export default function ERPConnections({ user, team, onBack }) {
   const handleConnect = (erpId) => {
     if (erpId === "quickbooks") connectQB();
     else if (erpId === "oracle") setShowOracleForm(true);
+    else if (erpId === "netsuite") setShowNetSuiteForm(true);
     else showToast("Coming soon!", "info");
   };
 
@@ -270,10 +292,72 @@ export default function ERPConnections({ user, team, onBack }) {
         </div>
       )}
 
+      {/* NetSuite Form */}
+      {showNetSuiteForm && (
+        <div style={{ background: "#fff", border: "1px solid #e2ddd4", borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>🟠 Connect NetSuite</div>
+          <p style={{ fontSize: 13, color: "#7a7a6e", marginBottom: 20, lineHeight: 1.6 }}>
+            NetSuite uses Token-Based Authentication (TBA). You'll need to create an Integration record and Token in NetSuite first.
+          </p>
+          <div style={{ background: "#fff7f4", border: "1px solid #fcd9cc", borderRadius: 10, padding: "14px 16px", marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 8 }}>⚠️ Before connecting — NetSuite setup required</div>
+            <ol style={{ paddingLeft: 18, fontSize: 12, color: "#92400e", lineHeight: 1.8 }}>
+              <li>In NetSuite → Setup → Integration → Manage Integrations → New</li>
+              <li>Enable Token-Based Authentication → Save → Copy Consumer Key & Secret</li>
+              <li>Setup → Users/Roles → Access Tokens → New → Select your user → Save</li>
+              <li>Copy Token ID & Token Secret (shown once only)</li>
+              <li>Find your Account ID in NetSuite URL (e.g. 1234567 from 1234567.app.netsuite.com)</li>
+            </ol>
+          </div>
+          <form onSubmit={connectNetSuite}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
+              <div>
+                <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>NetSuite Account ID *</label>
+                <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                  placeholder="e.g. 1234567 or TSTDRV123456" value={netsuiteForm.accountId}
+                  onChange={e => setNetsuiteForm(f => ({ ...f, accountId: e.target.value }))} required />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Consumer Key *</label>
+                  <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="From Integration record" value={netsuiteForm.consumerKey}
+                    onChange={e => setNetsuiteForm(f => ({ ...f, consumerKey: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Consumer Secret *</label>
+                  <input type="password" style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="••••••••" value={netsuiteForm.consumerSecret}
+                    onChange={e => setNetsuiteForm(f => ({ ...f, consumerSecret: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Token ID *</label>
+                  <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="From Access Token" value={netsuiteForm.tokenId}
+                    onChange={e => setNetsuiteForm(f => ({ ...f, tokenId: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Token Secret *</label>
+                  <input type="password" style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="••••••••" value={netsuiteForm.tokenSecret}
+                    onChange={e => setNetsuiteForm(f => ({ ...f, tokenSecret: e.target.value }))} required />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="submit" disabled={netsuiteLoading} style={{ background: "#F57F17", color: "#fff", border: "none", padding: "11px 22px", borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
+                {netsuiteLoading ? "Testing Connection..." : "Connect NetSuite →"}
+              </button>
+              <button type="button" onClick={() => setShowNetSuiteForm(false)} style={{ background: "transparent", border: "1px solid #e2ddd4", color: "#7a7a6e", padding: "11px 18px", borderRadius: 7, fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* QuickBooks setup guide */}
       <div style={{ background: "#fff", border: "1px solid #e2ddd4", borderRadius: 12, padding: 24 }}>
         <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 12 }}>📋 Setup Guide</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, color: "#2CA01C", marginBottom: 8 }}>💚 QuickBooks Setup</div>
             <ol style={{ paddingLeft: 18, fontSize: 13, color: "#7a7a6e", lineHeight: 1.8 }}>
@@ -282,6 +366,16 @@ export default function ERPConnections({ user, team, onBack }) {
               <li>Add to Render env: <code style={{ background: "#f5f2eb", padding: "1px 6px", borderRadius: 4 }}>QB_CLIENT_ID</code>, <code style={{ background: "#f5f2eb", padding: "1px 6px", borderRadius: 4 }}>QB_CLIENT_SECRET</code></li>
               <li>Set redirect URI: <code style={{ background: "#f5f2eb", padding: "1px 6px", borderRadius: 4, fontSize: 11 }}>{API}/api/erp/quickbooks/callback</code></li>
               <li>Click "Connect QuickBooks" above</li>
+            </ol>
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#F57F17", marginBottom: 8 }}>🟠 NetSuite Setup</div>
+            <ol style={{ paddingLeft: 18, fontSize: 13, color: "#7a7a6e", lineHeight: 1.8 }}>
+              <li>Setup → Integration → Manage Integrations → New</li>
+              <li>Enable Token-Based Auth → Copy Consumer Key/Secret</li>
+              <li>Setup → Access Tokens → New → Copy Token ID/Secret</li>
+              <li>Find Account ID in your NetSuite URL</li>
+              <li>Click "Connect NetSuite" above</li>
             </ol>
           </div>
           <div>
