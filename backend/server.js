@@ -664,6 +664,9 @@ app.get("/api/billing/check/:teamId", async (req, res) => {
 const qb = require("./quickbooks");
 const oracle = require("./oracle");
 const netsuite = require("./netsuite");
+const xero = require("./xero");
+const zoho = require("./zoho");
+const dynamics = require("./dynamics");
 
 // ── QUICKBOOKS ──────────────────────────────────────────────────
 // Get QB auth URL
@@ -768,6 +771,65 @@ app.post("/api/erp/netsuite/validate", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── XERO ROUTES ────────────────────────────────────────────────
+app.get("/api/erp/xero/auth/:teamId", (req, res) => {
+  try { res.json({ success: true, url: xero.getAuthUrl(req.params.teamId) }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.get("/api/erp/xero/callback", async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    const result = await xero.handleCallback(code, state);
+    res.redirect(`${process.env.FRONTEND_URL}/login?xero_connected=true`);
+  } catch (err) { res.redirect(`${process.env.FRONTEND_URL}/login?xero_error=${encodeURIComponent(err.message)}`); }
+});
+app.get("/api/erp/xero/status/:teamId", async (req, res) => {
+  try { res.json({ success: true, ...(await xero.getConnectionStatus(req.params.teamId)) }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post("/api/erp/xero/disconnect", async (req, res) => {
+  try { await xero.disconnect(req.body.teamId); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── ZOHO ROUTES ─────────────────────────────────────────────────
+app.get("/api/erp/zoho/auth/:teamId", (req, res) => {
+  try { res.json({ success: true, url: zoho.getAuthUrl(req.params.teamId) }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.get("/api/erp/zoho/callback", async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    await zoho.handleCallback(code, state);
+    res.redirect(`${process.env.FRONTEND_URL}/login?zoho_connected=true`);
+  } catch (err) { res.redirect(`${process.env.FRONTEND_URL}/login?zoho_error=${encodeURIComponent(err.message)}`); }
+});
+app.get("/api/erp/zoho/status/:teamId", async (req, res) => {
+  try { res.json({ success: true, ...(await zoho.getConnectionStatus(req.params.teamId)) }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post("/api/erp/zoho/disconnect", async (req, res) => {
+  try { await zoho.disconnect(req.body.teamId); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── DYNAMICS 365 ROUTES ─────────────────────────────────────────
+app.post("/api/erp/dynamics/connect", async (req, res) => {
+  try {
+    const { teamId, tenantId, clientId, clientSecret, resourceUrl, legalEntity } = req.body;
+    const result = await dynamics.saveConnection(teamId, { tenantId, clientId, clientSecret, resourceUrl, legalEntity });
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.get("/api/erp/dynamics/status/:teamId", async (req, res) => {
+  try { res.json({ success: true, ...(await dynamics.getConnectionStatus(req.params.teamId)) }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post("/api/erp/dynamics/disconnect", async (req, res) => {
+  try { await dynamics.disconnect(req.body.teamId); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post("/api/erp/push", async (req, res) => {
   try {
     const { invoiceData, teamId, erpType } = req.body;
@@ -779,6 +841,12 @@ app.post("/api/erp/push", async (req, res) => {
       result = await oracle.pushInvoice(teamId, invoiceData);
     } else if (erpType === "netsuite") {
       result = await netsuite.pushInvoice(teamId, invoiceData);
+    } else if (erpType === "xero") {
+      result = await xero.pushInvoice(teamId, invoiceData);
+    } else if (erpType === "zoho") {
+      result = await zoho.pushInvoice(teamId, invoiceData);
+    } else if (erpType === "dynamics") {
+      result = await dynamics.pushInvoice(teamId, invoiceData);
     } else {
       // Mock ERP fallback
       await new Promise(r => setTimeout(r, 1000));
