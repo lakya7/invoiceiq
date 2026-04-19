@@ -663,6 +663,7 @@ app.get("/api/billing/check/:teamId", async (req, res) => {
 // ── ERP INTEGRATIONS ────────────────────────────────────────────
 const qb = require("./quickbooks");
 const oracle = require("./oracle");
+const netsuite = require("./netsuite");
 
 // ── QUICKBOOKS ──────────────────────────────────────────────────
 // Get QB auth URL
@@ -736,6 +737,37 @@ app.post("/api/erp/oracle/validate", async (req, res) => {
 });
 
 // ── SMART ERP PUSH (routes to right ERP) ───────────────────────
+// ── NETSUITE ROUTES ────────────────────────────────────────────
+app.post("/api/erp/netsuite/connect", async (req, res) => {
+  try {
+    const { teamId, accountId, consumerKey, consumerSecret, tokenId, tokenSecret } = req.body;
+    const result = await netsuite.saveConnection(teamId, { accountId, consumerKey, consumerSecret, tokenId, tokenSecret });
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/erp/netsuite/status/:teamId", async (req, res) => {
+  try {
+    const status = await netsuite.getConnectionStatus(req.params.teamId);
+    res.json({ success: true, ...status });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/erp/netsuite/disconnect", async (req, res) => {
+  try {
+    await netsuite.disconnect(req.body.teamId);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/erp/netsuite/validate", async (req, res) => {
+  try {
+    const { teamId, invoiceData } = req.body;
+    const result = await netsuite.validateOnly(teamId, invoiceData);
+    res.json({ success: true, ...result });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post("/api/erp/push", async (req, res) => {
   try {
     const { invoiceData, teamId, erpType } = req.body;
@@ -745,6 +777,8 @@ app.post("/api/erp/push", async (req, res) => {
       result = await qb.pushInvoice(teamId, invoiceData);
     } else if (erpType === "oracle") {
       result = await oracle.pushInvoice(teamId, invoiceData);
+    } else if (erpType === "netsuite") {
+      result = await netsuite.pushInvoice(teamId, invoiceData);
     } else {
       // Mock ERP fallback
       await new Promise(r => setTimeout(r, 1000));
