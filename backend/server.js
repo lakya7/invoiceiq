@@ -433,13 +433,19 @@ app.post("/api/push-erp", async (req, res) => {
     // ── NOTIFY BUYER via Teams/Slack ────────────────────────────
     if (teamId && savedInv) {
       try {
-        await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInv });
-        console.log(`Slack/Teams notification sent for invoice #${savedInv.invoice_number}`);
-        if (matchResult?.matchStatus === "matched") {
-          await notify({ teamId, event: EVENTS.INVOICE_PO_MATCHED, invoice: savedInv });
-        }
+        // Only send ONE notification — prioritise anomaly flag over processed
         if (anomalyResult?.totalFlags > 0) {
-          await notify({ teamId, event: EVENTS.INVOICE_FLAGGED, invoice: { ...savedInv, flag_reason: anomalyResult.flags?.[0]?.description } });
+          // Invoice has real anomalies — show flagged notification with Approve/Reject
+          await notify({ teamId, event: EVENTS.INVOICE_FLAGGED, invoice: { ...savedInv, flag_reason: anomalyResult.flags?.[0]?.description, agent_reason: anomalyResult.flags?.[0]?.description } });
+          console.log(`Slack/Teams FLAGGED notification sent for invoice #${savedInv.invoice_number}`);
+        } else {
+          // Invoice processed cleanly — show processed notification (no approve/reject buttons)
+          await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInv });
+          console.log(`Slack/Teams PROCESSED notification sent for invoice #${savedInv.invoice_number}`);
+          // Also send PO matched notification if applicable
+          if (matchResult?.matchStatus === "matched") {
+            await notify({ teamId, event: EVENTS.INVOICE_PO_MATCHED, invoice: savedInv });
+          }
         }
       } catch (e) { console.error("Notification error:", e.message); }
     }
