@@ -232,6 +232,36 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
 .uc-card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#0a0f1e;margin-bottom:8px;line-height:1.25}
 .uc-card-desc{font-size:12px;color:#4b5563;line-height:1.65;font-weight:300}
 @media(max-width:768px){.uc-grid{grid-template-columns:1fr}.uc-wrap{padding:72px 20px}}
+
+/* NEW FEATURE CARDS */
+.nf-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:52px}
+.nf-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px 28px;position:relative;overflow:hidden}
+.nf-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange)}
+.nf-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.nf-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+.nf-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:white;margin-bottom:12px;line-height:1.25}
+.nf-desc{font-size:13px;color:var(--muted);line-height:1.75;font-weight:300;margin-bottom:20px}
+.nf-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.nf-bad{background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15);border-radius:8px;padding:10px 12px}
+.nf-good{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:10px 12px}
+.nf-clabel{font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;margin-bottom:5px}
+.nf-bad .nf-clabel{color:rgba(220,38,38,0.6)}
+.nf-good .nf-clabel{color:rgba(34,197,94,0.6)}
+.nf-ctext{font-size:11px;line-height:1.5}
+.nf-bad .nf-ctext{color:rgba(220,38,38,0.8)}
+.nf-good .nf-ctext{color:rgba(34,197,94,0.8)}
+.nf-example{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px 14px}
+.nf-ex-label{font-size:9px;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:8px}
+.nf-ex-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.nf-ex-row:last-child{margin-bottom:0}
+.nf-ex-desc{color:var(--muted)}
+.nf-lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.nf-lang{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;text-align:center}
+.nf-lang-name{font-size:11px;color:var(--muted);margin-bottom:3px}
+.nf-lang-word{font-size:13px;color:rgba(255,255,255,0.35)}
+.nf-lang-cur{font-size:9px;color:var(--orange);font-family:'DM Mono',monospace;margin-top:4px}
+.nf-confirm{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(34,197,94,0.8)}
+@media(max-width:768px){.nf-grid{grid-template-columns:1fr}.nf-compare{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -625,6 +655,55 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     </div>
   </div>
   <p style="font-size:12px;color:var(--dim);font-family:'DM Mono',monospace;margin-top:16px" class="reveal">More ERPs added monthly · Request your ERP at hello@apflow.app</p>
+</section>
+
+<!-- NEW FEATURES: FREIGHT + MULTILANG -->
+<section style="border-bottom:1px solid var(--border)">
+  <div class="eyebrow reveal">New Capabilities</div>
+  <h2 class="section-h reveal">Two features that fix what<br><span>other AP tools leave manual.</span></h2>
+  <p class="section-p reveal">Most AP automation tools still leave your team doing manual work after the invoice is processed. APFlow eliminates these last manual steps.</p>
+  <div class="nf-grid reveal">
+
+    <div class="nf-card">
+      <div class="nf-tag">Freight &amp; Line Type Detection</div>
+      <div class="nf-ico" style="background:rgba(232,83,26,0.1)">📦</div>
+      <div class="nf-title">Freight lines auto-mapped to correct Oracle type</div>
+      <div class="nf-desc">Most AP tools push all invoice lines as "Item" type — your team still manually recodes freight and tax before the invoice validates in Oracle. APFlow detects and maps every line automatically so invoices post to the right GL accounts with zero recoding.</div>
+      <div class="nf-compare">
+        <div class="nf-bad">
+          <div class="nf-clabel">OTHER TOOLS</div>
+          <div class="nf-ctext">All lines pushed as ITEM type. Team manually recodes freight in Oracle.</div>
+        </div>
+        <div class="nf-good">
+          <div class="nf-clabel">APFLOW</div>
+          <div class="nf-ctext">Freight → FREIGHT · Tax → TAX · Misc → MISC. Zero recoding needed.</div>
+        </div>
+      </div>
+      <div class="nf-example">
+        <div class="nf-ex-label">EXAMPLE — INVOICE PUSHED TO ORACLE FUSION</div>
+        <div class="nf-ex-row"><span class="nf-ex-desc">Widget A × 10</span><span style="color:#60a5fa;font-family:'DM Mono',monospace;font-size:11px">ITEM · $500.00</span></div>
+        <div class="nf-ex-row"><span class="nf-ex-desc">Freight charge</span><span style="color:#fb8c6a;font-family:'DM Mono',monospace;font-size:11px">FREIGHT · $45.00</span></div>
+        <div class="nf-ex-row"><span class="nf-ex-desc">GST 10%</span><span style="color:#22c55e;font-family:'DM Mono',monospace;font-size:11px">TAX · $54.50</span></div>
+      </div>
+    </div>
+
+    <div class="nf-card">
+      <div class="nf-tag">Multi-Language Invoice Reading</div>
+      <div class="nf-ico" style="background:rgba(59,130,246,0.1)">🌍</div>
+      <div class="nf-title">Read invoices in any language, push in English</div>
+      <div class="nf-desc">Global suppliers send invoices in their local language. APFlow reads French, German, Japanese, Arabic, Chinese, Hindi and more — extracts everything correctly, converts to English, and pushes to your ERP with the right ISO currency code automatically.</div>
+      <div class="nf-lang-grid">
+        <div class="nf-lang"><div class="nf-lang-name">German</div><div class="nf-lang-word">Rechnung</div><div class="nf-lang-cur">EUR</div></div>
+        <div class="nf-lang"><div class="nf-lang-name">Japanese</div><div class="nf-lang-word">請求書</div><div class="nf-lang-cur">JPY</div></div>
+        <div class="nf-lang"><div class="nf-lang-name">Arabic</div><div class="nf-lang-word">فاتورة</div><div class="nf-lang-cur">AED</div></div>
+        <div class="nf-lang"><div class="nf-lang-name">French</div><div class="nf-lang-word">Facture</div><div class="nf-lang-cur">EUR</div></div>
+        <div class="nf-lang"><div class="nf-lang-name">Chinese</div><div class="nf-lang-word">发票</div><div class="nf-lang-cur">CNY</div></div>
+        <div class="nf-lang"><div class="nf-lang-name">Hindi</div><div class="nf-lang-word">चालान</div><div class="nf-lang-cur">INR</div></div>
+      </div>
+      <div class="nf-confirm">✓ Always returns English JSON · Correct ISO currency code · Pushes to ERP automatically</div>
+    </div>
+
+  </div>
 </section>
 
 <!-- USE CASES -->
