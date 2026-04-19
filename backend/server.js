@@ -20,6 +20,24 @@ const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+// ── AUDIT LOG HELPER ─────────────────────────────────────────────
+async function logAudit({ invoiceId, teamId, userId, userEmail, action, detail, actor = "system" }) {
+  try {
+    await supabase.from("invoice_audit_log").insert({
+      invoice_id: invoiceId,
+      team_id: teamId,
+      user_id: userId || null,
+      user_email: userEmail || null,
+      action,
+      detail: detail || null,
+      actor,
+      created_at: new Date().toISOString(),
+    });
+  } catch (e) { console.error("Audit log error:", e.message); }
+}
+
+
+
 // Gmail SMTP transporter
 const gmailTransport = nodemailer.createTransport({
   service: "gmail",
@@ -682,6 +700,26 @@ app.post("/api/invoices/:invoiceId/comments", async (req, res) => {
       created_at: new Date().toISOString(),
     }).select().single();
     res.json({ success: true, comment: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// ── AUDIT LOG ROUTES ─────────────────────────────────────────────
+app.get("/api/invoices/:invoiceId/audit", async (req, res) => {
+  try {
+    const { data } = await supabase.from("invoice_audit_log")
+      .select("*").eq("invoice_id", req.params.invoiceId)
+      .order("created_at", { ascending: false });
+    res.json({ success: true, audit: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Log comment added to audit trail
+app.post("/api/invoices/:invoiceId/audit/comment", async (req, res) => {
+  try {
+    const { teamId, userId, userEmail, comment } = req.body;
+    await logAudit({ invoiceId: req.params.invoiceId, teamId, userId, userEmail, action: "comment_added", detail: `"${comment}"`, actor: userEmail || "AP Team" });
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

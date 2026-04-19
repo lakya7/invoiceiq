@@ -50,6 +50,9 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState({}); // { invoiceId: [comments] }
   const [savingComment, setSavingComment] = useState(false);
+  const [auditInvoice, setAuditInvoice] = useState(null);
+  const [auditLog, setAuditLog] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const firstName = user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0];
 
@@ -175,6 +178,22 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
       }
     } catch (e) { alert("Error saving comment: " + e.message); }
     setSavingComment(false);
+  };
+
+  const loadAudit = async (invoiceId) => {
+    setAuditLoading(true);
+    try {
+      const res = await fetch(`${API}/api/invoices/${invoiceId}/audit`);
+      const data = await res.json();
+      setAuditLog(data.audit || []);
+    } catch (e) { console.error("Audit load error:", e); }
+    setAuditLoading(false);
+  };
+
+  const openAudit = (inv) => {
+    setAuditInvoice(inv);
+    setAuditLog([]);
+    loadAudit(inv.id);
   };
 
   const openComments = (inv) => {
@@ -417,13 +436,23 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                                 onClick={() => openComments(inv)}
                                 style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
                               >💬</button>
+                              <button
+                                onClick={() => openAudit(inv)}
+                                style={{ background:"#f5f3ff", border:"1px solid #c4b5fd", color:"#7c3aed", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                              >🕐</button>
                             </div>
                           )}
                           {inv.status !== "pending" && (
-                            <button
-                              onClick={() => openComments(inv)}
-                              style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-                            >💬 Note</button>
+                            <div style={{ display:"flex", gap:6 }}>
+                              <button
+                                onClick={() => openComments(inv)}
+                                style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                              >💬 Note</button>
+                              <button
+                                onClick={() => openAudit(inv)}
+                                style={{ background:"#f5f3ff", border:"1px solid #c4b5fd", color:"#7c3aed", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                              >🕐 History</button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -435,6 +464,89 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           )}
         </div>
       </main>
+
+
+      {/* AUDIT HISTORY MODAL */}
+      {auditInvoice && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:1001, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+          onClick={e => e.target === e.currentTarget && setAuditInvoice(null)}>
+          <div style={{ background:"white", borderRadius:20, padding:28, maxWidth:520, width:"100%", fontFamily:"DM Sans,sans-serif", maxHeight:"80vh", display:"flex", flexDirection:"column" }}>
+            {/* Header */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
+              <div>
+                <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
+                  Audit History — Invoice #{auditInvoice.invoice_number}
+                </div>
+                <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>
+                  {auditInvoice.vendor_name} · {auditInvoice.invoice_date} · {auditLog.length} events
+                </div>
+              </div>
+              <button onClick={() => setAuditInvoice(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
+            </div>
+
+            {/* Timeline */}
+            <div style={{ flex:1, overflowY:"auto", marginTop:20 }}>
+              {auditLoading ? (
+                <div style={{ textAlign:"center", color:"#9ca3af", padding:"20px 0", fontSize:13 }}>Loading history...</div>
+              ) : auditLog.length === 0 ? (
+                <div style={{ textAlign:"center", color:"#9ca3af", padding:"20px 0", fontSize:13 }}>No audit history yet</div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column" }}>
+                  {auditLog.map((entry, i) => {
+                    const isLast = i === auditLog.length - 1;
+                    const dotConfig = {
+                      invoice_created:    { bg:"#f3f4f6", text:"📄", label:"Invoice extracted" },
+                      invoice_pushed:     { bg:"#dbeafe", text:"🚀", label:"Pushed to ERP" },
+                      agent_decision:     { bg:"#dcfce7", text:"✅", label:"Agent decision" },
+                      anomaly_flagged:    { bg:"#fef9c3", text:"⚠️", label:"Anomaly detected" },
+                      notification_sent:  { bg:"#ede9fe", text:"🔔", label:"Notification sent" },
+                      invoice_approved:   { bg:"#dcfce7", text:"✓", label:"Approved" },
+                      invoice_rejected:   { bg:"#fee2e2", text:"✗", label:"Rejected" },
+                      comment_added:      { bg:"#f5f3ff", text:"💬", label:"Note added" },
+                      payment_confirmed:  { bg:"#dcfce7", text:"💰", label:"Payment confirmed" },
+                      slack_approved:     { bg:"#dcfce7", text:"✓", label:"Approved via Slack" },
+                      slack_rejected:     { bg:"#fee2e2", text:"✗", label:"Rejected via Slack" },
+                    }[entry.action] || { bg:"#f3f4f6", text:"•", label:entry.action };
+
+                    return (
+                      <div key={entry.id} style={{ display:"flex", gap:14, paddingBottom: isLast ? 0 : 20, position:"relative" }}>
+                        {/* Dot + line */}
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flexShrink:0 }}>
+                          <div style={{ width:32, height:32, borderRadius:"50%", background:dotConfig.bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, border:"1px solid #e5e7eb", flexShrink:0 }}>
+                            {dotConfig.text}
+                          </div>
+                          {!isLast && <div style={{ width:1, flex:1, background:"#e5e7eb", marginTop:4 }} />}
+                        </div>
+                        {/* Content */}
+                        <div style={{ flex:1, paddingTop:4 }}>
+                          <div style={{ fontSize:13, fontWeight:600, color:"#0a0f1e", marginBottom:2 }}>{dotConfig.label}</div>
+                          {entry.detail && (
+                            <div style={{ fontSize:12, color:"#6b7280", lineHeight:1.6, marginBottom:3 }}>{entry.detail}</div>
+                          )}
+                          <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                            <span style={{ fontSize:11, color:"#9ca3af", fontFamily:"DM Mono,monospace" }}>
+                              {new Date(entry.created_at).toLocaleString("en-US", { dateStyle:"medium", timeStyle:"short" })}
+                            </span>
+                            {entry.actor && (
+                              <span style={{ fontSize:11, background:"#f3f4f6", color:"#6b7280", padding:"2px 8px", borderRadius:100 }}>
+                                {entry.actor}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:14, marginTop:14, display:"flex", justifyContent:"flex-end" }}>
+              <button onClick={() => setAuditInvoice(null)} style={{ background:"#0a0f1e", color:"white", border:"none", padding:"9px 20px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* COMMENTS MODAL */}
       {commentInvoice && (
