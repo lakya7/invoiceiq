@@ -359,6 +359,8 @@ Email subject: "${subject}"
 From: "${from}"
 ${emailBody ? `Email body: "${emailBody}"` : ""}
 
+The invoice may be in ANY language (French, German, Spanish, Japanese, Chinese, Arabic, Hindi, etc.). Extract all fields and return them in English JSON regardless of the invoice language. Use ISO 4217 currency codes (USD, EUR, GBP, JPY, CNY, AED, SAR, BRL, INR, MXN, CAD, AUD, SGD, CHF, etc.).
+
 IMPORTANT: If the email body mentions a PO number, purchase order number, or reference like "PO-123", "PO#456", "Purchase Order 789", extract it as poNumber even if it's not on the PDF itself.
 
 For each line item, set lineType:
@@ -378,7 +380,7 @@ Return ONLY valid JSON with these fields:
   "total": number,
   "subtotal": number or null,
   "tax": number or null,
-  "currency": "USD/EUR/GBP/INR",
+  "currency": "ISO 4217 code e.g. USD/EUR/GBP/JPY/CNY/AED/INR/etc",
   "lineItems": [
     {
       "description": "string",

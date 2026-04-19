@@ -174,6 +174,8 @@ async function extractInvoiceData(base64Data, filename) {
             type: "text",
             text: `Extract invoice data from this PDF (filename: "${filename}").
 
+The invoice may be in ANY language (French, German, Spanish, Japanese, Chinese, Arabic, Hindi, etc.). Extract all fields and return them in English JSON regardless of the invoice language. Use ISO 4217 currency codes (USD, EUR, GBP, JPY, CNY, AED, SAR, BRL, INR, MXN, CAD, AUD, SGD, CHF, etc.).
+
 IMPORTANT — for each line item set lineType:
 - "ITEM" → products, parts, services, labor
 - "FREIGHT" → freight, shipping, delivery, courier, carriage, postage
@@ -192,7 +194,7 @@ Return ONLY valid JSON with no extra text before or after:
   "total": number,
   "subtotal": number,
   "tax": number,
-  "currency": "USD/EUR/GBP/INR",
+  "currency": "ISO 4217 code e.g. USD/EUR/GBP/JPY/CNY/AED/INR/BRL/etc",
   "lineItems": [
     {
       "description": "string",

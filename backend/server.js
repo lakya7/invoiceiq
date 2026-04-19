@@ -153,7 +153,9 @@ app.post("/api/extract", upload.single("file"), async (req, res) => {
       model: "claude-opus-4-6", max_tokens: 1500,
       messages: [{ role: "user", content: [
         fileContent,
-        { type: "text", text: `Extract all data from this invoice/PO document. Return ONLY valid JSON:
+        { type: "text", text: `The invoice may be in ANY language (French, German, Spanish, Japanese, Chinese, Arabic, Hindi, etc.). Extract all fields and return them in English JSON regardless of the invoice language. Use ISO 4217 currency codes (USD, EUR, GBP, JPY, CNY, AED, SAR, BRL, INR, MXN, CAD, AUD, SGD, CHF, etc.).
+
+Extract all data from this invoice/PO document. Return ONLY valid JSON:
 {"invoiceNumber":"","invoiceDate":"YYYY-MM-DD","dueDate":"YYYY-MM-DD","vendor":{"name":"","address":"","email":"","phone":""},"billTo":{"name":"","address":""},"lineItems":[{"description":"","quantity":0,"unitPrice":0,"amount":0}],"subtotal":0,"tax":0,"total":0,"currency":"USD","poNumber":"","paymentTerms":"","notes":"","confidence":0.95}` }
       ]}]
     });
