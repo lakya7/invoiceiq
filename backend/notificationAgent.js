@@ -6,11 +6,12 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 // ── EVENT TYPES ─────────────────────────────────────────────────
 const EVENTS = {
-  INVOICE_UPLOADED:   "invoice_uploaded",
-  INVOICE_PROCESSED:  "invoice_processed",
-  INVOICE_PO_MATCHED: "invoice_po_matched",
-  INVOICE_FLAGGED:    "invoice_flagged",
-  PAYMENT_CONFIRMED:  "payment_confirmed",
+  INVOICE_UPLOADED:        "invoice_uploaded",
+  INVOICE_PROCESSED:       "invoice_processed",
+  INVOICE_PO_MATCHED:      "invoice_po_matched",
+  INVOICE_FLAGGED:         "invoice_flagged",
+  INVOICE_NEEDS_APPROVAL:  "invoice_needs_approval",
+  PAYMENT_CONFIRMED:       "payment_confirmed",
 };
 
 // ── FORMAT CURRENCY ─────────────────────────────────────────────
@@ -24,6 +25,48 @@ async function sendSlackNotification({ webhookUrl, event, invoice, recipient }) 
   if (!webhookUrl) return;
 
   const { emoji, title, color, fields } = buildMessageContent({ event, invoice, recipient });
+
+  const needsApproval = event === EVENTS.INVOICE_FLAGGED || invoice.status === "pending";
+  const backendUrl = process.env.BACKEND_URL || "https://invoiceiq-backend-w42q.onrender.com";
+
+  const actionButtons = needsApproval && invoice.id ? [
+    {
+      type: "button",
+      text: { type: "plain_text", text: "✓ Approve" },
+      style: "primary",
+      action_id: "approve_invoice",
+      value: JSON.stringify({ invoiceId: invoice.id, teamId: invoice.team_id }),
+      confirm: {
+        title: { type: "plain_text", text: "Approve invoice?" },
+        text: { type: "mrkdwn", text: `Approve *${invoice.invoice_number}* for *${formatAmount(invoice.total, invoice.currency)}* and push to ERP?` },
+        confirm: { type: "plain_text", text: "Yes, approve" },
+        deny: { type: "plain_text", text: "Cancel" },
+      },
+    },
+    {
+      type: "button",
+      text: { type: "plain_text", text: "✗ Reject" },
+      style: "danger",
+      action_id: "reject_invoice",
+      value: JSON.stringify({ invoiceId: invoice.id, teamId: invoice.team_id }),
+      confirm: {
+        title: { type: "plain_text", text: "Reject invoice?" },
+        text: { type: "mrkdwn", text: `Reject invoice *${invoice.invoice_number}*? The supplier will be notified.` },
+        confirm: { type: "plain_text", text: "Yes, reject" },
+        deny: { type: "plain_text", text: "Cancel" },
+      },
+    },
+    {
+      type: "button",
+      text: { type: "plain_text", text: "View in APFlow →" },
+      url: process.env.FRONTEND_URL || "https://www.apflow.app",
+    },
+  ] : [{
+    type: "button",
+    text: { type: "plain_text", text: "View in APFlow →" },
+    url: process.env.FRONTEND_URL || "https://www.apflow.app",
+    style: "primary",
+  }];
 
   const payload = {
     attachments: [{
@@ -45,12 +88,7 @@ async function sendSlackNotification({ webhookUrl, event, invoice, recipient }) 
         },
         {
           type: "actions",
-          elements: [{
-            type: "button",
-            text: { type: "plain_text", text: "View in APFlow →" },
-            url: process.env.FRONTEND_URL || "https://www.apflow.app",
-            style: "primary",
-          }],
+          elements: actionButtons,
         },
       ],
     }],
@@ -179,6 +217,18 @@ function buildMessageContent({ event, invoice, recipient }) {
         { label: "Amount", value: amount },
         { label: "Reason", value: invoice.agent_reason || invoice.flag_reason || "Flagged by anomaly detection" },
         { label: "Action Required", value: isBuyer ? "Review in APFlow" : "Please resubmit or contact AP team" },
+      ],
+    },
+    [EVENTS.INVOICE_NEEDS_APPROVAL]: {
+      emoji: "🔔",
+      title: `Invoice #${invoiceNum} needs your approval`,
+      color: "#f59e0b",
+      fields: [
+        { label: "Invoice #", value: invoiceNum },
+        { label: "Vendor", value: vendor },
+        { label: "Amount", value: amount },
+        { label: "PO Number", value: poNum },
+        { label: "Action Required", value: "Approve or Reject below" },
       ],
     },
     [EVENTS.PAYMENT_CONFIRMED]: {

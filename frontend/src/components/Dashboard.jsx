@@ -63,6 +63,33 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     setLoading(false);
   };
 
+  const approveInvoice = async (invoiceId) => {
+    try {
+      const res = await fetch(`${API}/api/invoices/${invoiceId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team?.id }),
+      });
+      const data = await res.json();
+      if (data.success) fetchInvoices();
+      else alert("Approval failed: " + data.error);
+    } catch (e) { alert("Error: " + e.message); }
+  };
+
+  const rejectInvoice = async (invoiceId) => {
+    if (!window.confirm("Reject this invoice? The supplier will be notified.")) return;
+    try {
+      const res = await fetch(`${API}/api/invoices/${invoiceId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team?.id }),
+      });
+      const data = await res.json();
+      if (data.success) fetchInvoices();
+      else alert("Rejection failed: " + data.error);
+    } catch (e) { alert("Error: " + e.message); }
+  };
+
   const createTeam = async (e) => {
     e.preventDefault();
     if (!newTeamName.trim()) return;
@@ -265,6 +292,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                     <th>PO Match</th>
                     <th>Status</th>
                     <th>ERP Ref</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -282,6 +310,21 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                         <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{(inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
                         <td><span className="status-badge" style={{background:sc.bg,color:sc.color}}>{inv.status}</span></td>
                         <td className="inv-erp">{inv.erp_reference||"—"}</td>
+                        <td>
+                          {inv.status === "pending" && (
+                            <div style={{ display:"flex", gap:6 }}>
+                              <button
+                                onClick={() => approveInvoice(inv.id)}
+                                style={{ background:"#16a34a", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                              >✓ Approve</button>
+                              <button
+                                onClick={() => rejectInvoice(inv.id)}
+                                style={{ background:"transparent", color:"#dc2626", border:"1px solid #fecaca", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                              >✗ Reject</button>
+                            </div>
+                          )}
+                          {inv.status !== "pending" && <span style={{ fontSize:11, color:"#9ca3af" }}>—</span>}
+                        </td>
                       </tr>
                     );
                   })}
