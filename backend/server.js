@@ -338,6 +338,53 @@ app.post("/api/push-erp", async (req, res) => {
       } catch (e) { console.error("Anomaly Agent error:", e.message); }
     }
 
+    // ── VENDOR MASTER MATCHING ──────────────────────────────────
+    // First check saved vendor mappings (from previous Slack selections)
+    // Then match against Oracle vendor master
+    if (teamId) {
+      try {
+        const { data: mapping } = await supabase.from("vendor_mappings")
+          .select("oracle_supplier_name, oracle_supplier_id")
+          .eq("team_id", teamId)
+          .ilike("invoice_vendor_name", `%${invoiceData.vendor?.name?.split(" ")[0] || ""}%`)
+          .limit(1)
+          .single();
+        if (mapping) {
+          console.log(`Vendor match from saved mapping: "${mapping.oracle_supplier_name}"`);
+          invoiceData.vendor = { ...invoiceData.vendor, name: mapping.oracle_supplier_name, oracleSupplierId: mapping.oracle_supplier_id };
+        }
+      } catch (e) { /* no saved mapping found */ }
+    }
+    // Match ambiguous vendor names against Oracle vendor master
+    // Sends Slack disambiguation if multiple matches found
+    if (teamId && erpType === "oracle") {
+      try {
+        const { data: conn } = await supabase.from("erp_connections").select("*").eq("team_id", teamId).eq("erp_type", "oracle").single();
+        if (conn) {
+          const credentials = Buffer.from(`${conn.username}:${conn.password}`).toString("base64");
+          const notifySettings = await supabase.from("notification_settings").select("slack_webhook_url,enabled").eq("team_id", teamId).single();
+          const vendorMatch = await matchVendor({
+            invoiceData,
+            teamId,
+            credentials,
+            baseUrl: conn.base_url,
+            senderEmail: invoiceData.senderEmail || null,
+            notifySlack: notifySettings.data?.enabled && notifySettings.data?.slack_webhook_url
+              ? { webhookUrl: notifySettings.data.slack_webhook_url }
+              : null,
+          });
+          if (vendorMatch.matched) {
+            console.log(`Vendor matched: "${vendorMatch.vendor}" via ${vendorMatch.method} (${vendorMatch.confidence}%)`);
+            invoiceData.vendor = { ...invoiceData.vendor, name: vendorMatch.vendor, oracleSupplierId: vendorMatch.supplierId };
+            invoiceData.vendorMatchMethod = vendorMatch.method;
+            invoiceData.vendorMatchConfidence = vendorMatch.confidence;
+          } else if (vendorMatch.needsDisambiguation) {
+            console.log(`Vendor disambiguation needed — ${vendorMatch.candidates.length} candidates sent to Slack`);
+          }
+        }
+      } catch (e) { console.error("Vendor matching error:", e.message); }
+    }
+
     // ── RUN APPROVAL AGENT ──────────────────────────────────────
     let agentDecision = null;
     if (teamId) {
@@ -794,6 +841,7 @@ app.get("/api/billing/check/:teamId", async (req, res) => {
 const qb = require("./quickbooks");
 const oracle = require("./oracle");
 const netsuite = require("./netsuite");
+const { matchVendor, saveVendorSelection } = require("./vendorMatcher");
 const xero = require("./xero");
 const zoho = require("./zoho");
 const dynamics = require("./dynamics");
