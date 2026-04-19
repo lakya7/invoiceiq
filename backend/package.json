@@ -19,7 +19,9 @@
     "nodemailer": "^6.9.9",
     "node-quickbooks": "^2.0.34",
     "resend": "^3.2.0",
-    "stripe": "^14.21.0"
+    "stripe": "^14.21.0",
+    "imap": "^0.8.19",
+    "mailparser": "^3.7.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

@@ -431,3 +431,239 @@ async function getEmailAgentConfig(teamId) {
 }
 
 module.exports = { checkGmailForInvoices, saveEmailAgentConfig, getEmailAgentConfig };
+
+// ── IMAP CONNECTOR ───────────────────────────────────────────────
+// Supports any email provider: Outlook, Yahoo, corporate IMAP servers
+// Install: npm install imap mailparser (add to package.json)
+
+async function checkImapForInvoices({ host, port, email, password, teamId, userId, lastChecked }) {
+  const Imap = require("imap");
+  const { simpleParser } = require("mailparser");
+
+  return new Promise((resolve, reject) => {
+    const results = { processed: 0, skipped: 0, failed: 0, emails: [] };
+
+    const imap = new Imap({
+      user: email,
+      password,
+      host,
+      port: port || 993,
+      tls: true,
+      tlsOptions: { rejectUnauthorized: false },
+      connTimeout: 15000,
+      authTimeout: 10000,
+    });
+
+    imap.once("ready", () => {
+      imap.openBox("INBOX", false, async (err, box) => {
+        if (err) { imap.end(); return resolve(results); }
+
+        // Search for unseen emails since last checked
+        const sinceDate = lastChecked
+          ? new Date(lastChecked).toLocaleDateString("en-US", { day:"2-digit", month:"short", year:"numeric" })
+          : new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { day:"2-digit", month:"short", year:"numeric" });
+
+        imap.search(["UNSEEN", ["SINCE", sinceDate]], async (err, uids) => {
+          if (err || !uids?.length) { imap.end(); return resolve(results); }
+
+          console.log(`IMAP: Found ${uids.length} unseen emails for ${email}`);
+
+          const fetch = imap.fetch(uids, { bodies: "", markSeen: false });
+          const emails = [];
+
+          fetch.on("message", (msg) => {
+            let buffer = "";
+            msg.on("body", (stream) => {
+              stream.on("data", (chunk) => buffer += chunk.toString("utf8"));
+            });
+            msg.once("end", () => emails.push(buffer));
+          });
+
+          fetch.once("end", async () => {
+            for (const rawEmail of emails) {
+              try {
+                const parsed = await simpleParser(rawEmail);
+                const from = parsed.from?.text || "";
+                const subject = parsed.subject || "";
+                const attachments = parsed.attachments || [];
+
+                // Check for PDF or ZIP attachments
+                const pdfAttachments = attachments.filter(a =>
+                  a.filename?.toLowerCase().endsWith(".pdf") ||
+                  a.filename?.toLowerCase().endsWith(".zip")
+                );
+
+                if (!pdfAttachments.length) { results.skipped++; continue; }
+
+                // Extract email body for PO number context
+                const emailBody = parsed.text || parsed.html?.replace(/<[^>]*>/g, "") || "";
+
+                for (const attachment of pdfAttachments) {
+                  const isZip = attachment.filename?.toLowerCase().endsWith(".zip");
+
+                  if (isZip) {
+                    // Process ZIP via existing batch processor
+                    const { processZipBuffer } = require("./batchProcessor");
+                    const zipResult = await processZipBuffer({
+                      zipBuffer: attachment.content,
+                      teamId, userId, source: "imap_email"
+                    });
+                    results.processed += zipResult.processed || 0;
+                    results.skipped += zipResult.skipped || 0;
+                    results.failed += zipResult.failed || 0;
+                    results.emails.push({ from, subject, filename: attachment.filename, status: "zip_processed", ...zipResult });
+                  } else {
+                    // Process PDF
+                    const base64Data = attachment.content.toString("base64");
+                    const result = await processImapPDF({ base64Data, from, subject, emailBody, teamId, userId, filename: attachment.filename });
+                    if (result.success) {
+                      results.processed++;
+                      results.emails.push({ from, subject, filename: attachment.filename, status: "processed", erpRef: result.erpRef });
+                    } else {
+                      results.failed++;
+                      results.emails.push({ from, subject, filename: attachment.filename, status: "failed", reason: result.error });
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error("IMAP email parse error:", e.message);
+                results.failed++;
+              }
+            }
+            imap.end();
+            resolve(results);
+          });
+
+          fetch.once("error", (err) => { console.error("IMAP fetch error:", err); imap.end(); resolve(results); });
+        });
+      });
+    });
+
+    imap.once("error", (err) => {
+      console.error("IMAP connection error:", err.message);
+      resolve({ ...results, error: err.message });
+    });
+
+    imap.once("end", () => console.log("IMAP connection closed"));
+    imap.connect();
+  });
+}
+
+async function processImapPDF({ base64Data, from, subject, emailBody, teamId, userId, filename }) {
+  const Anthropic = require("@anthropic-ai/sdk");
+  const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  try {
+    // Claude pre-check
+    const preCheck = await claude.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 100,
+      messages: [{ role: "user", content: [
+        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+        { type: "text", text: `Is this PDF an invoice, bill, or payment request? Reply ONLY "YES" or "NO".` }
+      ]}]
+    });
+
+    if (!preCheck.content[0]?.text?.trim().toUpperCase().startsWith("YES")) {
+      return { success: false, error: "Not an invoice" };
+    }
+
+    // Extract invoice data
+    const response = await claude.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 1500,
+      messages: [{ role: "user", content: [
+        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+        { type: "text", text: `Extract invoice data from this PDF. Email subject: "${subject}", From: "${from}"
+Email body: "${emailBody?.slice(0, 500)}"
+
+The invoice may be in ANY language. Extract all fields and return in English JSON.
+
+IMPORTANT: For each line item set lineType: ITEM/FREIGHT/MISCELLANEOUS/TAX/DISCOUNT
+If freight appears only in summary, include as separate lineItem with lineType "FREIGHT".
+
+Return ONLY valid JSON:
+{
+  "invoiceNumber": "string",
+  "invoiceDate": "YYYY-MM-DD",
+  "dueDate": "YYYY-MM-DD or null",
+  "vendor": { "name": "string", "email": "string or null" },
+  "total": number,
+  "subtotal": number or null,
+  "tax": number or null,
+  "currency": "ISO 4217 code",
+  "lineItems": [{ "description": "string", "quantity": number, "unitPrice": number, "amount": number, "lineType": "ITEM|FREIGHT|MISCELLANEOUS|TAX|DISCOUNT" }],
+  "poNumber": "string or null",
+  "hasFreight": boolean,
+  "freightAmount": number or null
+}` }
+      ]}]
+    });
+
+    const text = response.content[0]?.text || "";
+    const start = text.indexOf("{");
+    const extracted = start !== -1 ? JSON.parse(text.slice(start, text.lastIndexOf("}") + 1)) : null;
+    if (!extracted) return { success: false, error: "Extraction failed" };
+
+    // Save to Supabase
+    const erpRef = `IMAP-${Date.now()}`;
+    const { error } = await supabase.from("invoices").insert({
+      user_id: userId,
+      team_id: teamId,
+      invoice_number: extracted.invoiceNumber,
+      vendor_name: extracted.vendor?.name,
+      invoice_date: extracted.invoiceDate,
+      due_date: extracted.dueDate,
+      total: extracted.total,
+      currency: extracted.currency || "USD",
+      status: "pushed",
+      match_status: "unmatched",
+      erp_reference: erpRef,
+      raw_data: { ...extracted, source: "imap", from, subject },
+      agent_decision: "imap_auto",
+      agent_reason: `Auto-processed from IMAP email (${filename})`,
+    });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, erpRef };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ── SAVE IMAP CONFIG ─────────────────────────────────────────────
+async function saveImapConfig({ teamId, host, port, email, password, enabled }) {
+  const { data, error } = await supabase.from("email_agent_config").upsert({
+    team_id: teamId,
+    provider: "imap",
+    email,
+    enabled,
+    imap_host: host,
+    imap_port: port || 993,
+    imap_password: password, // In production: encrypt this
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "team_id" }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// ── TEST IMAP CONNECTION ─────────────────────────────────────────
+async function testImapConnection({ host, port, email, password }) {
+  const Imap = require("imap");
+  return new Promise((resolve, reject) => {
+    const imap = new Imap({
+      user: email, password, host,
+      port: port || 993, tls: true,
+      tlsOptions: { rejectUnauthorized: false },
+      connTimeout: 10000, authTimeout: 8000,
+    });
+    imap.once("ready", () => { imap.end(); resolve({ success: true }); });
+    imap.once("error", (err) => resolve({ success: false, error: err.message }));
+    imap.connect();
+  });
+}
+
+module.exports = {
+  checkGmailForInvoices, saveEmailAgentConfig, getEmailAgentConfig,
+  checkImapForInvoices, saveImapConfig, testImapConnection
+};
