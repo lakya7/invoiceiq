@@ -897,7 +897,7 @@ app.post("/api/erp/push", async (req, res) => {
 
     // Save to Supabase
     if (teamId) {
-      await supabase.from("invoices").insert({
+      const { data: savedInvoice } = await supabase.from("invoices").insert({
         user_id: req.body.userId,
         team_id: teamId,
         invoice_number: invoiceData.invoiceNumber,
@@ -905,10 +905,19 @@ app.post("/api/erp/push", async (req, res) => {
         invoice_date: invoiceData.invoiceDate,
         due_date: invoiceData.dueDate,
         total: invoiceData.total,
+        currency: invoiceData.currency || "USD",
         status: "pushed",
         erp_reference: result.erpReference,
         raw_data: invoiceData,
-      });
+      }).select().single();
+
+      // ── FIRE SLACK/TEAMS NOTIFICATION ──────────────────────────
+      if (savedInvoice) {
+        try {
+          await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInvoice });
+          console.log(`Slack/Teams notification sent for invoice ${savedInvoice.invoice_number}`);
+        } catch (e) { console.error("Notification error:", e.message); }
+      }
     }
 
     res.json({ success: true, timestamp: new Date().toISOString(), ...result });
