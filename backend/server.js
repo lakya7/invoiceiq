@@ -405,18 +405,41 @@ app.post("/api/push-erp", async (req, res) => {
       } catch (e) { console.error("Email error:", e.message); }
     }
 
-    // ── NOTIFY BUYER via Teams/Slack ────────────────────────────
+    // ── SAVE INVOICE TO SUPABASE ────────────────────────────────
+    let savedInv = null;
     if (teamId) {
       try {
-        const { data: savedInv } = await supabase.from("invoices").select("*").eq("erp_reference", erpReference).single();
-        if (savedInv) {
-          await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInv });
-          if (matchResult?.matchStatus === "matched") {
-            await notify({ teamId, event: EVENTS.INVOICE_PO_MATCHED, invoice: savedInv });
-          }
-          if (anomalyResult?.totalFlags > 0) {
-            await notify({ teamId, event: EVENTS.INVOICE_FLAGGED, invoice: { ...savedInv, flag_reason: anomalyResult.flags?.[0]?.description } });
-          }
+        const { data } = await supabase.from("invoices").insert({
+          user_id: userId,
+          team_id: teamId,
+          invoice_number: invoiceData.invoiceNumber,
+          vendor_name: invoiceData.vendor?.name,
+          invoice_date: invoiceData.invoiceDate,
+          due_date: invoiceData.dueDate,
+          total: invoiceData.total,
+          currency: invoiceData.currency || "USD",
+          status: "pushed",
+          match_status: matchResult?.matchStatus || "unmatched",
+          erp_reference: erpReference,
+          raw_data: invoiceData,
+          agent_decision: agentDecision?.decision,
+          agent_reason: agentDecision?.reason,
+          agent_rule: agentDecision?.rule,
+        }).select().single();
+        savedInv = data;
+      } catch (e) { console.error("Invoice save error:", e.message); }
+    }
+
+    // ── NOTIFY BUYER via Teams/Slack ────────────────────────────
+    if (teamId && savedInv) {
+      try {
+        await notify({ teamId, event: EVENTS.INVOICE_PROCESSED, invoice: savedInv });
+        console.log(`Slack/Teams notification sent for invoice #${savedInv.invoice_number}`);
+        if (matchResult?.matchStatus === "matched") {
+          await notify({ teamId, event: EVENTS.INVOICE_PO_MATCHED, invoice: savedInv });
+        }
+        if (anomalyResult?.totalFlags > 0) {
+          await notify({ teamId, event: EVENTS.INVOICE_FLAGGED, invoice: { ...savedInv, flag_reason: anomalyResult.flags?.[0]?.description } });
         }
       } catch (e) { console.error("Notification error:", e.message); }
     }
