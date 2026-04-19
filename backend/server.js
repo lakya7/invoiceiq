@@ -660,6 +660,32 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
 }
 
 const PORT = process.env.PORT || 4000;
+// ── INVOICE COMMENTS ─────────────────────────────────────────────
+app.get("/api/invoices/:invoiceId/comments", async (req, res) => {
+  try {
+    const { data } = await supabase.from("invoice_comments")
+      .select("*").eq("invoice_id", req.params.invoiceId)
+      .order("created_at", { ascending: true });
+    res.json({ success: true, comments: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/invoices/:invoiceId/comments", async (req, res) => {
+  try {
+    const { teamId, userId, userEmail, comment } = req.body;
+    const { data } = await supabase.from("invoice_comments").insert({
+      invoice_id: req.params.invoiceId,
+      team_id: teamId,
+      user_id: userId,
+      user_email: userEmail,
+      comment: comment.trim(),
+      created_at: new Date().toISOString(),
+    }).select().single();
+    res.json({ success: true, comment: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
 app.listen(PORT, () => {
   console.log(`InvoiceIQ backend on port ${PORT}`);
   // Start ERP Sync Agent scheduler

@@ -45,6 +45,11 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [filter, setFilter] = useState("all");
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
+  const [search, setSearch] = useState("");
+  const [commentInvoice, setCommentInvoice] = useState(null); // invoice being commented on
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState({}); // { invoiceId: [comments] }
+  const [savingComment, setSavingComment] = useState(false);
 
   const firstName = user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0];
 
@@ -104,7 +109,79 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     } catch (e) { alert("Error creating team: " + e.message); }
   };
 
-  const filtered = filter === "all" ? invoices : invoices.filter(i => i.status === filter);
+  // ── SEARCH FILTER ─────────────────────────────────────────────
+  const filtered = invoices.filter(inv => {
+    const matchesFilter = filter === "all" || inv.status === filter;
+    if (!search.trim()) return matchesFilter;
+    const q = search.toLowerCase();
+    return matchesFilter && (
+      inv.invoice_number?.toLowerCase().includes(q) ||
+      inv.vendor_name?.toLowerCase().includes(q) ||
+      inv.erp_reference?.toLowerCase().includes(q) ||
+      String(inv.total || "").includes(q)
+    );
+  });
+
+  // ── CSV EXPORT ─────────────────────────────────────────────────
+  const exportCSV = () => {
+    const rows = [
+      ["Invoice #","Vendor","Date","Amount","Currency","PO Match","Status","ERP Reference","Created At"],
+      ...invoices.map(inv => [
+        inv.invoice_number || "",
+        inv.vendor_name || "",
+        inv.invoice_date || "",
+        inv.total || 0,
+        inv.raw_data?.currency || "USD",
+        inv.match_status || "unmatched",
+        inv.status || "",
+        inv.erp_reference || "",
+        inv.created_at ? new Date(inv.created_at).toLocaleDateString() : "",
+      ])
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `apflow-invoices-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── COMMENTS ───────────────────────────────────────────────────
+  const loadComments = async (invoiceId) => {
+    try {
+      const { data } = await supabase.from("invoice_comments")
+        .select("*").eq("invoice_id", invoiceId).order("created_at", { ascending: true });
+      setComments(prev => ({ ...prev, [invoiceId]: data || [] }));
+    } catch (e) { console.error("Load comments error:", e); }
+  };
+
+  const saveComment = async () => {
+    if (!commentText.trim() || !commentInvoice) return;
+    setSavingComment(true);
+    try {
+      const { data } = await supabase.from("invoice_comments").insert({
+        invoice_id: commentInvoice.id,
+        team_id: team?.id,
+        user_id: user.id,
+        user_email: user.email,
+        comment: commentText.trim(),
+        created_at: new Date().toISOString(),
+      }).select().single();
+      if (data) {
+        setComments(prev => ({ ...prev, [commentInvoice.id]: [...(prev[commentInvoice.id] || []), data] }));
+        setCommentText("");
+      }
+    } catch (e) { alert("Error saving comment: " + e.message); }
+    setSavingComment(false);
+  };
+
+  const openComments = (inv) => {
+    setCommentInvoice(inv);
+    setCommentText("");
+    loadComments(inv.id);
+  };
 
   // Setup completion for banner
   const setupSteps = { team: !!team, gmail: false, erp: false, invoice: invoices.length > 0 };
@@ -260,14 +337,29 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
 
         {/* Invoice table */}
         <div className="invoices-section">
-          <div className="invoices-header">
+          <div className="invoices-header" style={{ flexWrap:"wrap", gap:10 }}>
             <div className="invoices-title">Recent Invoices</div>
-            <div className="filter-tabs">
-              {["all","pending","pushed","rejected"].map(f => (
-                <button key={f} className={`filter-tab ${filter===f?"active":""}`} onClick={() => setFilter(f)}>
-                  {f.charAt(0).toUpperCase()+f.slice(1)}
-                </button>
-              ))}
+            <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+              {/* Search */}
+              <input
+                placeholder="Search invoice #, vendor, amount..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ border:"1px solid #e2ddd4", borderRadius:8, padding:"7px 12px", fontSize:13, fontFamily:"DM Sans,sans-serif", background:"#f9fafb", width:220, outline:"none" }}
+              />
+              {/* Filter tabs */}
+              <div className="filter-tabs">
+                {["all","pending","pushed","rejected"].map(f => (
+                  <button key={f} className={`filter-tab ${filter===f?"active":""}`} onClick={() => setFilter(f)}>
+                    {f.charAt(0).toUpperCase()+f.slice(1)}
+                  </button>
+                ))}
+              </div>
+              {/* CSV Export */}
+              <button
+                onClick={exportCSV}
+                style={{ background:"white", border:"1px solid #e2ddd4", color:"#374151", padding:"7px 14px", borderRadius:8, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+              >⬇ Export CSV</button>
             </div>
           </div>
 
@@ -312,7 +404,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                         <td className="inv-erp">{inv.erp_reference||"—"}</td>
                         <td>
                           {inv.status === "pending" && (
-                            <div style={{ display:"flex", gap:6 }}>
+                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                               <button
                                 onClick={() => approveInvoice(inv.id)}
                                 style={{ background:"#16a34a", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
@@ -321,9 +413,18 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                                 onClick={() => rejectInvoice(inv.id)}
                                 style={{ background:"transparent", color:"#dc2626", border:"1px solid #fecaca", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
                               >✗ Reject</button>
+                              <button
+                                onClick={() => openComments(inv)}
+                                style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                              >💬</button>
                             </div>
                           )}
-                          {inv.status !== "pending" && <span style={{ fontSize:11, color:"#9ca3af" }}>—</span>}
+                          {inv.status !== "pending" && (
+                            <button
+                              onClick={() => openComments(inv)}
+                              style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                            >💬 Note</button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -334,6 +435,59 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           )}
         </div>
       </main>
+
+      {/* COMMENTS MODAL */}
+      {commentInvoice && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+          onClick={e => e.target === e.currentTarget && setCommentInvoice(null)}>
+          <div style={{ background:"white", borderRadius:16, padding:28, maxWidth:480, width:"100%", fontFamily:"DM Sans,sans-serif", maxHeight:"80vh", display:"flex", flexDirection:"column" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <div>
+                <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
+                  Notes — Invoice #{commentInvoice.invoice_number}
+                </div>
+                <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{commentInvoice.vendor_name} · {commentInvoice.invoice_date}</div>
+              </div>
+              <button onClick={() => setCommentInvoice(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
+            </div>
+
+            {/* Comments list */}
+            <div style={{ flex:1, overflowY:"auto", marginBottom:16, display:"flex", flexDirection:"column", gap:10, minHeight:80 }}>
+              {(comments[commentInvoice.id] || []).length === 0 ? (
+                <div style={{ color:"#9ca3af", fontSize:13, textAlign:"center", padding:"20px 0" }}>No notes yet — add the first one below</div>
+              ) : (
+                (comments[commentInvoice.id] || []).map((c, i) => (
+                  <div key={i} style={{ background:"#f9fafb", borderRadius:10, padding:"10px 14px", border:"1px solid #e5e7eb" }}>
+                    <div style={{ fontSize:12, color:"#0a0f1e", lineHeight:1.6 }}>{c.comment}</div>
+                    <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>
+                      {c.user_email} · {new Date(c.created_at).toLocaleString("en-US", { dateStyle:"medium", timeStyle:"short" })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add comment */}
+            <div style={{ borderTop:"1px solid #e5e7eb", paddingTop:14 }}>
+              <textarea
+                placeholder="Add a note (e.g. Waiting for GRN, Disputed by supplier...)"
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                rows={3}
+                style={{ width:"100%", border:"1px solid #e2ddd4", borderRadius:8, padding:"10px 12px", fontSize:13, fontFamily:"DM Sans,sans-serif", resize:"none", outline:"none", marginBottom:10, boxSizing:"border-box" }}
+                onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) saveComment(); }}
+              />
+              <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+                <button onClick={() => setCommentInvoice(null)} style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"8px 16px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}>Cancel</button>
+                <button onClick={saveComment} disabled={savingComment || !commentText.trim()} style={{ background:"#e8531a", color:"white", border:"none", padding:"8px 18px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", opacity: savingComment || !commentText.trim() ? 0.6 : 1 }}>
+                  {savingComment ? "Saving..." : "Save Note"}
+                </button>
+              </div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginTop:6 }}>Tip: Ctrl+Enter to save quickly</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
