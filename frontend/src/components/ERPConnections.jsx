@@ -63,6 +63,9 @@ export default function ERPConnections({ user, team, onBack }) {
   const [showNetSuiteForm, setShowNetSuiteForm] = useState(false);
   const [netsuiteForm, setNetsuiteForm] = useState({ accountId: "", consumerKey: "", consumerSecret: "", tokenId: "", tokenSecret: "" });
   const [netsuiteLoading, setNetsuiteLoading] = useState(false);
+  const [showDynamicsForm, setShowDynamicsForm] = useState(false);
+  const [dynamicsForm, setDynamicsForm] = useState({ tenantId: "", clientId: "", clientSecret: "", resourceUrl: "", legalEntity: "USMF" });
+  const [dynamicsLoading, setDynamicsLoading] = useState(false);
   const [selectedERP, setSelectedERP] = useState(null); // for push routing
 
   useEffect(() => {
@@ -77,6 +80,24 @@ export default function ERPConnections({ user, team, onBack }) {
       }
       if (params.get("qb_error")) {
         showToast("QuickBooks error: " + params.get("qb_error"), "error");
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      if (params.get("xero_connected") === "true") {
+        showToast("Xero connected successfully! 🎉", "success");
+        window.history.replaceState({}, "", window.location.pathname);
+        fetchConnections();
+      }
+      if (params.get("xero_error")) {
+        showToast("Xero error: " + params.get("xero_error"), "error");
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      if (params.get("zoho_connected") === "true") {
+        showToast("Zoho Books connected successfully! 🎉", "success");
+        window.history.replaceState({}, "", window.location.pathname);
+        fetchConnections();
+      }
+      if (params.get("zoho_error")) {
+        showToast("Zoho Books error: " + params.get("zoho_error"), "error");
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
@@ -140,6 +161,44 @@ export default function ERPConnections({ user, team, onBack }) {
     setNetsuiteLoading(false);
   };
 
+  const connectXero = async () => {
+    setLoading("xero");
+    try {
+      const res = await fetch(`${API}/api/erp/xero/auth/${team.id}`);
+      const data = await res.json();
+      if (data.success) window.location.href = data.url;
+    } catch (e) { showToast(e.message, "error"); }
+    setLoading(null);
+  };
+
+  const connectZoho = async () => {
+    setLoading("zoho");
+    try {
+      const res = await fetch(`${API}/api/erp/zoho/auth/${team.id}`);
+      const data = await res.json();
+      if (data.success) window.location.href = data.url;
+    } catch (e) { showToast(e.message, "error"); }
+    setLoading(null);
+  };
+
+  const connectDynamics = async (e) => {
+    e.preventDefault();
+    setDynamicsLoading(true);
+    try {
+      const res = await fetch(`${API}/api/erp/dynamics/connect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team.id, ...dynamicsForm }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast("Microsoft Dynamics 365 connected successfully! 🎉", "success");
+      setShowDynamicsForm(false);
+      fetchConnections();
+    } catch (e) { showToast(e.message, "error"); }
+    setDynamicsLoading(false);
+  };
+
   const disconnect = async (erpType) => {
     setLoading(erpType);
     try {
@@ -166,10 +225,10 @@ export default function ERPConnections({ user, team, onBack }) {
     { id: "oracle",      name: "Oracle Fusion Cloud",     icon: "🔴", desc: "Push invoices to Oracle Payables module",                    color: "#C74634", connected: connections.oracle?.status === "connected",      status: connections.oracle?.status      || "disconnected", updatedAt: connections.oracle?.updated_at },
     { id: "sap",         name: "SAP S/4HANA",             icon: "🔵", desc: "Coming soon — SAP integration in development",               color: "#0070f3", connected: false, status: "coming_soon", updatedAt: null },
     { id: "sap_ariba",   name: "SAP Ariba",               icon: "🟣", desc: "Coming soon — SAP Ariba procurement integration",            color: "#6B46C1", connected: false, status: "coming_soon", updatedAt: null },
-    { id: "dynamics",    name: "Microsoft Dynamics 365",  icon: "🟦", desc: "Coming soon — Dynamics 365 Finance integration",            color: "#0078D4", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "dynamics",    name: "Microsoft Dynamics 365",  icon: "🟦", desc: "Push invoices to Dynamics 365 — freight & charge lines mapped", color: "#0078D4", connected: connections.dynamics?.status === "connected", status: connections.dynamics?.status || "disconnected", updatedAt: connections.dynamics?.updated_at },
     { id: "netsuite",    name: "NetSuite",                icon: "🟠", desc: "Push invoices to NetSuite as Vendor Bills — freight lines auto-mapped", color: "#F57F17", connected: connections.netsuite?.status === "connected", status: connections.netsuite?.status || "disconnected", updatedAt: connections.netsuite?.updated_at },
-    { id: "xero",        name: "Xero",                    icon: "🔷", desc: "Coming soon — Xero accounting integration",                  color: "#13B5EA", connected: false, status: "coming_soon", updatedAt: null },
-    { id: "zoho",        name: "Zoho Books",              icon: "🟡", desc: "Coming soon — Zoho Books integration",                       color: "#E8A803", connected: false, status: "coming_soon", updatedAt: null },
+    { id: "xero",        name: "Xero",                    icon: "🔷", desc: "Push invoices to Xero as Bills — freight lines auto-mapped", color: "#13B5EA", connected: connections.xero?.status === "connected",     status: connections.xero?.status     || "disconnected", updatedAt: connections.xero?.updated_at },
+    { id: "zoho",        name: "Zoho Books",              icon: "🟡", desc: "Push invoices to Zoho Books as Bills — multi-currency ready", color: "#E8A803", connected: connections.zoho?.status === "connected",     status: connections.zoho?.status     || "disconnected", updatedAt: connections.zoho?.updated_at },
     { id: "coupa",       name: "Coupa",                   icon: "🟤", desc: "Coming soon — Coupa procurement integration",                color: "#D4622A", connected: false, status: "coming_soon", updatedAt: null },
     { id: "rillion",     name: "Rillion",                 icon: "⚫", desc: "Coming soon — Rillion AP automation integration",            color: "#374151", connected: false, status: "coming_soon", updatedAt: null },
     { id: "stampli",     name: "Stampli",                 icon: "🔶", desc: "Coming soon — Stampli invoice management integration",       color: "#F59E0B", connected: false, status: "coming_soon", updatedAt: null },
@@ -180,6 +239,9 @@ export default function ERPConnections({ user, team, onBack }) {
     if (erpId === "quickbooks") connectQB();
     else if (erpId === "oracle") setShowOracleForm(true);
     else if (erpId === "netsuite") setShowNetSuiteForm(true);
+    else if (erpId === "xero") connectXero();
+    else if (erpId === "zoho") connectZoho();
+    else if (erpId === "dynamics") setShowDynamicsForm(true);
     else showToast("Coming soon!", "info");
   };
 
@@ -349,6 +411,68 @@ export default function ERPConnections({ user, team, onBack }) {
                 {netsuiteLoading ? "Testing Connection..." : "Connect NetSuite →"}
               </button>
               <button type="button" onClick={() => setShowNetSuiteForm(false)} style={{ background: "transparent", border: "1px solid #e2ddd4", color: "#7a7a6e", padding: "11px 18px", borderRadius: 7, fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Dynamics 365 Form */}
+      {showDynamicsForm && (
+        <div style={{ background: "#fff", border: "1px solid #e2ddd4", borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 6 }}>🟦 Connect Microsoft Dynamics 365</div>
+          <p style={{ fontSize: 13, color: "#7a7a6e", marginBottom: 20, lineHeight: 1.6 }}>
+            Dynamics 365 uses Azure App Registration (Client Credentials). Create an app in Azure AD first.
+          </p>
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px", marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1e40af", marginBottom: 8 }}>🔵 Before connecting — Azure setup required</div>
+            <ol style={{ paddingLeft: 18, fontSize: 12, color: "#1e40af", lineHeight: 1.8 }}>
+              <li>Azure Portal → App Registrations → New Registration</li>
+              <li>Certificates & Secrets → New Client Secret → Copy Secret Value</li>
+              <li>API Permissions → Add → Dynamics ERP → user_impersonation</li>
+              <li>Your Tenant ID is in Azure AD → Overview</li>
+              <li>Resource URL is your Dynamics environment URL (e.g. https://yourorg.operations.dynamics.com)</li>
+            </ol>
+          </div>
+          <form onSubmit={connectDynamics}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Azure Tenant ID *</label>
+                  <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={dynamicsForm.tenantId}
+                    onChange={e => setDynamicsForm(f => ({ ...f, tenantId: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Client ID *</label>
+                  <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="App Registration Client ID" value={dynamicsForm.clientId}
+                    onChange={e => setDynamicsForm(f => ({ ...f, clientId: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Client Secret *</label>
+                  <input type="password" style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="••••••••" value={dynamicsForm.clientSecret}
+                    onChange={e => setDynamicsForm(f => ({ ...f, clientSecret: e.target.value }))} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Legal Entity *</label>
+                  <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                    placeholder="e.g. USMF" value={dynamicsForm.legalEntity}
+                    onChange={e => setDynamicsForm(f => ({ ...f, legalEntity: e.target.value }))} required />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#7a7a6e", fontWeight: 600, display: "block", marginBottom: 5 }}>Dynamics Resource URL *</label>
+                <input style={{ width: "100%", border: "1px solid #e2ddd4", borderRadius: 7, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", background: "#f5f2eb" }}
+                  placeholder="https://yourorg.operations.dynamics.com" value={dynamicsForm.resourceUrl}
+                  onChange={e => setDynamicsForm(f => ({ ...f, resourceUrl: e.target.value }))} required />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="submit" disabled={dynamicsLoading} style={{ background: "#0078D4", color: "#fff", border: "none", padding: "11px 22px", borderRadius: 7, fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
+                {dynamicsLoading ? "Testing Connection..." : "Connect Dynamics 365 →"}
+              </button>
+              <button type="button" onClick={() => setShowDynamicsForm(false)} style={{ background: "transparent", border: "1px solid #e2ddd4", color: "#7a7a6e", padding: "11px 18px", borderRadius: 7, fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>Cancel</button>
             </div>
           </form>
         </div>
