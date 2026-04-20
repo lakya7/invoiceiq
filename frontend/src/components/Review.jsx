@@ -61,7 +61,7 @@ function runLocalValidation(form) {
   return { errors, warnings };
 }
 
-export default function Review({ data, filePreview, onApprove, onBack, team }) {
+export default function Review({ data, filePreview, onApprove, onBack, team, pdfBase64, pdfFilename }) {
   const [form, setForm] = useState(data || {});
   const [showModal, setShowModal] = useState(false);
   const [oracleValidating, setOracleValidating] = useState(false);
@@ -281,7 +281,7 @@ export default function Review({ data, filePreview, onApprove, onBack, team }) {
                     {allErrors.length > 0 ? "Go Back & Fix" : "Cancel"}
                   </button>
                   {allErrors.length === 0 && (
-                    <button onClick={() => { setShowModal(false); onApprove(form); }}
+                    <button onClick={() => { setShowModal(false); onApprove(form, pdfBase64, pdfFilename); }}
                       style={{ flex: 2, background: "#e8531a", color: "white", border: "none", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
                       {allWarnings.length > 0 ? "Push Anyway →" : "Confirm & Push to ERP →"}
                     </button>

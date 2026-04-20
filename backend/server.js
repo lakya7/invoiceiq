@@ -159,6 +159,7 @@ app.post("/api/extract", upload.single("file"), async (req, res) => {
     const b64 = readFile(req.file.path).toString("base64");
     const mt = req.file.mimetype;
     const isPDF = mt === "application/pdf";
+    const originalFilename = req.file.originalname || "invoice.pdf";
     const isImage = ["image/jpeg","image/png","image/webp","image/gif"].includes(mt);
     const finalMt = isImage ? mt : isPDF ? "application/pdf" : "image/jpeg";
     fs.unlinkSync(req.file.path);
@@ -178,7 +179,7 @@ Extract all data from this invoice/PO document. Return ONLY valid JSON:
       ]}]
     });
     const extracted = cleanJSON(r.content.find(b=>b.type==="text")?.text || "{}");
-    res.json({ success: true, data: extracted || {} });
+    res.json({ success: true, data: extracted || {}, pdfBase64: isPDF ? b64 : null, pdfFilename: originalFilename });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
@@ -296,7 +297,7 @@ app.post("/api/pos", upload.single("file"), async (req, res) => {
 // ── PUSH TO ERP ─────────────────────────────────────────────────
 app.post("/api/push-erp", async (req, res) => {
   try {
-    const { invoiceData, userId, teamId, matchResult } = req.body;
+    const { invoiceData, userId, teamId, matchResult, pdfBase64, pdfFilename } = req.body;
     await new Promise(r => setTimeout(r, 1000));
     const erpReference = `ERP-${Date.now()}`;
     const timestamp = new Date().toISOString();

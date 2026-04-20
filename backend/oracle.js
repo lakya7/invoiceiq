@@ -323,17 +323,34 @@ async function pushInvoice(teamId, invoiceData) {
       }).eq("invoice_number", invoiceData.invoiceNumber).eq("team_id", teamId);
     }
 
+    // ── ATTACH PDF TO ORACLE INVOICE HEADER ────────────────────
+    let pdfAttachment = null;
+    if (pdfBase64 && oracle.InvoiceId) {
+      pdfAttachment = await attachPDFToInvoice({
+        invoiceId: oracle.InvoiceId,
+        pdfBase64,
+        filename: pdfFilename || `Invoice_${invoiceData.invoiceNumber || Date.now()}.pdf`,
+        credentials,
+        baseUrl,
+      });
+      if (pdfAttachment?.success) {
+        console.log(`PDF attached to Oracle Invoice ${oracle.InvoiceId}`);
+      }
+    }
+
     return {
       success: true,
       erpReference: `ORA-${oracle.InvoiceId || Date.now()}`,
       erpType: "oracle",
-      validation, // include validation results in response
+      validation,
+      pdfAttached: pdfAttachment?.success || false,
       details: {
         invoiceId: oracle.InvoiceId,
         invoiceNumber: oracle.InvoiceNumber,
         status: oracle.InvoiceStatus,
         amount: oracle.InvoiceAmount,
         warnings: validation.warnings,
+        pdfAttachment,
       }
     };
   } catch (err) {
@@ -395,4 +412,39 @@ async function disconnect(teamId) {
   return { success: true };
 }
 
-module.exports = { pushInvoice, saveConnection, getConnectionStatus, disconnect, validateOnly };
+
+// ── ATTACH PDF TO ORACLE INVOICE HEADER ─────────────────────────
+async function attachPDFToInvoice({ invoiceId, pdfBase64, filename, credentials, baseUrl }) {
+  if (!invoiceId || !pdfBase64 || !credentials || !baseUrl) return null;
+  try {
+    const endpoint = `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices/${invoiceId}/child/attachments`;
+    const safeFilename = (filename || "invoice.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    const payload = {
+      CategoryName: "MISC",
+      Title: safeFilename,
+      ContentRepositoryFileShared: false,
+      DatatypeCode: "FILE",
+      FileName: safeFilename,
+      FileContents: pdfBase64,
+    };
+
+    await axios.post(endpoint, payload, {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      timeout: 15000,
+    });
+
+    console.log(`PDF attached to Oracle Invoice ID ${invoiceId}: ${safeFilename}`);
+    return { success: true, invoiceId, filename: safeFilename };
+  } catch (err) {
+    const msg = err.response?.data?.detail || err.response?.data?.title || err.message;
+    console.error(`Oracle PDF attachment failed: ${msg}`);
+    return { success: false, error: msg };
+  }
+}
+
+module.exports = { pushInvoice, attachPDFToInvoice, saveConnection, getConnectionStatus, disconnect, validateOnly };
