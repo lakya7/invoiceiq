@@ -124,7 +124,7 @@ export default function EmailAgent({ user, team, onBack }) {
           </div>
         </div>
         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          Connect your email inbox. APFlow checks every 5 minutes for emails with PDF and ZIP invoice attachments, extracts the data automatically, and pushes to your ERP — zero human touch needed.
+          Connect your email inbox. Billtiq checks every 5 minutes for emails with PDF and ZIP invoice attachments, extracts the data automatically, and pushes to your ERP — zero human touch needed.
         </p>
       </div>
 
@@ -224,7 +224,7 @@ export default function EmailAgent({ user, team, onBack }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
                 { icon: "📨", text: "Supplier emails invoice PDF (or ZIP of invoices) to your connected inbox" },
-                { icon: "🤖", text: "APFlow detects the email every 5 minutes and downloads the attachment" },
+                { icon: "🤖", text: "Billtiq detects the email every 5 minutes and downloads the attachment" },
                 { icon: "🔍", text: "Claude AI extracts all invoice fields automatically" },
                 { icon: "✅", text: "Invoice is validated, matched to POs, and pushed to your ERP" },
                 { icon: "📊", text: "You receive a summary email of all auto-processed invoices" },
@@ -246,7 +246,7 @@ export default function EmailAgent({ user, team, onBack }) {
               <div style={{ fontSize: 36, marginBottom: 16 }}>📧</div>
               <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 18, color: "#1a1a2e", marginBottom: 8 }}>Connect Email Inbox</div>
               <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 16 }}>
-                Connect your dedicated invoice inbox. APFlow monitors it every 5 minutes for PDF and ZIP invoice attachments.
+                Connect your dedicated invoice inbox. Billtiq monitors it every 5 minutes for PDF and ZIP invoice attachments.
               </p>
 
               {/* Connection method selector */}
@@ -316,7 +316,7 @@ export default function EmailAgent({ user, team, onBack }) {
                   <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"10px 14px", marginBottom:14 }}>
                     <div style={{ fontSize:12, color:"#1e40af", fontWeight:600, marginBottom:4 }}>🏢 Dedicated Invoice Mailbox (recommended)</div>
                     <div style={{ fontSize:11, color:"#1e40af", lineHeight:1.6 }}>
-                      Ask IT to create <strong>ap-invoices@yourcompany.com</strong> and enable IMAP access for it. Tell all suppliers to send invoices to this address. APFlow will only read this mailbox — no access to any other company email.
+                      Ask IT to create <strong>ap-invoices@yourcompany.com</strong> and enable IMAP access for it. Tell all suppliers to send invoices to this address. Billtiq will only read this mailbox — no access to any other company email.
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:10 }}>
@@ -355,7 +355,7 @@ export default function EmailAgent({ user, team, onBack }) {
             <div style={{ fontWeight: 700, color: "#92400e", marginBottom: 12, fontSize: 14 }}>⚠️ Before connecting your inbox</div>
             <ol style={{ paddingLeft: 20, fontSize: 13, color: "#78350f", lineHeight: 2 }}>
               <li>Make sure you're connecting the inbox that receives supplier invoices (Gmail or Outlook)</li>
-              <li>APFlow will only read emails with PDF or ZIP invoice attachments — it never reads other emails</li>
+              <li>Billtiq will only read emails with PDF or ZIP invoice attachments — it never reads other emails</li>
               <li>You can disconnect at any time from this page</li>
               <li>We recommend creating a dedicated <strong>ap@yourcompany.com</strong> address for invoices</li>
             </ol>
