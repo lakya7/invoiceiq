@@ -1,4 +1,4 @@
-// notificationAgent.js — APFlow Teams & Slack Notification Agent
+// notificationAgent.js — Billtiq Teams & Slack Notification Agent
 // Notifies buyers and suppliers via Microsoft Teams and Slack webhooks
 
 const { createClient } = require("@supabase/supabase-js");
@@ -29,7 +29,7 @@ async function sendSlackNotification({ webhookUrl, event, invoice, recipient }) 
   // Approve/Reject buttons ONLY for pending invoices (QuickBooks flow)
   // For Oracle/NetSuite/Xero/Zoho/Dynamics — invoice already pushed, ERP handles approvals
   const needsApproval = invoice.status === "pending" || event === EVENTS.INVOICE_NEEDS_APPROVAL;
-  const backendUrl = process.env.BACKEND_URL || "https://invoiceiq-backend-w42q.onrender.com";
+  const backendUrl = process.env.BACKEND_URL || "https://billtiq-backend-w42q.onrender.com";
 
   const actionButtons = needsApproval && invoice.id ? [
     {
@@ -60,13 +60,13 @@ async function sendSlackNotification({ webhookUrl, event, invoice, recipient }) 
     },
     {
       type: "button",
-      text: { type: "plain_text", text: "View in APFlow →" },
-      url: process.env.FRONTEND_URL || "https://www.apflow.app",
+      text: { type: "plain_text", text: "View in Billtiq →" },
+      url: process.env.FRONTEND_URL || "https://www.billtiq.app",
     },
   ] : [{
     type: "button",
-    text: { type: "plain_text", text: "View in APFlow →" },
-    url: process.env.FRONTEND_URL || "https://www.apflow.app",
+    text: { type: "plain_text", text: "View in Billtiq →" },
+    url: process.env.FRONTEND_URL || "https://www.billtiq.app",
     style: "primary",
   }];
 
@@ -138,7 +138,7 @@ async function sendTeamsNotification({ webhookUrl, event, invoice, recipient }) 
           },
           {
             type: "TextBlock",
-            text: `Powered by APFlow · ${new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`,
+            text: `Powered by Billtiq · ${new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`,
             size: "Small",
             color: "Default",
             isSubtle: true,
@@ -146,8 +146,8 @@ async function sendTeamsNotification({ webhookUrl, event, invoice, recipient }) 
         ],
         actions: [{
           type: "Action.OpenUrl",
-          title: "View in APFlow →",
-          url: process.env.FRONTEND_URL || "https://www.apflow.app",
+          title: "View in Billtiq →",
+          url: process.env.FRONTEND_URL || "https://www.billtiq.app",
         }],
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
       },
@@ -218,7 +218,7 @@ function buildMessageContent({ event, invoice, recipient }) {
         { label: "Vendor", value: vendor },
         { label: "Amount", value: amount },
         { label: "Reason", value: invoice.agent_reason || invoice.flag_reason || "Flagged by anomaly detection" },
-        { label: "Action Required", value: isBuyer ? "Review in APFlow" : "Please resubmit or contact AP team" },
+        { label: "Action Required", value: isBuyer ? "Review in Billtiq" : "Please resubmit or contact AP team" },
       ],
     },
     [EVENTS.INVOICE_NEEDS_APPROVAL]: {
@@ -376,7 +376,7 @@ async function testWebhook({ platform, webhookUrl }) {
     currency: "USD",
     erp_reference: "ERP-TEST-123",
     raw_data: { poNumber: "PO-2024-001" },
-    agent_reason: "This is a test notification from APFlow",
+    agent_reason: "This is a test notification from Billtiq",
   };
 
   if (platform === "slack") {

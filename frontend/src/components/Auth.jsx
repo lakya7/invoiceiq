@@ -48,7 +48,7 @@ export default function Auth() {
     <div className="auth-page">
       <div className="auth-left">
         <div className="auth-brand">
-          <div className="logo">AP<span>Flow</span></div>
+          <div className="logo">Bill<span>tiq</span></div>
           <p className="auth-tagline">AI-powered invoice processing for modern finance teams</p>
         </div>
         <div className="auth-stats">
@@ -68,7 +68,7 @@ export default function Auth() {
       <div className="auth-right">
         <div className="auth-card">
           <div className="auth-card-title">{forgotMode ? "Reset password" : mode === "signup" ? "Create your account" : "Welcome back"}</div>
-          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : mode === "signup" ? "Start your 14-day free trial" : "Sign in to your APFlow account"}</div>
+          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : mode === "signup" ? "Start your 14-day free trial" : "Sign in to your Billtiq account"}</div>
 
           {!forgotMode && (
             <>

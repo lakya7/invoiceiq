@@ -6,7 +6,7 @@ const VALIDATION_STATUS = {
   needs_validation: { bg:"#fef9c3", color:"#92400e", icon:"⏳", label:"Needs Validation", desc:"Invoice submitted to ERP. Awaiting Oracle validation before posting." },
   validated:        { bg:"#dcfce7", color:"#16a34a", icon:"✅", label:"Validated",         desc:"Oracle validated the invoice. Ready for payment processing." },
   validation_error: { bg:"#fee2e2", color:"#dc2626", icon:"🔴", label:"Validation Error",  desc:"Oracle found issues. Check ERP for details." },
-  mock:             { bg:"#dbeafe", color:"#1d4ed8", icon:"🔵", label:"Mock ERP",           desc:"No real ERP connected. Data saved to APFlow database only." },
+  mock:             { bg:"#dbeafe", color:"#1d4ed8", icon:"🔵", label:"Mock ERP",           desc:"No real ERP connected. Data saved to Billtiq database only." },
 };
 
 const AGENT_STATUS = {

@@ -15,7 +15,7 @@ const STEPS = [
     id: "gmail",
     icon: "📧",
     title: "Connect your email inbox",
-    desc: "APFlow monitors your inbox every 5 minutes for invoice emails — PDFs and ZIPs detected automatically. Supports Gmail and Outlook.",
+    desc: "Billtiq monitors your inbox every 5 minutes for invoice emails — PDFs and ZIPs detected automatically. Supports Gmail and Outlook.",
     cta: "Connect Email",
     done_label: "Email inbox connected",
   },
@@ -31,7 +31,7 @@ const STEPS = [
     id: "invoice",
     icon: "📄",
     title: "Process your first invoice",
-    desc: "Upload a PDF invoice or send one to your connected email inbox. Watch APFlow extract and push it in seconds.",
+    desc: "Upload a PDF invoice or send one to your connected email inbox. Watch Billtiq extract and push it in seconds.",
     cta: "Process Invoice",
     done_label: "First invoice processed",
   },
@@ -75,7 +75,7 @@ export default function Onboarding({ user, team, teams, onCreateTeam, onEmailAge
           <div style={{ background: "white", borderRadius: 24, padding: "48px 40px", border: "1px solid #e5e7eb", marginBottom: 16 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>👋</div>
             <h1 style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 28, color: "#0a0f1e", marginBottom: 12, letterSpacing: "-1px" }}>
-              Welcome to APFlow, {firstName}!
+              Welcome to Billtiq, {firstName}!
             </h1>
             <p style={{ fontSize: 15, color: "#6b7280", lineHeight: 1.75, marginBottom: 32, fontWeight: 300 }}>
               You're about to eliminate manual invoice processing for your team. Let's get you set up in under 5 minutes.
@@ -215,7 +215,7 @@ export default function Onboarding({ user, team, teams, onCreateTeam, onEmailAge
           <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16, padding: "20px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
             <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 18, color: "#15803d", marginBottom: 4 }}>You're all set!</div>
-            <div style={{ fontSize: 13, color: "#16a34a", marginBottom: 16 }}>APFlow is fully configured and running 24/7 for your team.</div>
+            <div style={{ fontSize: 13, color: "#16a34a", marginBottom: 16 }}>Billtiq is fully configured and running 24/7 for your team.</div>
             <button onClick={onDismiss} style={{ background: "#16a34a", color: "white", border: "none", padding: "12px 28px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
               Go to Dashboard →
             </button>

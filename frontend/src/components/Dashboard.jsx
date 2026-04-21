@@ -146,7 +146,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `apflow-invoices-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `billtiq-invoices-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -216,7 +216,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     <div className="dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">AP<span>Flow</span></div>
+        <div className="sidebar-logo">Bill<span>tiq</span></div>
 
         {/* Team selector */}
         {teams?.length > 0 && (

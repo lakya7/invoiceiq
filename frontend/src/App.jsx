@@ -227,7 +227,7 @@ export default function App() {
   if (authLoading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#f5f2eb" }}>
       <div style={{ textAlign:"center" }}>
-        <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:24, marginBottom:12 }}>AP<span style={{color:"#e8531a"}}>Flow</span></div>
+        <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:24, marginBottom:12 }}>Bill<span style={{color:"#e8531a"}}>tiq</span></div>
         <div style={{ color:"#7a7a6e", fontSize:14 }}>Loading...</div>
       </div>
     </div>
@@ -301,7 +301,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="logo" style={{ cursor:"pointer" }} onClick={() => setView("dashboard")}>AP<span>Flow</span></div>
+        <div className="logo" style={{ cursor:"pointer" }} onClick={() => setView("dashboard")}>Bill<span>tiq</span></div>
         <div className="header-right">
           <button className="reset-btn" onClick={() => setView("dashboard")}>← Dashboard</button>
           <span className="ai-badge" style={{ cursor:"pointer" }} onClick={() => setShowAIPopup(true)}>⚡ AI Powered</span>

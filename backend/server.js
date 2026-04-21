@@ -51,11 +51,11 @@ const gmailTransport = nodemailer.createTransport({
 async function sendEmail({ to, subject, html }) {
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     await gmailTransport.sendMail({
-      from: `APFlow <${process.env.GMAIL_USER}>`,
+      from: `Billtiq <${process.env.GMAIL_USER}>`,
       to, subject, html,
     });
   } else if (resend) {
-    await resend.emails.send({ from: "APFlow <notifications@apflow.app>", to, subject, html });
+    await resend.emails.send({ from: "Billtiq <notifications@billtiq.app>", to, subject, html });
   } else {
     console.log("No email provider configured");
   }
@@ -305,7 +305,7 @@ app.post("/api/push-erp", async (req, res) => {
     // Check if real ERP is connected for this team
     let erpType = "mock";
     let validationStatus = "mock";
-    let validationMessage = "Invoice saved to InvoiceIQ. No real ERP connected.";
+    let validationMessage = "Invoice saved to Billtiq. No real ERP connected.";
 
     if (teamId) {
       const { data: connections } = await supabase
@@ -561,7 +561,7 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
     await sendEmail({
       to: email,
-      subject: `${inviterEmail} invited you to join ${team?.name || "a team"} on APFlow`,
+      subject: `${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`,
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
@@ -570,10 +570,10 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
   <div style="padding:32px;">
     <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">You've been invited! 🎉</h2>
     <p style="font-size:15px;color:#7a7a6e;line-height:1.6;margin:0 0 24px;">
-      <strong style="color:#0a0f1e;">${inviterEmail}</strong> has invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on APFlow as a <strong style="color:#e8531a;">${role}</strong>.
+      <strong style="color:#0a0f1e;">${inviterEmail}</strong> has invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${role}</strong>.
     </p>
     <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
-    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have an APFlow account, you'll be asked to create one.</p>
+    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have an Billtiq account, you'll be asked to create one.</p>
   </div>
 </div>`
     });
@@ -639,8 +639,8 @@ app.post("/api/settings/test-email", async (req, res) => {
   try {
     const { email } = req.body;
     await resend.emails.send({
-      from: "APFlow <notifications@apflow.app>", to: email,
-      subject: "✅ InvoiceIQ Test Notification",
+      from: "Billtiq <notifications@billtiq.app>", to: email,
+      subject: "✅ Billtiq Test Notification",
       html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e2ddd4;"><div style="font-size:20px;font-weight:800;margin-bottom:16px;">Invoice<span style="color:#e8531a;">IQ</span></div><h2 style="font-size:18px;margin-bottom:8px;">Test notification working! 🎉</h2><p style="color:#7a7a6e;font-size:14px;line-height:1.6;">Email notifications are configured correctly.</p></div>`
     });
     res.json({ success: true });
@@ -660,7 +660,7 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
   }[matchResult.matchStatus] || "" : "";
 
   await resend.emails.send({
-    from: "APFlow <notifications@apflow.app>", to: recipients,
+    from: "Billtiq <notifications@billtiq.app>", to: recipients,
     subject: `✅ Invoice ${invoiceData.invoiceNumber||"N/A"} Approved — ${total}`,
     html: `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;"><div style="font-size:20px;font-weight:800;color:#fff;">Invoice<span style="color:#e8531a;">IQ</span></div></div>
@@ -726,7 +726,7 @@ app.post("/api/invoices/:invoiceId/audit/comment", async (req, res) => {
 
 
 app.listen(PORT, () => {
-  console.log(`InvoiceIQ backend on port ${PORT}`);
+  console.log(`Billtiq backend on port ${PORT}`);
   // Start ERP Sync Agent scheduler
   startErpSyncScheduler().catch(e => console.error("ERP Sync scheduler failed to start:", e.message));
 });
@@ -1144,7 +1144,7 @@ app.post("/api/agent/email/check", async (req, res) => {
   <div style="padding:32px;">
     <div style="font-size:36px;margin-bottom:12px;">📧</div>
     <h2 style="font-size:20px;margin:0 0 8px;color:#0a0f1e;">${result.processed} Invoice(s) Auto-Processed</h2>
-    <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;">APFlow automatically detected and processed ${result.processed} invoice(s) from your email inbox.</p>
+    <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;">Billtiq automatically detected and processed ${result.processed} invoice(s) from your email inbox.</p>
     <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;">View Dashboard →</a>
   </div>
 </div>`
@@ -1265,7 +1265,7 @@ app.post("/api/support", async (req, res) => {
     if (!message || !email) return res.status(400).json({ error: "Email and message required" });
 
     await sendEmail({
-      to: "help@apflow.app",
+      to: "help@billtiq.app",
       subject: `[${issueType}] Support Request from ${name || email}`,
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
@@ -1283,7 +1283,7 @@ app.post("/api/support", async (req, res) => {
     </table>
     <div style="background:#f9fafb;border-radius:10px;padding:16px 20px;font-size:14px;color:#374151;line-height:1.7;white-space:pre-wrap;">${message}</div>
     <div style="margin-top:20px;">
-      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(issueType)} — APFlow Support" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Reply to ${name || email} →</a>
+      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(issueType)} — Billtiq Support" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Reply to ${name || email} →</a>
     </div>
   </div>
 </div>`
@@ -1292,7 +1292,7 @@ app.post("/api/support", async (req, res) => {
     // Also send confirmation to user
     await sendEmail({
       to: email,
-      subject: `We received your support request — APFlow`,
+      subject: `We received your support request — Billtiq`,
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
@@ -1302,9 +1302,9 @@ app.post("/api/support", async (req, res) => {
     <div style="font-size:36px;margin-bottom:12px;">✅</div>
     <h2 style="font-size:18px;margin:0 0 8px;color:#0a0f1e;">We got your message, ${name?.split(" ")[0] || "there"}!</h2>
     <p style="font-size:14px;color:#7a7a6e;margin:0 0 20px;line-height:1.7;">Thanks for reaching out. We'll get back to you within 2 hours on business days. Your issue: <strong>${issueType}</strong>.</p>
-    <p style="font-size:13px;color:#9ca3af;margin:0;">In the meantime, check our FAQ in the Help & Support page inside APFlow.</p>
+    <p style="font-size:13px;color:#9ca3af;margin:0;">In the meantime, check our FAQ in the Help & Support page inside Billtiq.</p>
     <div style="margin-top:24px;text-align:center;">
-      <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Back to APFlow →</a>
+      <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;">Back to Billtiq →</a>
     </div>
   </div>
 </div>`
