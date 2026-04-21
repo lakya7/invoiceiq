@@ -184,7 +184,7 @@ export default function TeamManagement({ user, team, onBack }) {
         {tab === "roles" && (
           <div className="settings-card">
             <div className="settings-card-title">Role Permissions</div>
-            <div className="settings-card-sub">What each role can do in InvoiceIQ</div>
+            <div className="settings-card-sub">What each role can do in Billtiq</div>
             <div className="settings-card-body">
               <div className="roles-table-wrap">
                 <table className="roles-table">

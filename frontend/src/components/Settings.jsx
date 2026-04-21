@@ -186,7 +186,7 @@ export default function Settings({ user, onBack }) {
               <>
                 <div className="settings-card">
                   <div className="settings-card-title">Email Notifications</div>
-                  <div className="settings-card-sub">Choose when APFlow sends you emails</div>
+                  <div className="settings-card-sub">Choose when Billtiq sends you emails</div>
 
                   <div className="settings-card-body">
                     <Toggle

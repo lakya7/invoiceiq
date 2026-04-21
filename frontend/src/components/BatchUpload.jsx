@@ -51,7 +51,7 @@ export default function BatchUpload({ user, team, onBack, onDone }) {
           </div>
         </div>
         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          Upload a ZIP file containing multiple PDF invoices. APFlow will extract, validate and process each one automatically — duplicates are detected and skipped.
+          Upload a ZIP file containing multiple PDF invoices. Billtiq will extract, validate and process each one automatically — duplicates are detected and skipped.
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export default function BatchUpload({ user, team, onBack, onDone }) {
             <li>Put all your invoice PDFs into a single folder</li>
             <li>Right-click the folder → <strong>Send to → Compressed (zipped) folder</strong></li>
             <li>Upload the ZIP file here</li>
-            <li>APFlow will process each PDF automatically</li>
+            <li>Billtiq will process each PDF automatically</li>
           </ol>
         </div>
       )}

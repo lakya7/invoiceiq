@@ -11,14 +11,14 @@ export default function Legal({ page, onBack }) {
         {isPrivacy ? "Privacy Policy" : "Terms of Service"}
       </div>
       <div style={{ fontSize: 13, color: "#7a7a6e", marginBottom: 40 }}>
-        Last updated: April 14, 2026 · APFlow (apflow.app)
+        Last updated: April 14, 2026 · Billtiq (billtiq.com)
       </div>
 
       {isPrivacy ? <PrivacyContent /> : <TermsContent />}
 
       <div style={{ marginTop: 48, padding: "24px", background: "#f5f2eb", borderRadius: 12, fontSize: 13, color: "#7a7a6e", lineHeight: 1.7 }}>
         <strong style={{ color: "#0a0f1e" }}>Questions?</strong> Contact us at{" "}
-        <a href="mailto:hello@apflow.app" style={{ color: "#e8531a" }}>hello@apflow.app</a>
+        <a href="mailto:hello@billtiq.com" style={{ color: "#e8531a" }}>hello@billtiq.com</a>
       </div>
     </div>
   );
@@ -37,7 +37,7 @@ function PrivacyContent() {
   return (
     <div>
       <Section title="1. Introduction">
-        APFlow ("we", "our", or "us") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our AI-powered invoice processing platform at apflow.app.
+        Billtiq ("we", "our", or "us") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our AI-powered invoice processing platform at billtiq.com.
       </Section>
 
       <Section title="2. Information We Collect">
@@ -49,7 +49,7 @@ function PrivacyContent() {
 
       <Section title="3. How We Use Your Information">
         We use your information to:<br /><br />
-        • Provide and improve the APFlow service<br />
+        • Provide and improve the Billtiq service<br />
         • Process invoices using AI extraction<br />
         • Send notifications about invoice processing<br />
         • Communicate account-related updates<br />
@@ -69,7 +69,7 @@ function PrivacyContent() {
       </Section>
 
       <Section title="6. Invoice Data Retention">
-        Extracted invoice data is retained in your account until you delete it. Original PDF files are processed in memory and are not permanently stored on our servers. You may request deletion of your data at any time by contacting hello@apflow.app.
+        Extracted invoice data is retained in your account until you delete it. Original PDF files are processed in memory and are not permanently stored on our servers. You may request deletion of your data at any time by contacting hello@billtiq.com.
       </Section>
 
       <Section title="7. Your Rights">
@@ -79,7 +79,7 @@ function PrivacyContent() {
         • Request deletion of your data<br />
         • Export your data<br />
         • Withdraw consent at any time<br /><br />
-        To exercise these rights, contact us at hello@apflow.app.
+        To exercise these rights, contact us at hello@billtiq.com.
       </Section>
 
       <Section title="8. Cookies">
@@ -87,15 +87,15 @@ function PrivacyContent() {
       </Section>
 
       <Section title="9. Third-Party Services">
-        APFlow integrates with third-party services including Anthropic (AI processing), Supabase (database), Stripe (payments), and Resend (email). Each service has its own privacy policy governing their data handling.
+        Billtiq integrates with third-party services including Anthropic (AI processing), Supabase (database), Stripe (payments), and Resend (email). Each service has its own privacy policy governing their data handling.
       </Section>
 
       <Section title="10. Changes to This Policy">
-        We may update this Privacy Policy periodically. We will notify you of significant changes via email or in-app notification. Continued use of APFlow after changes constitutes acceptance of the updated policy.
+        We may update this Privacy Policy periodically. We will notify you of significant changes via email or in-app notification. Continued use of Billtiq after changes constitutes acceptance of the updated policy.
       </Section>
 
       <Section title="11. Contact Us">
-        For privacy-related questions or requests, contact us at hello@apflow.app.
+        For privacy-related questions or requests, contact us at hello@billtiq.com.
       </Section>
     </div>
   );
@@ -105,11 +105,11 @@ function TermsContent() {
   return (
     <div>
       <Section title="1. Acceptance of Terms">
-        By accessing or using APFlow at apflow.app, you agree to be bound by these Terms of Service. If you do not agree, please do not use our service. These terms apply to all users, including individuals and organizations.
+        By accessing or using Billtiq at billtiq.com, you agree to be bound by these Terms of Service. If you do not agree, please do not use our service. These terms apply to all users, including individuals and organizations.
       </Section>
 
       <Section title="2. Description of Service">
-        APFlow is an AI-powered invoice processing platform that extracts data from invoice documents, matches them against purchase orders, detects duplicates, and integrates with ERP systems. We provide this service on a subscription basis.
+        Billtiq is an AI-powered invoice processing platform that extracts data from invoice documents, matches them against purchase orders, detects duplicates, and integrates with ERP systems. We provide this service on a subscription basis.
       </Section>
 
       <Section title="3. Account Registration">
@@ -119,7 +119,7 @@ function TermsContent() {
       <Section title="4. Acceptable Use">
         You agree NOT to:<br /><br />
         • Upload invoices or documents you do not have rights to process<br />
-        • Use APFlow for any illegal or fraudulent activity<br />
+        • Use Billtiq for any illegal or fraudulent activity<br />
         • Attempt to reverse engineer or hack the platform<br />
         • Share your account credentials with unauthorized users<br />
         • Upload malicious files or content<br />
@@ -127,27 +127,27 @@ function TermsContent() {
       </Section>
 
       <Section title="5. Subscription and Billing">
-        APFlow offers Free, Starter ($299/month), Growth ($799/month), and Enterprise plans. Subscriptions are billed monthly. You may upgrade or downgrade at any time. Refunds are provided at our discretion. We reserve the right to change pricing with 30 days notice.
+        Billtiq offers Free, Starter ($299/month), Growth ($799/month), and Enterprise plans. Subscriptions are billed monthly. You may upgrade or downgrade at any time. Refunds are provided at our discretion. We reserve the right to change pricing with 30 days notice.
       </Section>
 
       <Section title="6. Data and Privacy">
-        You retain ownership of all invoice data you upload. By using APFlow, you grant us a limited license to process your data for the purpose of providing the service. We handle your data in accordance with our Privacy Policy.
+        You retain ownership of all invoice data you upload. By using Billtiq, you grant us a limited license to process your data for the purpose of providing the service. We handle your data in accordance with our Privacy Policy.
       </Section>
 
       <Section title="7. AI Processing Accuracy">
-        APFlow uses AI to extract invoice data. While we strive for high accuracy, AI extraction is not 100% perfect. You are responsible for reviewing and verifying all extracted data before approving invoices. APFlow is not liable for errors in AI-extracted data that are not caught during review.
+        Billtiq uses AI to extract invoice data. While we strive for high accuracy, AI extraction is not 100% perfect. You are responsible for reviewing and verifying all extracted data before approving invoices. Billtiq is not liable for errors in AI-extracted data that are not caught during review.
       </Section>
 
       <Section title="8. ERP Integrations">
-        APFlow integrates with third-party ERP systems. We are not responsible for data loss, errors, or issues caused by third-party ERP systems. You are responsible for ensuring your ERP credentials are kept secure.
+        Billtiq integrates with third-party ERP systems. We are not responsible for data loss, errors, or issues caused by third-party ERP systems. You are responsible for ensuring your ERP credentials are kept secure.
       </Section>
 
       <Section title="9. Limitation of Liability">
-        APFlow is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from use of our service. Our total liability is limited to the amount you paid us in the last 3 months.
+        Billtiq is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from use of our service. Our total liability is limited to the amount you paid us in the last 3 months.
       </Section>
 
       <Section title="10. Intellectual Property">
-        APFlow and its original content, features, and functionality are owned by APFlow and protected by intellectual property laws. You may not copy, modify, or distribute our platform without written permission.
+        Billtiq and its original content, features, and functionality are owned by Billtiq and protected by intellectual property laws. You may not copy, modify, or distribute our platform without written permission.
       </Section>
 
       <Section title="11. Termination">
@@ -163,7 +163,7 @@ function TermsContent() {
       </Section>
 
       <Section title="14. Contact">
-        For questions about these terms, contact us at hello@apflow.app.
+        For questions about these terms, contact us at hello@billtiq.com.
       </Section>
     </div>
   );

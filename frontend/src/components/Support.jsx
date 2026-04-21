@@ -9,15 +9,15 @@ const FAQS = [
   },
   {
     q: "How do I add a PO number when the invoice doesn't have one?",
-    a: "Ask your supplier to mention the PO number in the email body when sending the invoice — for example \"Please process against PO-2024-001\". APFlow reads the email body and extracts the PO number automatically, even if it's not printed on the invoice PDF.",
+    a: "Ask your supplier to mention the PO number in the email body when sending the invoice — for example \"Please process against PO-2024-001\". Billtiq reads the email body and extracts the PO number automatically, even if it's not printed on the invoice PDF.",
   },
   {
     q: "Can I process multiple invoices at once?",
-    a: "Yes — use Batch Upload to upload a ZIP file containing multiple PDF invoices. APFlow processes each one automatically. Alternatively, your suppliers can email a ZIP file to your connected Gmail and the Email Agent handles it automatically.",
+    a: "Yes — use Batch Upload to upload a ZIP file containing multiple PDF invoices. Billtiq processes each one automatically. Alternatively, your suppliers can email a ZIP file to your connected Gmail and the Email Agent handles it automatically.",
   },
   {
     q: "Why does my invoice show \"Unmatched\" for PO?",
-    a: "APFlow couldn't find a matching PO in your Purchase Orders list. Make sure you've added the PO in APFlow under Purchase Orders, and that the PO number matches exactly. You can also ask your supplier to mention the PO number in the email body.",
+    a: "Billtiq couldn't find a matching PO in your Purchase Orders list. Make sure you've added the PO in Billtiq under Purchase Orders, and that the PO number matches exactly. You can also ask your supplier to mention the PO number in the email body.",
   },
   {
     q: "How do I connect Oracle Fusion?",
@@ -28,8 +28,8 @@ const FAQS = [
     a: "Go to Team Management (Admin only) → Invite Member → enter their work email and role. They'll receive an invite email. If they don't see it, check their spam folder. Members can view and process invoices; only Admins can manage billing and team settings.",
   },
   {
-    q: "My PDF won't upload — what format does APFlow accept?",
-    a: "APFlow accepts standard PDF files up to 10MB. If your PDF is password-protected, remove the password first. For scanned invoices, make sure the scan resolution is at least 150 DPI. Image files (JPG, PNG) are also supported.",
+    q: "My PDF won't upload — what format does Billtiq accept?",
+    a: "Billtiq accepts standard PDF files up to 10MB. If your PDF is password-protected, remove the password first. For scanned invoices, make sure the scan resolution is at least 150 DPI. Image files (JPG, PNG) are also supported.",
   },
   {
     q: "How do I cancel or change my subscription?",
@@ -76,9 +76,9 @@ export default function Support({ user, team, onBack }) {
       setSent(true);
     } catch (err) {
       // Fallback: open mailto
-      const subject = encodeURIComponent(`[${form.issueType}] Support Request — APFlow`);
-      const body = encodeURIComponent(`Hi APFlow Support,\n\nIssue: ${form.issueType}\n\n${form.message}\n\nAccount: ${form.email}\nTeam: ${team?.name || "No team"}`);
-      window.open(`mailto:help@apflow.app?subject=${subject}&body=${body}`);
+      const subject = encodeURIComponent(`[${form.issueType}] Support Request — Billtiq`);
+      const body = encodeURIComponent(`Hi Billtiq Support,\n\nIssue: ${form.issueType}\n\n${form.message}\n\nAccount: ${form.email}\nTeam: ${team?.name || "No team"}`);
+      window.open(`mailto:help@billtiq.com?subject=${subject}&body=${body}`);
       setSent(true);
     }
     setSending(false);
@@ -182,7 +182,7 @@ export default function Support({ user, team, onBack }) {
           <span style={{ fontSize: 20 }}>✉️</span>
           <div>
             <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2 }}>Email support</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>help@apflow.app</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e" }}>help@billtiq.com</div>
           </div>
         </div>
         <div style={{ background: "#f9fafb", borderRadius: 12, padding: "16px", display: "flex", alignItems: "center", gap: 12 }}>

@@ -8,7 +8,7 @@ const PLANS = [
     name: "Starter",
     price: "$0",
     period: "/month",
-    desc: "Try APFlow with no commitment",
+    desc: "Try Billtiq with no commitment",
     docs: 50,
     features: ["50 invoices/month", "1 ERP integration", "AI extraction", "Supplier portal"],
     cta: "Current Plan",
@@ -112,7 +112,7 @@ export default function Billing({ user, team, onBack }) {
 
   const checkout = async (planId) => {
     if (planId === "enterprise") {
-      window.open("mailto:hello@apflow.app?subject=Enterprise Plan Inquiry", "_blank");
+      window.open("mailto:hello@billtiq.com?subject=Enterprise Plan Inquiry", "_blank");
       return;
     }
     setCheckoutLoading(planId);
@@ -269,7 +269,7 @@ export default function Billing({ user, team, onBack }) {
             {/* Security note */}
             <div className="billing-security">
               <span>🔒</span>
-              <span>Payments are processed securely by Stripe. APFlow never stores your card details.</span>
+              <span>Payments are processed securely by Stripe. Billtiq never stores your card details.</span>
             </div>
           </>
         )}

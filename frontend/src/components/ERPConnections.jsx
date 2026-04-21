@@ -265,7 +265,7 @@ export default function ERPConnections({ user, team, onBack }) {
 
       {/* How it works */}
       <div style={{ background: "#fff7f4", border: "1px solid #fcd9cc", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
-        <strong>How it works:</strong> Connect your ERP below → when you approve an invoice in APFlow, it automatically creates a Bill/Invoice in your ERP system with all extracted data. No copy-pasting needed.
+        <strong>How it works:</strong> Connect your ERP below → when you approve an invoice in Billtiq, it automatically creates a Bill/Invoice in your ERP system with all extracted data. No copy-pasting needed.
       </div>
 
       {/* ERP Cards */}
