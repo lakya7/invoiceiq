@@ -208,23 +208,7 @@ export default function App() {
       });
       const result = await res.json();
 
-      // Save invoice to Supabase
-      await supabase.from("invoices").insert({
-        user_id: user.id,
-        team_id: team?.id,
-        invoice_number: data.invoiceNumber,
-        vendor_name: data.vendor?.name,
-        invoice_date: data.invoiceDate,
-        due_date: data.dueDate,
-        total: data.total,
-        status: "pushed",
-        match_status: match?.matchStatus || "unmatched",
-        match_details: match,
-        po_id: match?.matchedPoId || null,
-        erp_reference: result.erpReference,
-        submitted_by: user.id,
-        raw_data: data,
-      });
+      // Backend handles the invoice insert — no duplicate needed here
 
       setErpResult(result);
       setStage(STAGES.SUCCESS);
