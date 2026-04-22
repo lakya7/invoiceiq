@@ -26,7 +26,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [view, setView] = useState("dashboard");
   const [team, setTeam] = useState(null); // active team
-  const [teams, setTeams] = useState([]);
+  const [teams, setTeams] = useState(null); // null = loading, [] = loaded but empty, [...] = loaded with data
 
   // Invoice flow state
   const [stage, setStage] = useState(STAGES.UPLOAD);
@@ -86,18 +86,30 @@ export default function App() {
     }
   }, [user]);
 
-  const loadTeams = async () => {
+  const loadTeams = async (retries = 3) => {
     try {
       const res = await fetch(`${API}/api/teams/user/${user.id}`);
       const data = await res.json();
-      if (data.success && data.teams.length > 0) {
-        setTeams(data.teams);
-        setTeam(data.teams[0]); // default to first team
+      if (data.success) {
+        setTeams(data.teams || []);
+        if (data.teams && data.teams.length > 0) {
+          setTeam(data.teams[0]); // default to first team
+        }
+      } else {
+        setTeams([]); // API responded but no success
       }
-    } catch (e) { console.error("Team load error:", e); }
+    } catch (e) {
+      console.error("Team load error:", e);
+      if (retries > 0) {
+        // Retry after 2 seconds (handles backend cold starts)
+        setTimeout(() => loadTeams(retries - 1), 2000);
+      } else {
+        setTeams([]); // give up after retries, show empty state
+      }
+    }
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); setUser(null); setTeam(null); setTeams([]); };
+  const handleSignOut = async () => { await supabase.auth.signOut(); setUser(null); setTeam(null); setTeams(null); };
 
   // Invoice processing flow
   const handleFileSelected = async (file) => {
