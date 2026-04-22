@@ -55,9 +55,9 @@ export default function App() {
   useEffect(() => {
     if (user) {
       loadTeams();
-      // Check for invite token in URL
+      // Check for invite token in URL OR localStorage (survives OAuth redirect)
       const params = new URLSearchParams(window.location.search);
-      const inviteToken = params.get("invite");
+      const inviteToken = params.get("invite") || localStorage.getItem("pending_invite_token");
       const emailAgentConnected = params.get("emailAgentConnected");
       const emailAgentError = params.get("emailAgentError");
 
@@ -67,11 +67,18 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: inviteToken, userId: user.id })
         }).then(r => r.json()).then(data => {
+          // Always clear the localStorage token after attempting - success or fail
+          localStorage.removeItem("pending_invite_token");
           if (data.success) {
             window.history.replaceState({}, "", "/login");
             loadTeams();
+          } else if (data.error) {
+            console.warn("Invite accept failed:", data.error);
           }
-        }).catch(console.error);
+        }).catch(err => {
+          console.error("Invite accept error:", err);
+          localStorage.removeItem("pending_invite_token");
+        });
       }
 
       if (emailAgentConnected) {

@@ -33,6 +33,10 @@ export default function Auth() {
   const handleGoogle = async () => {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
+    // Save invite token to localStorage so it survives the OAuth redirect
+    if (inviteToken) {
+      localStorage.setItem("pending_invite_token", inviteToken);
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

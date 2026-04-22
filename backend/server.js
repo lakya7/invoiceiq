@@ -565,7 +565,7 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
+    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
   </div>
   <div style="padding:32px;">
     <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">You've been invited! 🎉</h2>
@@ -573,7 +573,7 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
       <strong style="color:#0a0f1e;">${inviterEmail}</strong> has invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${role}</strong>.
     </p>
     <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
-    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have an Billtiq account, you'll be asked to create one.</p>
+    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have a Billtiq account, you'll be asked to create one.</p>
   </div>
 </div>`
     });
