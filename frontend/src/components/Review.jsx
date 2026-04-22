@@ -172,26 +172,124 @@ export default function Review({ data, filePreview, onApprove, onBack, team, pdf
               <thead>
                 <tr>
                   <th>Description</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Amount</th>
+                  <th style={{ width: 70 }}>Qty</th>
+                  <th style={{ width: 110 }}>Unit Price</th>
+                  <th style={{ width: 110 }}>Amount</th>
+                  <th style={{ width: 30 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {(form.lineItems || []).map((item, i) => (
                   <tr key={i}>
-                    <td>{item.description}</td>
-                    <td>{item.quantity}</td>
-                    <td>{sym}{Number(item.unitPrice || 0).toFixed(2)}</td>
-                    <td>{sym}{Number(item.amount || 0).toFixed(2)}</td>
+                    <td>
+                      <input
+                        style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, fontFamily: "inherit" }}
+                        value={item.description || ""}
+                        onChange={(e) => {
+                          const newItems = [...form.lineItems];
+                          newItems[i] = { ...newItems[i], description: e.target.value };
+                          set("lineItems", newItems);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, fontFamily: "inherit" }}
+                        value={item.quantity || 0}
+                        onChange={(e) => {
+                          const qty = parseFloat(e.target.value) || 0;
+                          const newItems = [...form.lineItems];
+                          newItems[i] = { ...newItems[i], quantity: qty, amount: qty * (newItems[i].unitPrice || 0) };
+                          set("lineItems", newItems);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, fontFamily: "inherit" }}
+                        value={item.unitPrice || 0}
+                        onChange={(e) => {
+                          const price = parseFloat(e.target.value) || 0;
+                          const newItems = [...form.lineItems];
+                          newItems[i] = { ...newItems[i], unitPrice: price, amount: (newItems[i].quantity || 0) * price };
+                          set("lineItems", newItems);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        step="0.01"
+                        style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, fontFamily: "inherit", fontWeight: 600 }}
+                        value={item.amount || 0}
+                        onChange={(e) => {
+                          const newItems = [...form.lineItems];
+                          newItems[i] = { ...newItems[i], amount: parseFloat(e.target.value) || 0 };
+                          set("lineItems", newItems);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          const newItems = form.lineItems.filter((_, idx) => idx !== i);
+                          set("lineItems", newItems);
+                        }}
+                        style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 16 }}
+                        title="Remove line"
+                      >×</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <button
+              onClick={() => {
+                const newItems = [...(form.lineItems || []), { description: "", quantity: 1, unitPrice: 0, amount: 0 }];
+                set("lineItems", newItems);
+              }}
+              style={{ marginTop: 10, background: "none", border: "1px dashed #9ca3af", color: "#6b7280", padding: "8px 16px", borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+            >+ Add Line Item</button>
             <div className="totals">
-              <div className="total-row"><span>Subtotal</span><span>{sym}{Number(form.subtotal || 0).toFixed(2)}</span></div>
-              <div className="total-row"><span>Tax</span><span>{sym}{Number(form.tax || 0).toFixed(2)}</span></div>
-              <div className="total-row total-grand"><span>Total</span><span>{sym}{Number(form.total || 0).toFixed(2)}</span></div>
+              <div className="total-row">
+                <span>Subtotal</span>
+                <span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    style={{ width: 120, border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, textAlign: "right", fontFamily: "inherit" }}
+                    value={form.subtotal || 0}
+                    onChange={(e) => set("subtotal", parseFloat(e.target.value) || 0)}
+                  />
+                </span>
+              </div>
+              <div className="total-row">
+                <span>Tax</span>
+                <span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    style={{ width: 120, border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 13, textAlign: "right", fontFamily: "inherit" }}
+                    value={form.tax || 0}
+                    onChange={(e) => set("tax", parseFloat(e.target.value) || 0)}
+                  />
+                </span>
+              </div>
+              <div className="total-row total-grand">
+                <span>Total</span>
+                <span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    style={{ width: 120, border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", fontSize: 14, textAlign: "right", fontWeight: 700, fontFamily: "inherit" }}
+                    value={form.total || 0}
+                    onChange={(e) => set("total", parseFloat(e.target.value) || 0)}
+                  />
+                </span>
+              </div>
             </div>
           </div>
         </div>
