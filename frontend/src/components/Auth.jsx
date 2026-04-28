@@ -120,8 +120,8 @@ export default function Auth() {
           </div>
           <div style={{ marginTop: 16, fontSize: 12, color: "#7a7a6e", textAlign: "center" }}>
             By continuing you agree to our{" "}
-            <a href="/terms" style={{ color: "#e8531a", textDecoration: "none" }}>Terms</a>{" "}and{" "}
-            <a href="/privacy" style={{ color: "#e8531a", textDecoration: "none" }}>Privacy Policy</a>
+            <a href="/terms" style={{ color: "#0a3d2f", textDecoration: "none" }}>Terms</a>{" "}and{" "}
+            <a href="/privacy" style={{ color: "#0a3d2f", textDecoration: "none" }}>Privacy Policy</a>
           </div>
         </div>
       </div>

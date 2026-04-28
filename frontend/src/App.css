@@ -1,9 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
 :root {
-  --ink: #0a0f1e;
+  --ink: #0a3d2f;
+  --ink-deep: #062b21;
+  --teal: #0d4f3c;
+  --teal-light: #1a6b56;
   --paper: #f5f2eb;
-  --accent: #e8531a;
+  --accent: #f5b86e;
+  --accent-light: #ffce8a;
   --accent2: #1a6be8;
   --muted: #7a7a6e;
   --card: #ffffff;
@@ -35,7 +39,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
   font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif;
   transition: background 0.2s;
 }
-.reset-btn:hover { background: var(--accent); }
+.reset-btn:hover { background: var(--ink); }
 
 /* PROGRESS */
 .progress-bar {
@@ -50,7 +54,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 600; transition: all 0.3s; flex-shrink: 0;
 }
-.progress-step.active .progress-dot { background: var(--accent); color: #fff; }
+.progress-step.active .progress-dot { background: var(--ink); color: #fff; }
 .progress-step.done .progress-dot { background: var(--success); color: #fff; }
 .progress-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .progress-step.active .progress-label { color: var(--ink); font-weight: 500; }
@@ -147,8 +151,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .review-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; flex-wrap: wrap; gap: 12px; }
 .btn-back { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 12px 22px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 14px; transition: all 0.2s; }
 .btn-back:hover { border-color: var(--ink); color: var(--ink); }
-.btn-approve { background: var(--accent); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; transition: all 0.2s; box-shadow: 0 4px 16px rgba(232,83,26,0.3); }
-.btn-approve:hover { background: #d44a12; transform: translateY(-1px); }
+.btn-approve { background: var(--ink); color: #fff; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 16px rgba(13,79,60,0.25); }
+.btn-approve:hover { background: var(--ink-deep); transform: translateY(-1px); }
 
 /* SUCCESS */
 .success-page { display: flex; justify-content: center; align-items: center; min-height: 400px; }
@@ -205,8 +209,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .auth-error { background: #fee2e2; color: #dc2626; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
 .auth-message { background: #dcfce7; color: #16a34a; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
 
-.auth-submit { width: 100%; background: var(--accent); color: #fff; border: none; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 6px; }
-.auth-submit:hover:not(:disabled) { background: #d44a12; }
+.auth-submit { width: 100%; background: var(--ink); color: #fff; border: none; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 6px; }
+.auth-submit:hover:not(:disabled) { background: var(--ink-deep); }
 .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .auth-switch { text-align: center; font-size: 13px; color: var(--muted); margin-top: 20px; }
@@ -224,14 +228,14 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .nav-item { padding: 10px 14px; border-radius: 8px; font-size: 14px; color: rgba(245,242,235,0.5); cursor: pointer; transition: all 0.2s; }
 .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--paper); }
-.nav-item.active { background: rgba(232,83,26,0.15); color: var(--accent); font-weight: 500; }
+.nav-item.active { background: rgba(245,184,110,0.15); color: var(--accent); font-weight: 500; }
 .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 14px; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); }
-.sidebar-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.sidebar-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
 .sidebar-user-info { flex: 1; min-width: 0; }
 .sidebar-user-name { font-size: 13px; font-weight: 500; color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-user-email { font-size: 11px; color: rgba(245,242,235,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .signout-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(245,242,235,0.5); cursor: pointer; font-size: 11px; font-family: 'DM Sans', sans-serif; padding: 4px 8px; border-radius: 5px; transition: all 0.2s; flex-shrink: 0; }
-.signout-btn:hover { background: rgba(232,83,26,0.2); color: #f87c4f; border-color: rgba(232,83,26,0.3); }
+.signout-btn:hover { background: rgba(245,184,110,0.2); color: #ffce8a; border-color: rgba(245,184,110,0.3); }
 
 .dash-main { background: var(--paper); padding: 36px 40px; overflow-y: auto; }
 @media (max-width: 768px) { .dash-main { padding: 24px 16px; } }
@@ -307,7 +311,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .toggle-label { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
 .toggle-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
 .toggle-btn { width: 44px; height: 24px; border-radius: 12px; border: none; background: var(--border); cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
-.toggle-btn.on { background: var(--accent); }
+.toggle-btn.on { background: var(--ink); }
 .toggle-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
 .toggle-btn.on .toggle-knob { transform: translateX(20px); }
 
@@ -340,22 +344,22 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .erp-status { font-size: 11px; }
 .erp-status.connected { color: var(--success); }
 .erp-status.coming_soon { color: var(--muted); }
-.erp-check { position: absolute; top: 8px; right: 8px; background: var(--accent); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.erp-check { position: absolute; top: 8px; right: 8px; background: var(--ink); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
 .profile-avatar-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-.profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; font-family: 'Syne', sans-serif; flex-shrink: 0; }
+.profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; font-family: 'Syne', sans-serif; flex-shrink: 0; }
 .profile-name { font-weight: 600; font-size: 15px; }
 .profile-email { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-.plan-display { background: #0a0f1e; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-.plan-badge { display: inline-block; background: rgba(232,83,26,0.2); color: #f87c4f; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.plan-display { background: #0a3d2f; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.plan-badge { display: inline-block; background: rgba(245,184,110,0.2); color: #ffce8a; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
 .plan-price { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #fff; }
 .plan-price span { font-size: 16px; font-weight: 400; color: rgba(245,242,235,0.5); }
 .plan-desc { font-size: 13px; color: rgba(245,242,235,0.5); margin-top: 4px; }
 .usage-bar-wrap { }
 .usage-bar-header { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .usage-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-.usage-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.6s ease; }
+.usage-bar-fill { height: 100%; background: var(--ink); border-radius: 4px; transition: width 0.6s ease; }
 .billing-plans { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 .billing-plan-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
 .billing-plan-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
@@ -369,7 +373,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 
 /* Toast */
 .settings-toast { position: fixed; bottom: 28px; right: 28px; padding: 13px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; z-index: 999; animation: slideUp 0.3s ease; box-shadow: 0 8px 28px rgba(0,0,0,0.12); }
-.settings-toast.success { background: #0a0f1e; color: #fff; }
+.settings-toast.success { background: #0a3d2f; color: #fff; }
 .settings-toast.error { background: #dc2626; color: #fff; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -395,7 +399,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .members-list { display: flex; flex-direction: column; }
 .member-row { display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
 .member-row:last-child { border-bottom: none; }
-.member-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #f87c4f); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.member-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--teal-light)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
 .member-info { flex: 1; min-width: 0; }
 .member-email { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 7px; }
 .member-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -425,7 +429,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .po-stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
 
 /* Onboarding card */
-.onboarding-card { background: linear-gradient(135deg, #0a0f1e, #1a1a30); border-radius: 14px; padding: 40px; text-align: center; color: var(--paper); margin-bottom: 24px; }
+.onboarding-card { background: linear-gradient(135deg, #0a3d2f, #125c46); border-radius: 14px; padding: 40px; text-align: center; color: var(--paper); margin-bottom: 24px; }
 
 /* ── BILLING ──────────────────────────────────────── */
 .billing-page { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
@@ -442,7 +446,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .billing-current-name { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 4px; }
 .billing-current-price { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; line-height: 1; }
 .billing-current-price span { font-size: 16px; font-weight: 400; color: rgba(245,242,235,0.5); }
-.trial-badge { display: inline-block; background: rgba(232,83,26,0.2); color: #f87c4f; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-top: 12px; }
+.trial-badge { display: inline-block; background: rgba(245,184,110,0.2); color: #ffce8a; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-top: 12px; }
 .cancel-badge { display: inline-block; background: rgba(245,158,11,0.2); color: #fbbf24; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-top: 12px; }
 .pastdue-badge { display: inline-block; background: rgba(220,38,38,0.2); color: #f87171; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-top: 12px; }
 
@@ -457,7 +461,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .billing-plan-card-full.highlighted { border-color: var(--accent); background: linear-gradient(180deg, #fff7f4 0%, #fff 40%); }
 .billing-plan-card-full.current { opacity: 0.85; }
 
-.popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 14px; border-radius: 20px; white-space: nowrap; }
+.popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 14px; border-radius: 20px; white-space: nowrap; }
 .current-badge { position: absolute; top: 12px; right: 12px; background: #dcfce7; color: #16a34a; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
 
 .bpc-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
