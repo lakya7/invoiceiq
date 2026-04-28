@@ -65,6 +65,14 @@ app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","
 app.use(express.json());
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// Helper: Determine final PO match status. If no PO at all, mark as 'non_po'
+// (it's a direct expense, not a missing match). Otherwise use the matcher's result.
+function resolveMatchStatus(invoiceData, matchResult) {
+  const po = (invoiceData?.poNumber || "").toString().trim();
+  if (!po) return "non_po";
+  return matchResult?.matchStatus || "unmatched";
+}
+
 // ── DUPLICATE CHECK ─────────────────────────────────────────────
 app.post("/api/check-duplicate", async (req, res) => {
   try {
@@ -358,7 +366,7 @@ app.post("/api/push-erp", async (req, res) => {
             total: invoiceData.total,
             currency: invoiceData.currency || "USD",
             status: "pending",
-            match_status: matchResult?.matchStatus || "unmatched",
+            match_status: resolveMatchStatus(invoiceData, matchResult),
             erp_reference: null,
             raw_data: invoiceData,
             agent_decision: "pending_approval",
@@ -438,7 +446,7 @@ app.post("/api/push-erp", async (req, res) => {
           total: invoiceData.total,
           currency: invoiceData.currency || "USD",
           status: "pushed",
-          match_status: matchResult?.matchStatus || "unmatched",
+          match_status: resolveMatchStatus(invoiceData, matchResult),
           erp_reference: erpReference,
           raw_data: invoiceData,
           agent_decision: agentDecision?.decision,
@@ -686,6 +694,70 @@ app.get("/api/invoices/:invoiceId/comments", async (req, res) => {
       .select("*").eq("invoice_id", req.params.invoiceId)
       .order("created_at", { ascending: true });
     res.json({ success: true, comments: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Mark invoice as paid (manual - admin only)
+app.post("/api/invoices/:invoiceId/mark-paid", async (req, res) => {
+  try {
+    const { teamId, userId, userEmail, paymentDate, paymentMethod, paymentReference, paidAmount } = req.body;
+    const invoiceId = req.params.invoiceId;
+
+    // Verify user is admin of this team
+    const { data: member } = await supabase
+      .from("team_members")
+      .select("role, status")
+      .eq("team_id", teamId)
+      .eq("user_id", userId)
+      .single();
+
+    if (!member || member.role !== "admin" || member.status !== "active") {
+      return res.status(403).json({ error: "Only team admins can mark invoices as paid" });
+    }
+
+    // Get the invoice to determine payment status (full vs partial)
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("total, payment_status")
+      .eq("id", invoiceId)
+      .single();
+
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+
+    const total = Number(invoice.total) || 0;
+    const paid = Number(paidAmount) || total;
+    let newStatus = "paid";
+    if (paid > 0 && paid < total) newStatus = "partial";
+
+    // Update invoice
+    const { data: updated, error } = await supabase
+      .from("invoices")
+      .update({
+        payment_status: newStatus,
+        paid_amount: paid,
+        payment_date: paymentDate || new Date().toISOString().slice(0, 10),
+        payment_method: paymentMethod || null,
+        payment_reference: paymentReference || null,
+        last_synced_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceId)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    // Log audit event
+    await supabase.from("invoice_audit_log").insert({
+      invoice_id: invoiceId,
+      team_id: teamId,
+      user_id: userId,
+      user_email: userEmail,
+      action: "payment_confirmed",
+      detail: `Marked as ${newStatus}: ${paid} via ${paymentMethod || "unspecified"}${paymentReference ? ` (ref: ${paymentReference})` : ""}`,
+      actor: userEmail,
+    });
+
+    res.json({ success: true, invoice: updated });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

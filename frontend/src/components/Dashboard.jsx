@@ -11,11 +11,21 @@ const STATUS_COLORS = {
 };
 
 const MATCH_COLORS = {
-  matched:   { bg:"#dcfce7", color:"#16a34a" },
-  partial:   { bg:"#fef9c3", color:"#92400e" },
-  mismatch:  { bg:"#fee2e2", color:"#dc2626" },
-  unmatched: { bg:"#f3f4f6", color:"#6b7280" },
-  no_po:     { bg:"#f3f4f6", color:"#6b7280" },
+  matched:   { bg:"#dcfce7", color:"#16a34a", label:"Matched" },
+  partial:   { bg:"#fef9c3", color:"#92400e", label:"Partial" },
+  mismatch:  { bg:"#fee2e2", color:"#dc2626", label:"Mismatch" },
+  unmatched: { bg:"#fee2e2", color:"#dc2626", label:"Unmatched" },
+  non_po:    { bg:"#e0e7ff", color:"#4338ca", label:"Non-PO" },
+  no_po:     { bg:"#e0e7ff", color:"#4338ca", label:"Non-PO" },
+};
+
+const PAYMENT_COLORS = {
+  unpaid:    { bg:"#ffedd5", color:"#c2410c", label:"Unpaid" },
+  scheduled: { bg:"#dbeafe", color:"#1d4ed8", label:"Scheduled" },
+  partial:   { bg:"#fef9c3", color:"#92400e", label:"Partial" },
+  paid:      { bg:"#dcfce7", color:"#16a34a", label:"Paid" },
+  overdue:   { bg:"#fee2e2", color:"#dc2626", label:"Overdue" },
+  cancelled: { bg:"#f3f4f6", color:"#6b7280", label:"Cancelled" },
 };
 
 function StatCard({ icon, label, value, sub, accent, multiLine }) {
@@ -69,6 +79,11 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [auditInvoice, setAuditInvoice] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+
+  // Mark-paid modal state
+  const [paidInvoice, setPaidInvoice] = useState(null);
+  const [paidForm, setPaidForm] = useState({ paymentDate: "", paymentMethod: "ACH", paymentReference: "", paidAmount: "" });
+  const [savingPaid, setSavingPaid] = useState(false);
 
   const firstName = user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0];
 
@@ -240,6 +255,48 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     setCommentInvoice(inv);
     setCommentText("");
     loadComments(inv.id);
+  };
+
+  // Mark-paid handlers
+  const openMarkPaid = (inv) => {
+    setPaidInvoice(inv);
+    setPaidForm({
+      paymentDate: new Date().toISOString().slice(0, 10),
+      paymentMethod: "ACH",
+      paymentReference: "",
+      paidAmount: inv.total || "",
+    });
+  };
+
+  const submitMarkPaid = async () => {
+    if (!paidInvoice) return;
+    setSavingPaid(true);
+    try {
+      const res = await fetch(`${API}/api/invoices/${paidInvoice.id}/mark-paid`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId: team.id,
+          userId: user.id,
+          userEmail: user.email,
+          paymentDate: paidForm.paymentDate,
+          paymentMethod: paidForm.paymentMethod,
+          paymentReference: paidForm.paymentReference,
+          paidAmount: parseFloat(paidForm.paidAmount) || paidInvoice.total,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update local state
+        setInvoices(prev => prev.map(i => i.id === paidInvoice.id ? { ...i, ...data.invoice } : i));
+        setPaidInvoice(null);
+      } else {
+        alert(data.error || "Failed to mark as paid");
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+    setSavingPaid(false);
   };
 
   // Setup completion for banner
@@ -442,6 +499,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                     <th onClick={() => handleSort("total")} style={{ cursor: "pointer", userSelect: "none" }}>Amount{sortIcon("total")}</th>
                     <th onClick={() => handleSort("match_status")} style={{ cursor: "pointer", userSelect: "none" }}>PO Match{sortIcon("match_status")}</th>
                     <th onClick={() => handleSort("status")} style={{ cursor: "pointer", userSelect: "none" }}>Status{sortIcon("status")}</th>
+                    <th onClick={() => handleSort("payment_status")} style={{ cursor: "pointer", userSelect: "none" }}>Payment{sortIcon("payment_status")}</th>
                     <th onClick={() => handleSort("erp_reference")} style={{ cursor: "pointer", userSelect: "none" }}>ERP Ref{sortIcon("erp_reference")}</th>
                     <th>Actions</th>
                   </tr>
@@ -450,16 +508,20 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                   {filtered.map(inv => {
                     const sc = STATUS_COLORS[inv.status] || STATUS_COLORS.pending;
                     const mc = MATCH_COLORS[inv.match_status] || MATCH_COLORS.unmatched;
+                    const pc = PAYMENT_COLORS[inv.payment_status] || PAYMENT_COLORS.unpaid;
                     const cur = inv.raw_data?.currency || "USD";
                     const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
+                    const isAdmin = team?.role === "admin";
+                    const showMarkPaid = isAdmin && inv.status === "pushed" && inv.payment_status !== "paid" && inv.payment_status !== "cancelled";
                     return (
                       <tr key={inv.id}>
                         <td className="inv-num">{inv.invoice_number||"—"}</td>
                         <td className="inv-vendor">{inv.vendor_name||"—"}</td>
                         <td className="inv-date">{inv.invoice_date||"—"}</td>
                         <td className="inv-amount">{sym}{Number(inv.total||0).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-                        <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{(inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
+                        <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
                         <td><span className="status-badge" style={{background:sc.bg,color:sc.color}}>{inv.status}</span></td>
+                        <td>{inv.status === "pushed" ? <span className="status-badge" style={{background:pc.bg,color:pc.color}}>{pc.label}</span> : <span style={{color:"#9ca3af",fontSize:12}}>—</span>}</td>
                         <td className="inv-erp">{inv.erp_reference||"—"}</td>
                         <td>
                           {inv.status === "pending" && (
@@ -483,7 +545,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                             </div>
                           )}
                           {inv.status !== "pending" && (
-                            <div style={{ display:"flex", gap:6 }}>
+                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                              {showMarkPaid && (
+                                <button
+                                  onClick={() => openMarkPaid(inv)}
+                                  style={{ background:"#16a34a", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                                >💰 Mark Paid</button>
+                              )}
                               <button
                                 onClick={() => openComments(inv)}
                                 style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
@@ -636,6 +704,91 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                 </button>
               </div>
               <div style={{ fontSize:11, color:"#9ca3af", marginTop:6 }}>Tip: Ctrl+Enter to save quickly</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MARK AS PAID MODAL */}
+      {paidInvoice && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+          onClick={(e) => e.target === e.currentTarget && setPaidInvoice(null)}>
+          <div style={{ background:"white", borderRadius:20, padding:32, maxWidth:480, width:"100%", fontFamily:"DM Sans, sans-serif" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+              <div>
+                <div style={{ fontFamily:"Syne, sans-serif", fontWeight:800, fontSize:18, color:"#0a0f1e" }}>
+                  Mark as Paid 💰
+                </div>
+                <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>
+                  Invoice #{paidInvoice.invoice_number} · {paidInvoice.vendor_name}
+                </div>
+              </div>
+              <button onClick={() => setPaidInvoice(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
+            </div>
+
+            <div style={{ display:"grid", gap:14 }}>
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:"#374151", marginBottom:6, display:"block" }}>Payment Date</label>
+                <input
+                  type="date"
+                  value={paidForm.paymentDate}
+                  onChange={(e) => setPaidForm(f => ({ ...f, paymentDate: e.target.value }))}
+                  style={{ width:"100%", padding:"10px 12px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:14, fontFamily:"inherit" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:"#374151", marginBottom:6, display:"block" }}>Payment Method</label>
+                <select
+                  value={paidForm.paymentMethod}
+                  onChange={(e) => setPaidForm(f => ({ ...f, paymentMethod: e.target.value }))}
+                  style={{ width:"100%", padding:"10px 12px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:14, fontFamily:"inherit", background:"white" }}
+                >
+                  <option value="ACH">ACH</option>
+                  <option value="Wire">Wire Transfer</option>
+                  <option value="Check">Check</option>
+                  <option value="Card">Credit Card</option>
+                  <option value="Zelle">Zelle</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:"#374151", marginBottom:6, display:"block" }}>Reference / Check #</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ACH-12345 or Check #5678"
+                  value={paidForm.paymentReference}
+                  onChange={(e) => setPaidForm(f => ({ ...f, paymentReference: e.target.value }))}
+                  style={{ width:"100%", padding:"10px 12px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:14, fontFamily:"inherit" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize:12, fontWeight:600, color:"#374151", marginBottom:6, display:"block" }}>
+                  Amount Paid (full: {Number(paidInvoice.total||0).toLocaleString("en-US",{minimumFractionDigits:2})})
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={paidForm.paidAmount}
+                  onChange={(e) => setPaidForm(f => ({ ...f, paidAmount: e.target.value }))}
+                  style={{ width:"100%", padding:"10px 12px", border:"1px solid #e5e7eb", borderRadius:8, fontSize:14, fontFamily:"inherit" }}
+                />
+                <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>Enter a smaller amount for partial payment</div>
+              </div>
+            </div>
+
+            <div style={{ display:"flex", gap:10, marginTop:24 }}>
+              <button
+                onClick={() => setPaidInvoice(null)}
+                style={{ flex:1, background:"none", border:"1px solid #e5e7eb", color:"#6b7280", padding:"12px", borderRadius:10, fontSize:14, cursor:"pointer", fontFamily:"DM Sans, sans-serif" }}
+              >Cancel</button>
+              <button
+                onClick={submitMarkPaid}
+                disabled={savingPaid}
+                style={{ flex:2, background:"#16a34a", color:"white", border:"none", padding:"12px", borderRadius:10, fontSize:14, fontWeight:600, cursor: savingPaid ? "wait" : "pointer", opacity: savingPaid ? 0.7 : 1, fontFamily:"DM Sans, sans-serif" }}
+              >{savingPaid ? "Saving..." : "Confirm Payment ✓"}</button>
             </div>
           </div>
         </div>
