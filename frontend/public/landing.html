@@ -8,34 +8,50 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--orange:#e8531a;--orange-light:#f87c4f;--bg:#080c14;--bg2:#0d1220;--bg3:#111827;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:rgba(255,255,255,0.9);--muted:rgba(255,255,255,0.45);--dim:rgba(255,255,255,0.25)}
+:root{
+  --teal:#0d4f3c;
+  --teal-deep:#0a3d2f;
+  --teal-light:#1a6b56;
+  --gold:#f5b86e;
+  --gold-light:#ffce8a;
+  --orange:#f5b86e;
+  --orange-light:#ffce8a;
+  --bg:#0a3d2f;
+  --bg2:#0d4f3c;
+  --bg3:#125c46;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.14);
+  --text:rgba(255,255,255,0.94);
+  --muted:rgba(185,217,205,0.85);
+  --dim:rgba(185,217,205,0.55)
+}
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:66px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:white}
-.nav-logo span{color:var(--orange)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:66px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,61,47,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:white}
+.nav-logo span{color:var(--gold)}
 .nav-links{display:flex;align-items:center;gap:28px;list-style:none}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;transition:color 0.2s}
 .nav-links a:hover{color:white}
 .nav-right{display:flex;gap:10px;align-items:center}
 .btn-ghost{color:var(--muted);border:1px solid var(--border2);padding:7px 18px;border-radius:100px;font-size:13px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all 0.2s}
 .btn-ghost:hover{color:white;border-color:rgba(255,255,255,0.25)}
-.btn-nav{background:var(--orange);color:white;padding:8px 20px;border-radius:100px;font-size:13px;font-weight:500;text-decoration:none;transition:all 0.2s;font-family:'DM Sans',sans-serif}
-.btn-nav:hover{background:var(--orange-light)}
+.btn-nav{background:white;color:var(--teal-deep);padding:8px 20px;border-radius:100px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.btn-nav:hover{background:#f5f5f0;transform:translateY(-1px)}
 
 /* HERO */
 .hero{padding:130px 60px 80px;text-align:center;border-bottom:1px solid var(--border)}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,83,26,0.1);border:1px solid rgba(232,83,26,0.25);color:#fb8c6a;padding:5px 16px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;margin-bottom:28px}
-.hero-badge::before{content:'';width:6px;height:6px;background:var(--orange);border-radius:50%;animation:blink 2s infinite;display:inline-block;flex-shrink:0}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(245,184,110,0.12);border:1px solid rgba(245,184,110,0.3);color:var(--gold-light);padding:5px 16px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;margin-bottom:28px}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--gold);border-radius:50%;animation:blink 2s infinite;display:inline-block;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-.hero h1{font-family:'Syne',sans-serif;font-size:clamp(40px,5.5vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2.5px;margin-bottom:22px;color:white}
-.hero h1 span{color:var(--orange)}
-.hero-sub{font-size:17px;color:var(--muted);max-width:540px;margin:0 auto 36px;line-height:1.75;font-weight:300}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(36px,4.5vw,58px);font-weight:600;line-height:1.1;letter-spacing:-1.5px;margin-bottom:22px;color:white}
+.hero h1 span{color:var(--gold)}
+.hero-sub{font-size:17px;color:var(--muted);max-width:540px;margin:0 auto 36px;line-height:1.7;font-weight:400}
 .hero-btns{display:flex;gap:12px;justify-content:center;margin-bottom:52px}
-.btn-primary{background:var(--orange);color:white;padding:14px 28px;border-radius:100px;font-size:14px;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all 0.2s}
-.btn-primary:hover{background:var(--orange-light);transform:translateY(-1px)}
+.btn-primary{background:white;color:var(--teal-deep);padding:14px 28px;border-radius:100px;font-size:14px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.btn-primary:hover{background:#f5f5f0;transform:translateY(-1px)}
 .btn-secondary{color:rgba(255,255,255,0.65);border:1px solid var(--border2);padding:14px 24px;border-radius:100px;font-size:14px;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all 0.2s}
 .btn-secondary:hover{border-color:rgba(255,255,255,0.25);color:white}
 
@@ -43,30 +59,30 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:66px;d
 .stats-bar{display:flex;justify-content:center;border:1px solid var(--border);border-radius:16px;overflow:hidden;max-width:680px;margin:0 auto 56px;background:rgba(255,255,255,0.02)}
 .stat{flex:1;padding:20px 16px;text-align:center;border-right:1px solid var(--border)}
 .stat:last-child{border-right:none}
-.stat-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:white;line-height:1}
-.stat-n em{color:var(--orange);font-style:normal}
+.stat-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:white;line-height:1}
+.stat-n em{color:var(--gold);font-style:normal}
 .stat-l{font-size:10px;color:var(--dim);margin-top:5px;font-family:'DM Mono',monospace;letter-spacing:0.5px;text-transform:uppercase}
 
 /* DASHBOARD MOCKUP */
 .mockup-outer{max-width:840px;margin:0 auto;border:1px solid var(--border2);border-radius:16px;overflow:hidden}
-.browser-bar{background:#111827;padding:10px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.browser-bar{background:#125c46;padding:10px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .browser-url{flex:1;background:rgba(255,255,255,0.04);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;margin:0 12px}
 .dash-layout{display:grid;grid-template-columns:176px 1fr;background:var(--bg2)}
 .dash-sidebar{border-right:1px solid var(--border);padding:14px 0}
-.dash-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:white;padding:0 14px 14px;border-bottom:1px solid var(--border);margin-bottom:6px}
-.dash-logo span{color:var(--orange)}
-.d-nav{padding:7px 14px;font-size:11px;color:rgba(255,255,255,0.38);display:flex;align-items:center;gap:8px}
-.d-nav.on{background:rgba(232,83,26,0.1);color:#fb8c6a;border-right:2px solid var(--orange)}
+.dash-logo{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:white;padding:0 14px 14px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.dash-logo span{color:var(--gold)}
+.d-nav{padding:7px 14px;font-size:11px;color:rgba(255,255,255,0.45);display:flex;align-items:center;gap:8px}
+.d-nav.on{background:rgba(245,184,110,0.12);color:var(--gold-light);border-right:2px solid var(--gold)}
 .dash-main{padding:16px}
 .d-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .d-stat{background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
-.d-stat-n{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:white}
+.d-stat-n{font-family:'Syne',sans-serif;font-size:17px;font-weight:600;color:white}
 .d-stat-l{font-size:9px;color:var(--dim);margin-top:3px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
 .d-table-head{display:grid;grid-template-columns:80px 1fr 80px 80px 70px;gap:8px;padding:6px 10px;font-size:9px;color:var(--dim);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
 .d-row{display:grid;grid-template-columns:80px 1fr 80px 80px 70px;gap:8px;padding:8px 10px;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.03);align-items:center}
 .d-row:last-child{border-bottom:none}
-.inv-n{color:#fb8c6a;font-family:'DM Mono',monospace;font-size:10px}
+.inv-n{color:var(--gold-light);font-family:'DM Mono',monospace;font-size:10px}
 .inv-v{color:rgba(255,255,255,0.65)}
 .inv-a{color:white;font-weight:600;font-size:11px}
 .badge{font-size:9px;padding:2px 7px;border-radius:100px;font-family:'DM Mono',monospace;white-space:nowrap}
@@ -75,16 +91,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:66px;d
 .bg-pushed{background:rgba(59,130,246,0.12);color:#60a5fa}
 
 /* TICKER */
-.ticker-wrap{background:var(--orange);padding:12px 0;overflow:hidden;border-top:none}
+.ticker-wrap{background:var(--gold);padding:12px 0;overflow:hidden;border-top:none}
 .ticker{display:flex;gap:48px;animation:tick 25s linear infinite;white-space:nowrap}
-.ticker-item{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.8);letter-spacing:1px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ticker-item{font-family:'DM Mono',monospace;font-size:11px;color:var(--teal-deep);letter-spacing:1px;display:flex;align-items:center;gap:10px;flex-shrink:0;font-weight:500}
 .ticker-item::before{content:'✦';color:rgba(255,255,255,0.4);font-size:8px}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* SECTIONS */
 section{padding:100px 60px}
 .eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.5px;color:var(--orange);text-transform:uppercase;margin-bottom:12px}
-.section-h{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,44px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:white;margin-bottom:14px}
+.section-h{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,44px);font-weight:600;letter-spacing:-1.5px;line-height:1.1;color:white;margin-bottom:14px}
 .section-h span{color:var(--orange)}
 .section-p{font-size:15px;color:var(--muted);line-height:1.75;font-weight:300;max-width:480px}
 
@@ -92,26 +108,26 @@ section{padding:100px 60px}
 .sol-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:52px;background:var(--border);border-radius:20px;overflow:hidden}
 .sol-card{background:var(--bg2);padding:36px 30px;transition:background 0.25s;position:relative}
 .sol-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange);opacity:0;transition:opacity 0.25s}
-.sol-card:hover{background:#111827}
+.sol-card:hover{background:#125c46}
 .sol-card:hover::before{opacity:1}
 .sol-card:first-child{border-radius:20px 0 0 0}
 .sol-card:nth-child(3){border-radius:0 20px 0 0}
 .sol-card:nth-child(4){border-radius:0 0 0 20px}
 .sol-card:last-child{border-radius:0 0 20px 0}
-.sol-ico{width:44px;height:44px;background:rgba(232,83,26,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px}
+.sol-ico{width:44px;height:44px;background:rgba(245,184,110,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px}
 .sol-h{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px}
 .sol-p{font-size:13px;color:var(--muted);line-height:1.7;font-weight:300}
-.sol-tag{display:inline-block;margin-top:14px;font-size:10px;font-family:'DM Mono',monospace;color:var(--orange);background:rgba(232,83,26,0.08);padding:3px 10px;border-radius:100px}
+.sol-tag{display:inline-block;margin-top:14px;font-size:10px;font-family:'DM Mono',monospace;color:var(--orange);background:rgba(245,184,110,0.08);padding:3px 10px;border-radius:100px}
 
 /* WHO IS IT FOR */
 .for-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:52px}
 .for-card{border-radius:20px;padding:40px 36px}
-.for-card.buyer{background:#0d1220;border:1px solid rgba(232,83,26,0.2)}
+.for-card.buyer{background:#0d4f3c;border:1px solid rgba(245,184,110,0.2)}
 .for-card.supplier{background:var(--bg2);border:1px solid var(--border)}
 .for-tag{display:inline-block;padding:5px 14px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1px;margin-bottom:18px}
-.for-card.buyer .for-tag{background:rgba(232,83,26,0.15);color:#fb8c6a}
+.for-card.buyer .for-tag{background:rgba(245,184,110,0.15);color:#ffce8a}
 .for-card.supplier .for-tag{background:rgba(34,197,94,0.1);color:#22c55e}
-.for-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:12px;color:white}
+.for-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:600;margin-bottom:12px;color:white}
 .for-desc{font-size:14px;line-height:1.8;font-weight:300;color:var(--muted);margin-bottom:22px}
 .for-list{list-style:none;display:flex;flex-direction:column;gap:10px}
 .for-list li{font-size:13px;color:rgba(255,255,255,0.6);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
@@ -119,8 +135,8 @@ section{padding:100px 60px}
 
 /* AGENTS */
 .agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:52px}
-.agent-card{background:var(--bg2);border:1px solid rgba(232,83,26,0.15);border-radius:18px;padding:28px 24px;position:relative;transition:all 0.25s}
-.agent-card:hover{border-color:rgba(232,83,26,0.35);background:#111827;transform:translateY(-2px)}
+.agent-card{background:var(--bg2);border:1px solid rgba(245,184,110,0.15);border-radius:18px;padding:28px 24px;position:relative;transition:all 0.25s}
+.agent-card:hover{border-color:rgba(245,184,110,0.35);background:#125c46;transform:translateY(-2px)}
 .agent-dot{position:absolute;top:20px;right:20px;font-size:10px;font-family:'DM Mono',monospace;color:#22c55e;letter-spacing:1px}
 .agent-emoji{font-size:28px;margin-bottom:14px;display:block}
 .agent-h{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:6px}
@@ -131,7 +147,7 @@ section{padding:100px 60px}
 .int-logos{display:flex;flex-wrap:wrap;gap:10px}
 .int-pill{background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:9px 18px;border-radius:100px;font-size:12px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.35);transition:all 0.2s}
 .int-pill:hover{color:white;border-color:rgba(255,255,255,0.2)}
-.int-pill.live{color:#fb8c6a;border-color:rgba(232,83,26,0.3);background:rgba(232,83,26,0.05)}
+.int-pill.live{color:#ffce8a;border-color:rgba(245,184,110,0.3);background:rgba(245,184,110,0.05)}
 .int-right{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px}
 .int-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:white;margin-bottom:8px}
 .int-sub{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:20px;font-weight:300}
@@ -143,13 +159,13 @@ section{padding:100px 60px}
 /* IDR COMPARISON */
 .idr-grid{display:grid;grid-template-columns:1fr 1fr;margin-top:52px;border-radius:20px;overflow:hidden;border:1px solid var(--border)}
 .idr-head{padding:22px 28px;display:flex;align-items:center;gap:12px}
-.idr-head.left{background:#111827;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
-.idr-head.right{background:#0a0f1e;border-bottom:1px solid rgba(255,255,255,0.06)}
+.idr-head.left{background:#125c46;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.idr-head.right{background:#0a3d2f;border-bottom:1px solid rgba(255,255,255,0.06)}
 .idr-tag{font-size:10px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:20px;margin-left:auto}
 .idr-tag.left{background:#1f2937;color:#6b7280}
-.idr-tag.right{background:rgba(232,83,26,0.12);color:#fb8c6a}
+.idr-tag.right{background:rgba(245,184,110,0.12);color:#ffce8a}
 .idr-row-l{padding:15px 28px;background:#111318;border-bottom:1px solid rgba(255,255,255,0.04);border-right:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
-.idr-row-r{padding:15px 28px;background:#0a0f1e;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:12px;align-items:flex-start}
+.idr-row-r{padding:15px 28px;background:#0a3d2f;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:12px;align-items:flex-start}
 .idr-row-l:last-child,.idr-row-r:last-child{border-bottom:none}
 .idr-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
 .idr-dot.neutral{background:#1f2937;color:#6b7280}
@@ -165,10 +181,10 @@ section{padding:100px 60px}
 .price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:52px}
 .price-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px 24px;position:relative;transition:all 0.25s}
 .price-card:hover{border-color:var(--border2);transform:translateY(-3px)}
-.price-card.pop{border-color:var(--orange);background:rgba(232,83,26,0.04)}
+.price-card.pop{border-color:var(--orange);background:rgba(245,184,110,0.04)}
 .pop-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--orange);color:white;padding:4px 16px;border-radius:100px;font-size:10px;font-weight:600;white-space:nowrap;font-family:'DM Mono',monospace}
 .plan-name{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
-.plan-price{font-family:'Syne',sans-serif;font-size:44px;font-weight:800;letter-spacing:-2px;color:white;line-height:1;margin-bottom:4px}
+.plan-price{font-family:'Syne',sans-serif;font-size:44px;font-weight:600;letter-spacing:-2px;color:white;line-height:1;margin-bottom:4px}
 .plan-period{font-size:12px;color:var(--dim);margin-bottom:8px}
 .plan-who{font-size:11px;color:var(--orange);font-weight:500;margin-bottom:18px;font-family:'DM Mono',monospace}
 .plan-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px}
@@ -182,14 +198,14 @@ section{padding:100px 60px}
 
 /* CTA */
 .cta-section{background:var(--bg2);border-top:1px solid var(--border);padding:100px 60px;text-align:center}
-.cta-h{font-family:'Syne',sans-serif;font-size:clamp(36px,4vw,58px);font-weight:800;letter-spacing:-2px;line-height:1.05;color:white;margin-bottom:18px}
+.cta-h{font-family:'Syne',sans-serif;font-size:clamp(36px,4vw,58px);font-weight:600;letter-spacing:-2px;line-height:1.05;color:white;margin-bottom:18px}
 .cta-h span{color:var(--orange)}
 .cta-p{font-size:16px;color:var(--muted);margin-bottom:36px;font-weight:300}
 .cta-note{margin-top:18px;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace}
 
 /* FOOTER */
 footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px;display:flex;align-items:center;justify-content:space-between}
-.foot-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:white}
+.foot-logo{font-family:'Syne',sans-serif;font-weight:600;font-size:16px;color:white}
 .foot-logo span{color:var(--orange)}
 .foot-links{display:flex;gap:24px;list-style:none}
 .foot-links a{color:var(--dim);text-decoration:none;font-size:12px;transition:color 0.2s}
@@ -216,9 +232,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
 /* USE CASES */
 .uc-wrap{background:#f5f4f0;padding:100px 60px;border-top:1px solid #e5e7eb}
 .uc-center{text-align:center;margin-bottom:52px}
-.uc-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:#e8531a;text-transform:uppercase;margin-bottom:12px}
-.uc-title{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,42px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;color:#0a0f1e;margin-bottom:10px}
-.uc-title span{color:#e8531a}
+.uc-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:#f5b86e;text-transform:uppercase;margin-bottom:12px}
+.uc-title{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,42px);font-weight:600;letter-spacing:-1.5px;line-height:1.1;color:#0a0f1e;margin-bottom:10px}
+.uc-title span{color:#f5b86e}
 .uc-sub{font-size:15px;color:#6b7280;line-height:1.75;font-weight:300;max-width:520px;margin:0 auto}
 .uc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
 .uc-card{border-radius:20px;padding:28px 22px;transition:transform 0.2s;overflow:hidden}
@@ -229,7 +245,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
 .uc-mini-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .uc-mini-text{font-size:10px;font-weight:500;color:#1a1a2e;flex:1}
 .uc-mini-badge{font-size:9px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:100px;white-space:nowrap}
-.uc-card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#0a0f1e;margin-bottom:8px;line-height:1.25}
+.uc-card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:#0a0f1e;margin-bottom:8px;line-height:1.25}
 .uc-card-desc{font-size:12px;color:#4b5563;line-height:1.65;font-weight:300}
 @media(max-width:768px){.uc-grid{grid-template-columns:1fr}.uc-wrap{padding:72px 20px}}
 
@@ -239,7 +255,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
 .nf-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange)}
 .nf-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
 .nf-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
-.nf-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:white;margin-bottom:12px;line-height:1.25}
+.nf-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:600;color:white;margin-bottom:12px;line-height:1.25}
 .nf-desc{font-size:13px;color:var(--muted);line-height:1.75;font-weight:300;margin-bottom:20px}
 .nf-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .nf-bad{background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15);border-radius:8px;padding:10px 12px}
@@ -276,7 +292,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 <nav>
   <div style="display:flex;flex-direction:column;gap:2px">
     <div class="nav-logo">Bill<span>tiq</span></div>
-    <div style="font-size:10px;color:rgba(232,83,26,0.8);font-family:'DM Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;font-weight:500">We handle invoices. You handle business.</div>
+    <div style="font-size:10px;color:rgba(245,184,110,0.8);font-family:'DM Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;font-weight:500">We handle invoices. You handle business.</div>
   </div>
   <ul class="nav-links">
     <li><a href="#how">How it works</a></li>
@@ -441,28 +457,28 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div style="font-size:28px;margin-bottom:14px">📤</div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px">Supplier sends invoice</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Upload to Billtiq or email it directly — Billtiq monitors your email inbox automatically every 5 minutes.</div>
-      <div style="margin-top:14px;background:rgba(232,83,26,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Supplier does this</div>
+      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Supplier does this</div>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px">
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:16px">02 — EXTRACT</div>
       <div style="font-size:28px;margin-bottom:14px">🤖</div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px">AI reads everything</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Claude AI extracts every field — vendor, amounts, dates, line items — from any format with 99% accuracy in 4 seconds.</div>
-      <div style="margin-top:14px;background:rgba(232,83,26,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">4 seconds</div>
+      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">4 seconds</div>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px">
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:16px">03 — VALIDATE</div>
       <div style="font-size:28px;margin-bottom:14px">✅</div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px">Match & approve</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Billtiq matches POs, detects duplicates, flags anomalies, and auto-approves invoices within your rules.</div>
-      <div style="margin-top:14px;background:rgba(232,83,26,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Instant</div>
+      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Instant</div>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px">
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:16px">04 — SYNC</div>
       <div style="font-size:28px;margin-bottom:14px">🚀</div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px">Lands in your ERP</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Pushed to Oracle or QuickBooks automatically. Your team gets a Slack alert. Supplier gets notified when paid.</div>
-      <div style="margin-top:14px;background:rgba(232,83,26,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Zero manual entry</div>
+      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Zero manual entry</div>
     </div>
   </div>
 </section>
@@ -606,7 +622,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
           <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">● Live</div>
         </div>
         <div style="background:var(--bg3);border-radius:10px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;background:rgba(232,83,26,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div style="width:36px;height:36px;background:rgba(245,184,110,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:600;color:white">Claude AI extracted invoice #0012820</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">£17,712.55 · Vendor matched · PO found</div>
@@ -630,7 +646,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
           <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">Sent ✓</div>
         </div>
       </div>
-      <div style="margin-top:16px;padding:12px 16px;background:rgba(232,83,26,0.06);border:1px solid rgba(232,83,26,0.15);border-radius:10px;font-size:12px;color:#fb8c6a;font-family:'DM Mono',monospace">⚡ Total time: 4 seconds · Zero manual steps</div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(245,184,110,0.06);border:1px solid rgba(245,184,110,0.15);border-radius:10px;font-size:12px;color:#ffce8a;font-family:'DM Mono',monospace">⚡ Total time: 4 seconds · Zero manual steps</div>
     </div>
   </div>
 </section>
@@ -644,62 +660,62 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   <div class="reveal" style="display:flex;flex-wrap:wrap;gap:0;justify-content:center;max-width:900px;margin:0 auto;border:1px solid var(--border);border-radius:20px;overflow:hidden">
     <div style="display:grid;grid-template-columns:repeat(6,1fr);width:100%">
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Oracle</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Oracle</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Fusion</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">QuickBooks</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">QuickBooks</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Online</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Gmail/Outlook</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Gmail/Outlook</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Inbox Agent</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Slack</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Slack</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Alerts</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">MS Teams</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">MS Teams</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Alerts</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">SAP</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">SAP</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">S/4HANA</div>
         <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">NetSuite</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">NetSuite</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Oracle</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Xero</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Xero</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Accounting</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Dynamics</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Dynamics</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">365</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:white">Zoho</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Zoho</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Books</div>
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Coupa</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Coupa</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Procurement</div>
         <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:rgba(255,255,255,0.3)">Rillion</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Rillion</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">AP</div>
         <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
@@ -717,7 +733,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 
     <div class="nf-card">
       <div class="nf-tag">Freight &amp; Line Type Detection</div>
-      <div class="nf-ico" style="background:rgba(232,83,26,0.1)">📦</div>
+      <div class="nf-ico" style="background:rgba(245,184,110,0.1)">📦</div>
       <div class="nf-title">Freight lines auto-mapped to correct Oracle type</div>
       <div class="nf-desc">Most AP tools push all invoice lines as "Item" type — your team still manually recodes freight and tax before the invoice validates in Oracle. Billtiq detects and maps every line automatically so invoices post to the right GL accounts with zero recoding.</div>
       <div class="nf-compare">
@@ -733,7 +749,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div class="nf-example">
         <div class="nf-ex-label">EXAMPLE — INVOICE PUSHED TO ORACLE FUSION</div>
         <div class="nf-ex-row"><span class="nf-ex-desc">Widget A × 10</span><span style="color:#60a5fa;font-family:'DM Mono',monospace;font-size:11px">ITEM · $500.00</span></div>
-        <div class="nf-ex-row"><span class="nf-ex-desc">Freight charge</span><span style="color:#fb8c6a;font-family:'DM Mono',monospace;font-size:11px">FREIGHT · $45.00</span></div>
+        <div class="nf-ex-row"><span class="nf-ex-desc">Freight charge</span><span style="color:#ffce8a;font-family:'DM Mono',monospace;font-size:11px">FREIGHT · $45.00</span></div>
         <div class="nf-ex-row"><span class="nf-ex-desc">GST 10%</span><span style="color:#22c55e;font-family:'DM Mono',monospace;font-size:11px">TAX · $54.50</span></div>
       </div>
     </div>
@@ -793,8 +809,8 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     <div class="uc-card" style="background:#fff4f0">
       <div class="uc-num">01 — EMAIL BODY</div>
       <div class="uc-mini" style="background:#ffe8de">
-        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#e8531a"></div><div class="uc-mini-text">Subject: Invoice attached</div></div>
-        <div class="uc-mini-row" style="background:rgba(232,83,26,0.1)"><div class="uc-mini-dot" style="background:#e8531a"></div><div class="uc-mini-text">Body: "re: PO-2024-001"</div><div class="uc-mini-badge" style="background:#e8531a;color:white">PO Found ✓</div></div>
+        <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#f5b86e"></div><div class="uc-mini-text">Subject: Invoice attached</div></div>
+        <div class="uc-mini-row" style="background:rgba(245,184,110,0.1)"><div class="uc-mini-dot" style="background:#f5b86e"></div><div class="uc-mini-text">Body: "re: PO-2024-001"</div><div class="uc-mini-badge" style="background:#f5b86e;color:white">PO Found ✓</div></div>
       </div>
       <div class="uc-card-title">PO number in the email body, not on the invoice</div>
       <div class="uc-card-desc">Billtiq reads the email body, extracts the PO number, and matches it to your open POs automatically — even if it's not printed on the PDF.</div>
@@ -875,11 +891,11 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   <p class="section-p reveal">Built-in ERP document recognition handles basic extraction — but most AP teams still need manual steps around it. Billtiq automates the full workflow end to end.</p>
   <div class="idr-grid reveal">
     <div class="idr-head left">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:rgba(255,255,255,0.7)">Built-in ERP IDR</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:14px;color:rgba(255,255,255,0.7)">Built-in ERP IDR</div>
       <div class="idr-tag left">Manual steps required</div>
     </div>
     <div class="idr-head right">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:white">Bill<span style="color:var(--orange)">tiq</span></div>
+      <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:14px;color:white">Bill<span style="color:var(--orange)">tiq</span></div>
       <div class="idr-tag right">Fully automated</div>
     </div>
     <div class="idr-row-l"><div class="idr-dot neutral">—</div><div><div class="idr-label">Setup</div><div class="idr-text">Requires IT involvement and configuration. Most teams take weeks to go live.</div></div></div>
@@ -981,7 +997,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
       <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">We used to spend 3 hours a day entering invoices into Oracle. Billtiq cut that to zero. The freight line mapping alone saved us hours of recoding every week.</div>
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:white">S</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">S</div>
         <div>
           <div style="font-size:13px;font-weight:700;color:white">Sarah K.</div>
           <div style="font-size:11px;color:var(--dim)">AP Manager · Energy Company</div>
@@ -993,7 +1009,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
       <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">The Slack approval feature is a game changer. I approve invoices from my phone without opening a single system. My team loves it.</div>
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:#1a6be8;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:white">M</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#1a6be8;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">M</div>
         <div>
           <div style="font-size:13px;font-weight:700;color:white">Michael R.</div>
           <div style="font-size:11px;color:var(--dim)">Finance Director · Healthcare</div>
@@ -1005,7 +1021,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
       <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">Setup took 10 minutes. Basware wanted 6 months and $100K. Billtiq was live the same day and works better for our Oracle Fusion environment.</div>
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:white">P</div>
+        <div style="width:40px;height:40px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">P</div>
         <div>
           <div style="font-size:13px;font-weight:700;color:white">Priya M.</div>
           <div style="font-size:11px;color:var(--dim)">CFO · Manufacturing</div>
