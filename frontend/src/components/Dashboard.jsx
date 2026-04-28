@@ -43,6 +43,22 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("created_at"); // default: newest first
+  const [sortDir, setSortDir] = useState("desc"); // asc | desc
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortDir("desc");
+    }
+  };
+
+  const sortIcon = (field) => {
+    if (sortBy !== field) return <span style={{ opacity: 0.3, marginLeft: 4, fontSize: 11 }}>↕</span>;
+    return <span style={{ marginLeft: 4, fontSize: 11 }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [search, setSearch] = useState("");
@@ -123,6 +139,30 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
       inv.erp_reference?.toLowerCase().includes(q) ||
       String(inv.total || "").includes(q)
     );
+  }).sort((a, b) => {
+    let aVal = a[sortBy];
+    let bVal = b[sortBy];
+
+    // Numeric sort for total
+    if (sortBy === "total") {
+      aVal = Number(aVal) || 0;
+      bVal = Number(bVal) || 0;
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+    }
+
+    // Date sort
+    if (sortBy === "invoice_date" || sortBy === "created_at") {
+      aVal = aVal ? new Date(aVal).getTime() : 0;
+      bVal = bVal ? new Date(bVal).getTime() : 0;
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+    }
+
+    // String sort (invoice_number, vendor_name, erp_reference, status, match_status)
+    aVal = (aVal || "").toString().toLowerCase();
+    bVal = (bVal || "").toString().toLowerCase();
+    if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+    return 0;
   });
 
   // ── CSV EXPORT ─────────────────────────────────────────────────
@@ -396,13 +436,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
               <table className="invoices-table">
                 <thead>
                   <tr>
-                    <th>Invoice #</th>
-                    <th>Vendor</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>PO Match</th>
-                    <th>Status</th>
-                    <th>ERP Ref</th>
+                    <th onClick={() => handleSort("invoice_number")} style={{ cursor: "pointer", userSelect: "none" }}>Invoice #{sortIcon("invoice_number")}</th>
+                    <th onClick={() => handleSort("vendor_name")} style={{ cursor: "pointer", userSelect: "none" }}>Vendor{sortIcon("vendor_name")}</th>
+                    <th onClick={() => handleSort("invoice_date")} style={{ cursor: "pointer", userSelect: "none" }}>Date{sortIcon("invoice_date")}</th>
+                    <th onClick={() => handleSort("total")} style={{ cursor: "pointer", userSelect: "none" }}>Amount{sortIcon("total")}</th>
+                    <th onClick={() => handleSort("match_status")} style={{ cursor: "pointer", userSelect: "none" }}>PO Match{sortIcon("match_status")}</th>
+                    <th onClick={() => handleSort("status")} style={{ cursor: "pointer", userSelect: "none" }}>Status{sortIcon("status")}</th>
+                    <th onClick={() => handleSort("erp_reference")} style={{ cursor: "pointer", userSelect: "none" }}>ERP Ref{sortIcon("erp_reference")}</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
