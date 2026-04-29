@@ -206,13 +206,32 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invoiceData: data, userId: user?.id, teamId: team?.id, matchResult: match, pdfBase64: activePdf, pdfFilename: activeFilename }),
       });
+
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        // Backend likely returned an error page (HTML) - probably waking up from sleep
+        throw new Error(res.status === 502 || res.status === 503
+          ? "Backend is waking up. Please wait 30 seconds and try again."
+          : `Server error (${res.status}). Please try again in a moment.`);
+      }
+
       const result = await res.json();
 
-      // Backend handles the invoice insert — no duplicate needed here
+      if (!res.ok) {
+        throw new Error(result.error || `Push failed (${res.status})`);
+      }
 
+      // Backend handles the invoice insert — no duplicate needed here
       setErpResult(result);
       setStage(STAGES.SUCCESS);
-    } catch (err) { alert("ERP push failed: " + err.message); setStage(STAGES.REVIEW); }
+    } catch (err) {
+      const friendlyMsg = err.message.includes("Unexpected token")
+        ? "Backend is waking up or unreachable. Please wait 30 seconds and try again."
+        : err.message;
+      alert("ERP push failed: " + friendlyMsg);
+      setStage(STAGES.REVIEW);
+    }
   };
 
   const handleReset = () => {

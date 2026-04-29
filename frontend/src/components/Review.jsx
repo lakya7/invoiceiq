@@ -38,7 +38,7 @@ function runLocalValidation(form) {
     }
   }
 
-  if (!form.poNumber) warnings.push("No PO number — invoice will be unmatched in ERP");
+  if (!form.poNumber) warnings.push("No PO number — will be processed as a non-PO direct expense");
 
   if (form.lineItems?.length > 0) {
     const lineTotal = form.lineItems.reduce((s, l) => s + (l.amount || 0), 0);
@@ -145,7 +145,7 @@ export default function Review({ data, filePreview, onApprove, onBack, team, pdf
               <Field label="Invoice Number" value={form.invoiceNumber} onChange={(v) => set("invoiceNumber", v)}
                 warning={!form.invoiceNumber ? "Required" : form.invoiceNumber?.length > 50 ? "Too long (50 char max)" : null} />
               <Field label="PO Number" value={form.poNumber} onChange={(v) => set("poNumber", v)}
-                warning={!form.poNumber ? "Missing — invoice will be unmatched" : null} />
+                warning={!form.poNumber ? "Optional — leave blank for non-PO invoices" : null} />
               <Field label="Invoice Date" value={form.invoiceDate} onChange={(v) => set("invoiceDate", v)}
                 warning={form.invoiceDate && new Date(form.invoiceDate) > new Date() ? "Future date — ERP will reject" : null} />
               <Field label="Due Date" value={form.dueDate} onChange={(v) => set("dueDate", v)}
@@ -380,7 +380,7 @@ export default function Review({ data, filePreview, onApprove, onBack, team, pdf
                   </button>
                   {allErrors.length === 0 && (
                     <button onClick={() => { setShowModal(false); onApprove(form, pdfBase64, pdfFilename); }}
-                      style={{ flex: 2, background: "#e8531a", color: "white", border: "none", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
+                      style={{ flex: 2, background: "#0a3d2f", color: "white", border: "none", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
                       {allWarnings.length > 0 ? "Push Anyway →" : "Confirm & Push to ERP →"}
                     </button>
                   )}
