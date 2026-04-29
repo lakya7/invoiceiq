@@ -66,8 +66,8 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   };
 
   const sortIcon = (field) => {
-    if (sortBy !== field) return <span style={{ opacity: 0.3, marginLeft: 4, fontSize: 11 }}>↕</span>;
-    return <span style={{ marginLeft: 4, fontSize: 11 }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
+    if (sortBy !== field) return <span style={{ opacity: 0.4, marginLeft: 6, fontSize: 13, color: "#7a7a6e" }}>⇅</span>;
+    return <span style={{ marginLeft: 6, fontSize: 13, color: "#0a3d2f", fontWeight: 700 }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
   };
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
