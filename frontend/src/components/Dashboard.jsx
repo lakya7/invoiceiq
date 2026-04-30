@@ -87,6 +87,64 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   };
   const [auditLoading, setAuditLoading] = useState(false);
 
+  // ── BULK SELECTION ─────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(i => i.id)));
+    }
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // ── HELPER: Compute age in days from invoice_date ─────────
+  const getInvoiceAge = (inv) => {
+    const dateStr = inv.invoice_date || inv.created_at;
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    const diffMs = Date.now() - date.getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return days;
+  };
+
+  // ── HELPER: Format age with smart units + color ──────────
+  const formatAge = (days) => {
+    if (days === null || days < 0) return { text: "—", color: "#9ca3af" };
+    if (days === 0) return { text: "Today", color: "#6b7280" };
+    if (days === 1) return { text: "1d", color: "#6b7280" };
+    if (days < 14) return { text: `${days}d`, color: "#6b7280" };
+    if (days < 30) return { text: `${days}d`, color: "#d97706" };
+    if (days < 60) return { text: `${days}d`, color: "#dc2626" };
+    return { text: `${days}d`, color: "#991b1b" };
+  };
+
+  // ── HELPER: Compute exception reason for a row ──────────
+  const getExceptionReason = (inv) => {
+    if (inv.match_status === "matched") return null;
+    if (inv.match_status === "non_po") return null;
+    // Try to derive specific reason from anomalies or match_status
+    if (inv.anomalies && Array.isArray(inv.anomalies) && inv.anomalies.length > 0) {
+      const first = inv.anomalies[0];
+      if (typeof first === 'string') return first;
+      return first.label || first.message || first.type || "Anomaly flagged";
+    }
+    if (inv.match_status === "mismatch") return "Amount or vendor mismatch";
+    if (inv.match_status === "partial") return "Partial PO match";
+    if (inv.match_status === "unmatched" && !inv.po_number) return "No PO number on invoice";
+    if (inv.match_status === "unmatched") return "PO not found in system";
+    return null;
+  };
+
   // Mark-paid modal state
   const [paidInvoice, setPaidInvoice] = useState(null);
   const [paidForm, setPaidForm] = useState({ paymentDate: "", paymentMethod: "ACH", paymentReference: "", paidAmount: "" });
@@ -134,6 +192,95 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
       if (data.success) fetchInvoices();
       else alert("Rejection failed: " + data.error);
     } catch (e) { alert("Error: " + e.message); }
+  };
+
+  // ── BULK: Mark selected as paid ────────────────────────────
+  const bulkMarkPaid = async () => {
+    const eligibleIds = [...selectedIds].filter(id => {
+      const inv = invoices.find(i => i.id === id);
+      return inv && inv.status === "pushed" && inv.payment_status !== "paid" && inv.payment_status !== "cancelled";
+    });
+    if (eligibleIds.length === 0) {
+      alert("No eligible invoices selected. Only pushed/unpaid invoices can be marked paid.");
+      return;
+    }
+    if (!window.confirm(`Mark ${eligibleIds.length} invoice(s) as paid? Payment date will be set to today.`)) return;
+    setBulkActionLoading(true);
+    const today = new Date().toISOString().slice(0, 10);
+    let successCount = 0;
+    let failCount = 0;
+    for (const invoiceId of eligibleIds) {
+      try {
+        const inv = invoices.find(i => i.id === invoiceId);
+        const res = await fetch(`${API}/api/invoices/${invoiceId}/mark-paid`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teamId: team?.id,
+            paymentDate: today,
+            paymentMethod: "ACH",
+            paymentReference: "Bulk action",
+            paidAmount: inv?.total || 0,
+            userId: user?.id,
+          }),
+        });
+        if (res.ok) successCount++; else failCount++;
+      } catch { failCount++; }
+    }
+    setBulkActionLoading(false);
+    clearSelection();
+    fetchInvoices();
+    alert(`Marked ${successCount} invoice(s) as paid.${failCount > 0 ? ` ${failCount} failed.` : ""}`);
+  };
+
+  // ── BULK: Export selected to CSV ───────────────────────────
+  const bulkExportCSV = () => {
+    const selected = invoices.filter(i => selectedIds.has(i.id));
+    if (selected.length === 0) return;
+    const headers = ["Invoice #", "Vendor", "Date", "Amount", "Currency", "PO Match", "Status", "Payment Status", "ERP Reference"];
+    const rows = selected.map(inv => [
+      inv.invoice_number || "",
+      inv.vendor_name || "",
+      inv.invoice_date || "",
+      inv.total || 0,
+      inv.raw_data?.currency || "USD",
+      inv.match_status || "",
+      inv.status || "",
+      inv.payment_status || "",
+      inv.erp_reference || "",
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `billtiq-invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── BULK: Add note to selected ─────────────────────────────
+  const [bulkNoteText, setBulkNoteText] = useState("");
+  const [showBulkNote, setShowBulkNote] = useState(false);
+  const submitBulkNote = async () => {
+    if (!bulkNoteText.trim()) return;
+    setBulkActionLoading(true);
+    let successCount = 0;
+    for (const invoiceId of selectedIds) {
+      try {
+        const res = await fetch(`${API}/api/invoices/${invoiceId}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teamId: team?.id, userId: user?.id, comment: bulkNoteText, userName: user?.user_metadata?.full_name || user?.email }),
+        });
+        if (res.ok) successCount++;
+      } catch {}
+    }
+    setBulkActionLoading(false);
+    setShowBulkNote(false);
+    setBulkNoteText("");
+    clearSelection();
+    alert(`Added note to ${successCount} invoice(s).`);
   };
 
   const createTeam = async (e) => {
@@ -417,7 +564,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div>
             <h1 className="dash-title">
               {hasActionItems
-                ? <>Action Required <span style={{ color: "#dc2626" }}>· {totalActionRequired}</span></>
+                ? <>Action Required <span style={{ color: "#C53030", fontWeight: 700 }}>· {totalActionRequired}</span></>
                 : "Inbox"
               }
             </h1>
@@ -590,6 +737,34 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             </div>
           </div>
 
+          {/* Bulk Action Bar — shows when items selected */}
+          {selectedIds.size > 0 && (
+            <div style={{ background:"#0a3d2f", color:"white", borderRadius:8, padding:"10px 16px", marginBottom:12, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+              <span style={{ fontSize:13, fontWeight:600 }}>
+                {selectedIds.size} selected
+              </span>
+              <span style={{ color:"rgba(255,255,255,0.4)" }}>·</span>
+              <button
+                onClick={bulkMarkPaid}
+                disabled={bulkActionLoading}
+                style={{ background:"white", color:"#0a3d2f", border:"none", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:600, cursor:bulkActionLoading?"wait":"pointer", fontFamily:"DM Sans,sans-serif" }}
+              >💰 Mark Paid</button>
+              <button
+                onClick={bulkExportCSV}
+                style={{ background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.3)", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+              >⬇ Export selected</button>
+              <button
+                onClick={() => setShowBulkNote(true)}
+                style={{ background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.3)", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+              >💬 Add Note</button>
+              <div style={{ flex:1 }} />
+              <button
+                onClick={clearSelection}
+                style={{ background:"transparent", color:"rgba(255,255,255,0.7)", border:"none", padding:"6px 10px", fontSize:12, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+              >Clear</button>
+            </div>
+          )}
+
           {loading ? (
             <div className="table-loading">Loading invoices...</div>
           ) : filtered.length === 0 ? (
@@ -604,14 +779,23 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
               <table className="invoices-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 36, padding: "9px 8px 9px 14px" }}>
+                      <input
+                        type="checkbox"
+                        checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                        ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length; }}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: "pointer", accentColor: "#0a3d2f" }}
+                      />
+                    </th>
                     <th onClick={() => handleSort("invoice_number")} style={{ cursor: "pointer", userSelect: "none" }}>Invoice #{sortIcon("invoice_number")}</th>
                     <th onClick={() => handleSort("vendor_name")} style={{ cursor: "pointer", userSelect: "none" }}>Vendor{sortIcon("vendor_name")}</th>
-                    <th onClick={() => handleSort("invoice_date")} style={{ cursor: "pointer", userSelect: "none" }}>Date{sortIcon("invoice_date")}</th>
+                    <th>Age</th>
                     <th onClick={() => handleSort("total")} style={{ cursor: "pointer", userSelect: "none" }}>Amount{sortIcon("total")}</th>
                     <th onClick={() => handleSort("match_status")} style={{ cursor: "pointer", userSelect: "none" }}>PO Match{sortIcon("match_status")}</th>
+                    <th>Exception Reason</th>
                     <th onClick={() => handleSort("status")} style={{ cursor: "pointer", userSelect: "none" }}>Status{sortIcon("status")}</th>
                     <th onClick={() => handleSort("payment_status")} style={{ cursor: "pointer", userSelect: "none" }}>Payment{sortIcon("payment_status")}</th>
-                    <th onClick={() => handleSort("erp_reference")} style={{ cursor: "pointer", userSelect: "none" }}>ERP Ref{sortIcon("erp_reference")}</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -624,16 +808,31 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                     const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
                     const isAdmin = team?.role === "admin";
                     const showMarkPaid = isAdmin && inv.status === "pushed" && inv.payment_status !== "paid" && inv.payment_status !== "cancelled";
+                    const ageDays = getInvoiceAge(inv);
+                    const age = formatAge(ageDays);
+                    const reason = getExceptionReason(inv);
+                    const isException = inv.match_status === "unmatched" || inv.match_status === "mismatch" || inv.match_status === "partial";
+                    const isSelected = selectedIds.has(inv.id);
                     return (
-                      <tr key={inv.id}>
+                      <tr key={inv.id} className={isException ? "row-exception" : ""} style={isSelected ? { background: "#eff6f3" } : undefined}>
+                        <td style={{ padding: "9px 8px 9px 14px" }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(inv.id)}
+                            style={{ cursor: "pointer", accentColor: "#0a3d2f" }}
+                          />
+                        </td>
                         <td className="inv-num">{inv.invoice_number||"—"}</td>
                         <td className="inv-vendor">{inv.vendor_name||"—"}</td>
-                        <td className="inv-date">{inv.invoice_date||"—"}</td>
+                        <td style={{ color: age.color, fontWeight: 600, fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{age.text}</td>
                         <td className="inv-amount">{sym}{Number(inv.total||0).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
                         <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
+                        <td style={{ color: reason ? "#991b1b" : "#9ca3af", fontSize: 12, maxWidth: 220 }}>
+                          {reason || "—"}
+                        </td>
                         <td><span className="status-badge" style={{background:sc.bg,color:sc.color}}>{inv.status}</span></td>
                         <td>{inv.status === "pushed" ? <span className="status-badge" style={{background:pc.bg,color:pc.color}}>{pc.label}</span> : <span style={{color:"#9ca3af",fontSize:12}}>—</span>}</td>
-                        <td className="inv-erp">{inv.erp_reference||"—"}</td>
                         <td>
                           {inv.status === "pending" && (
                             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -685,6 +884,36 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         </div>
       </main>
 
+
+      {/* BULK NOTE MODAL */}
+      {showBulkNote && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:1001, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}
+          onClick={e => e.target === e.currentTarget && setShowBulkNote(false)}>
+          <div style={{ background:"white", borderRadius:14, padding:24, maxWidth:480, width:"100%", fontFamily:"DM Sans,sans-serif" }}>
+            <div style={{ fontSize:18, fontWeight:700, marginBottom:6 }}>Add note to {selectedIds.size} invoice{selectedIds.size === 1 ? '' : 's'}</div>
+            <div style={{ fontSize:13, color:"#6b7280", marginBottom:14 }}>This note will be added to each selected invoice's audit trail.</div>
+            <textarea
+              value={bulkNoteText}
+              onChange={e => setBulkNoteText(e.target.value)}
+              placeholder="e.g., Reviewed during month-end close. Approved for payment."
+              autoFocus
+              rows={4}
+              style={{ width:"100%", border:"1px solid #e2ddd4", borderRadius:8, padding:"10px 12px", fontSize:13, fontFamily:"DM Sans,sans-serif", resize:"vertical", boxSizing:"border-box", outline:"none" }}
+            />
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
+              <button
+                onClick={() => { setShowBulkNote(false); setBulkNoteText(""); }}
+                style={{ background:"white", border:"1px solid #e2ddd4", color:"#374151", padding:"8px 16px", borderRadius:6, fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+              >Cancel</button>
+              <button
+                onClick={submitBulkNote}
+                disabled={!bulkNoteText.trim() || bulkActionLoading}
+                style={{ background:"#0a3d2f", color:"white", border:"none", padding:"8px 16px", borderRadius:6, fontSize:13, fontWeight:600, cursor: (!bulkNoteText.trim() || bulkActionLoading) ? "not-allowed" : "pointer", opacity: (!bulkNoteText.trim() || bulkActionLoading) ? 0.5 : 1, fontFamily:"DM Sans,sans-serif" }}
+              >{bulkActionLoading ? "Adding..." : "Add Note"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AUDIT HISTORY MODAL */}
       {auditInvoice && (
