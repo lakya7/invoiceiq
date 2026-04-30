@@ -19,6 +19,7 @@
     { "src": "/app/(.*)", "dest": "/index.html" },
     { "src": "/app", "dest": "/index.html" },
     { "src": "/dashboard", "dest": "/index.html" },
+    { "src": "/security", "dest": "/security.html" },
     { "src": "/", "dest": "/landing.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]

@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Billtiq — AI-Powered Invoice Processing for Finance Teams</title>
+<title>Billtiq — Oracle Fusion AP Exception Handling for Mid-Market Teams</title>
+<meta name="description" content="Resolve Oracle Fusion match exceptions, prevent duplicate payments, unblock AP approvals. Built by Oracle Fusion experts. Also supports NetSuite, QuickBooks, Xero, Zoho, Dynamics 365.">
+<meta property="og:title" content="Billtiq — Oracle Fusion AP Exception Handling">
+<meta property="og:description" content="Resolve match exceptions and unblock approvals — without IT tickets or workflow scripts.">
+<meta property="og:url" content="https://www.billtiq.com">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -56,6 +61,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:66px;d
 .btn-secondary:hover{border-color:rgba(255,255,255,0.25);color:white}
 
 /* STATS */
+.trust-strip{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:16px;margin:32px auto 40px;padding:14px 24px;border:1px solid rgba(245,184,110,0.18);border-radius:100px;max-width:780px;background:rgba(245,184,110,0.04);font-size:12px}
+.trust-item{color:var(--gold-light);font-family:'DM Mono',monospace;letter-spacing:0.3px;white-space:nowrap}
+.trust-dot{color:rgba(245,184,110,0.35)}
 .stats-bar{display:flex;justify-content:center;border:1px solid var(--border);border-radius:16px;overflow:hidden;max-width:680px;margin:0 auto 56px;background:rgba(255,255,255,0.02)}
 .stat{flex:1;padding:20px 16px;text-align:center;border-right:1px solid var(--border)}
 .stat:last-child{border-right:none}
@@ -301,27 +309,38 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     <li><a href="#pricing">Pricing</a></li>
   </ul>
   <div class="nav-right">
+    <a href="/security" class="btn-ghost">Security</a>
     <a href="/login" class="btn-ghost">Sign In</a>
-    <a href="/login?signup=true" class="btn-nav">Get Started Free →</a>
+    <a href="/login?signup=true" class="btn-nav">Book Oracle Demo →</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">9 AI Agents · 6 ERPs Live · Zero setup required</div>
-  <h1>AI-powered invoice<br>processing for <span>finance teams.</span></h1>
-  <p class="hero-sub" style="color:rgba(245,242,235,0.75)">Your inbox sends the invoice. Claude AI reads it. Your ERP gets it. Your team gets notified. Zero manual work — from any supplier, in any language.</p>
+  <div class="hero-badge">Built by Oracle Fusion experts · For mid-market AP teams</div>
+  <h1>Oracle Fusion AP exception<br>handling — <span>without IT tickets.</span></h1>
+  <p class="hero-sub" style="color:rgba(245,242,235,0.78)">Resolve match exceptions, prevent duplicate payments, and unblock approvals — without rewriting Oracle workflows or waiting on developers. Also works with NetSuite, QuickBooks, Xero, Zoho, and Dynamics 365.</p>
   <div class="hero-btns">
-    <a href="/login?signup=true" class="btn-primary">Start Free Trial →</a>
-    <a href="/login" class="btn-secondary">Sign In</a>
+    <a href="/login?signup=true" class="btn-primary">Book a 15-min Oracle Demo →</a>
+    <a href="/login?signup=true" class="btn-secondary">Try with one invoice</a>
+  </div>
+
+  <div class="trust-strip">
+    <span class="trust-item">🔒 Bank-level encryption</span>
+    <span class="trust-dot">·</span>
+    <span class="trust-item">📋 SOC 2 in progress</span>
+    <span class="trust-dot">·</span>
+    <span class="trust-item">🧾 Audit trail on every invoice</span>
+    <span class="trust-dot">·</span>
+    <span class="trust-item">👥 Role-based access</span>
   </div>
 
   <div class="stats-bar">
-    <div class="stat"><div class="stat-n">$40<em>K</em></div><div class="stat-l">Saved per year</div></div>
-    <div class="stat"><div class="stat-n">4<em>sec</em></div><div class="stat-l">Per invoice</div></div>
-    <div class="stat"><div class="stat-n">9<em>+</em></div><div class="stat-l">AI Agents live</div></div>
-    <div class="stat"><div class="stat-n">6<em>+</em></div><div class="stat-l">ERPs live now</div></div>
-    <div class="stat"><div class="stat-n">0<em>h</em></div><div class="stat-l">Manual entry</div></div>
+    <div class="stat"><div class="stat-n">80<em>%</em></div><div class="stat-l">Faster exception resolution</div></div>
+    <div class="stat"><div class="stat-n">4<em>sec</em></div><div class="stat-l">Per invoice extraction</div></div>
+    <div class="stat"><div class="stat-n">99<em>%</em></div><div class="stat-l">Extraction accuracy</div></div>
+    <div class="stat"><div class="stat-n">6<em>+</em></div><div class="stat-l">ERPs supported</div></div>
+    <div class="stat"><div class="stat-n">0<em>h</em></div><div class="stat-l">IT effort required</div></div>
   </div>
 
   <!-- Dashboard mockup -->
@@ -534,62 +553,62 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 
 <!-- SOLUTIONS -->
 <section id="solutions" style="border-bottom:1px solid var(--border)">
-  <div class="eyebrow reveal">AI Agents</div>
-  <h2 class="section-h reveal">Your AP team,<br><span>on autopilot.</span></h2>
-  <p class="section-p reveal">9 AI agents work 24/7 — approving, flagging, syncing, and reporting so your team only touches what needs a human decision.</p>
+  <div class="eyebrow reveal">Built for Oracle AP teams</div>
+  <h2 class="section-h reveal">Where Oracle workflows<br><span>actually break — fixed.</span></h2>
+  <p class="section-p reveal">We don't add complexity. We resolve the exceptions, mismatches, and approval bottlenecks that already cost your team hours every day.</p>
   <div class="sol-grid reveal">
     <div class="sol-card">
-      <div class="sol-ico">✅</div>
-      <div class="sol-h">Approval Agent</div>
-      <div class="sol-p">Auto-approves invoices under your threshold from trusted vendors. Escalates anything unusual to your team instantly.</div>
+      <div class="sol-ico">🧩</div>
+      <div class="sol-h">Match exception resolution</div>
+      <div class="sol-p">Wrong PO line, UOM mismatch, kit issues, partial receipts — flagged with the exact reason and one-click fix paths.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
       <div class="sol-ico">🚨</div>
-      <div class="sol-h">Anomaly Detection</div>
-      <div class="sol-p">Catches duplicates, amount spikes, and future dates before they reach your ERP. Flags high-risk invoices instantly.</div>
+      <div class="sol-h">Duplicate payment prevention</div>
+      <div class="sol-p">Catches duplicates by invoice number, vendor, amount, and PO before they reach Oracle. Audit log shows what was caught and why.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">📧</div>
-      <div class="sol-h">Email Invoice Agent</div>
-      <div class="sol-p">Monitors your email inbox every 5 minutes. Detects PDF and ZIP attachments and processes them automatically.</div>
+      <div class="sol-ico">⚡</div>
+      <div class="sol-h">Approval routing without scripts</div>
+      <div class="sol-p">Threshold-based routing, escalations, and parallel approvals — configured by finance, not IT. No Oracle workflow customizations needed.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">🔔</div>
-      <div class="sol-h">Notification Agent</div>
-      <div class="sol-p">Real-time Slack and Teams alerts to buyers and suppliers for every invoice event — including payment confirmation.</div>
+      <div class="sol-ico">📱</div>
+      <div class="sol-h">Approve from Slack or email</div>
+      <div class="sol-p">Your CFO doesn't need to log in. Approve, reject, or escalate from Slack, Teams, or a single click in email.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
       <div class="sol-ico">🔄</div>
-      <div class="sol-h">ERP Sync Agent</div>
-      <div class="sol-p">Checks Oracle and QuickBooks hourly. Syncs paid, validated, and rejected statuses back to your dashboard.</div>
+      <div class="sol-h">Bidirectional Oracle sync</div>
+      <div class="sol-p">Pushes invoices into AP_INVOICES_ALL with proper line types (ITEM, FREIGHT, TAX, MISC). Syncs payment status back automatically.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">💬</div>
-      <div class="sol-h">Supplier Communication</div>
-      <div class="sol-p">Automatically emails suppliers when invoices have issues. Professional AI-written messages explaining what to resubmit.</div>
+      <div class="sol-ico">📎</div>
+      <div class="sol-h">PDF attached at header</div>
+      <div class="sol-p">Original invoice PDF auto-attached to the Oracle Invoice Header — every time. No manual uploads, full audit trail in Oracle.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">📊</div>
-      <div class="sol-h">Monthly Report Agent</div>
-      <div class="sol-p">Emails your CFO a complete AP summary — invoices processed, amounts, time saved, duplicates caught.</div>
+      <div class="sol-ico">🔍</div>
+      <div class="sol-h">Vendor master matching</div>
+      <div class="sol-p">4-layer matching handles "CDW Inc" vs "CDW LLC" — fuzzy match, email domain, PO history, and Slack disambiguation when needed.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">📦</div>
-      <div class="sol-h">Batch Processing Agent</div>
-      <div class="sol-p">Processes ZIP files containing multiple invoices in one pass — via manual upload or email attachments.</div>
+      <div class="sol-ico">📋</div>
+      <div class="sol-h">Confidence scores on every field</div>
+      <div class="sol-p">Every extracted value shows a confidence score. Low-confidence fields are flagged for human review — never silently pushed to Oracle.</div>
       <div class="sol-tag">● live</div>
     </div>
     <div class="sol-card">
-      <div class="sol-ico">🎯</div>
-      <div class="sol-h">PO Matching Agent</div>
-      <div class="sol-p">AI matches invoices to POs automatically. Even reads PO numbers mentioned in the email body — not just the PDF.</div>
+      <div class="sol-ico">🧾</div>
+      <div class="sol-h">Full audit trail</div>
+      <div class="sol-p">Every invoice action is logged — who approved, who edited, what changed. Exportable for SOX, internal audits, and finance reviews.</div>
       <div class="sol-tag">● live</div>
     </div>
   </div>
@@ -608,7 +627,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Zero manual entry into Oracle or QuickBooks</div>
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>$40K saved per year on average</div>
       </div>
-      <a href="/login?signup=true" class="btn-primary">Start Free Trial →</a>
+      <a href="/login?signup=true" class="btn-primary">Book Oracle Demo →</a>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px">
       <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:16px;letter-spacing:1px">PROCESSING NOW</div>
@@ -919,71 +938,65 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 <!-- PRICING -->
 <section id="pricing" style="border-bottom:1px solid var(--border)">
   <div class="eyebrow reveal">Pricing</div>
-  <h2 class="section-h reveal">Simple pricing for<br><span>finance teams.</span></h2>
-  <p class="section-p reveal">Suppliers always use Billtiq for free. You pay only for what your team processes.</p>
+  <h2 class="section-h reveal">Built for serious<br><span>AP automation.</span></h2>
+  <p class="section-p reveal">No "freemium" gimmicks. Every plan includes the full Oracle Fusion integration, audit trail, and human support. Suppliers always use Billtiq free.</p>
   <div class="price-grid">
     <div class="price-card reveal">
       <div class="plan-name">Starter</div>
-      <div class="plan-price">$0</div>
-      <div class="plan-period">forever</div>
-      <div class="plan-who">For small teams getting started</div>
+      <div class="plan-price">$499</div>
+      <div class="plan-period">/month</div>
+      <div class="plan-who">For small AP teams on QuickBooks, Xero, Zoho</div>
       <ul class="plan-features">
-        <li>50 invoices/month</li>
+        <li>Up to 200 invoices/month</li>
         <li>1 ERP integration</li>
-        <li>AI extraction</li>
-        <li>Supplier portal</li>
+        <li>AI extraction with confidence scores</li>
+        <li>Duplicate detection</li>
+        <li>Slack & email approvals</li>
+        <li>Full audit trail</li>
+        <li>Email support (24h response)</li>
       </ul>
-      <a href="/login?signup=true" class="plan-btn plan-btn-outline">Get Started Free</a>
+      <a href="/login?signup=true" class="plan-btn plan-btn-outline">Book a demo →</a>
     </div>
     <div class="price-card pop reveal">
-      <div class="pop-badge">Most Popular</div>
+      <div class="pop-badge">For Oracle / NetSuite teams</div>
       <div class="plan-name">Growth</div>
-      <div class="plan-price">$299</div>
+      <div class="plan-price">$1,500</div>
       <div class="plan-period">/month</div>
-      <div class="plan-who">For growing AP teams</div>
+      <div class="plan-who">For mid-market AP teams ($20M–$200M revenue)</div>
       <ul class="plan-features">
-        <li>500 invoices/month</li>
-        <li>1 ERP integration</li>
-        <li>PO matching</li>
-        <li>Duplicate detection</li>
-        <li>All 9 AI Agents</li>
-        <li>6 ERP integrations</li>
-        <li>Slack & Teams alerts</li>
-        <li>14-day free trial</li>
+        <li>Up to 1,000 invoices/month</li>
+        <li>Oracle Fusion or NetSuite integration</li>
+        <li>Match exception resolution</li>
+        <li>3-way matching (PO + receipt + invoice)</li>
+        <li>PDF attachment at Oracle header</li>
+        <li>Vendor master matching (4-layer)</li>
+        <li>Approval routing without scripts</li>
+        <li>Bidirectional payment status sync</li>
+        <li>Priority support (4h response)</li>
+        <li>Onboarding included</li>
       </ul>
-      <a href="/login?signup=true" class="plan-btn plan-btn-fill">Start Free Trial →</a>
-    </div>
-    <div class="price-card reveal">
-      <div class="plan-name">Scale</div>
-      <div class="plan-price">$799</div>
-      <div class="plan-period">/month</div>
-      <div class="plan-who">For high-volume AP teams</div>
-      <ul class="plan-features">
-        <li>2,000 invoices/month</li>
-        <li>3 ERP integrations</li>
-        <li>All AI Agents</li>
-        <li>Team management</li>
-        <li>Analytics dashboard</li>
-        <li>Priority support</li>
-      </ul>
-      <a href="/login?signup=true" class="plan-btn plan-btn-outline">Start Trial →</a>
+      <a href="/login?signup=true" class="plan-btn plan-btn-fill">Book a 15-min Oracle demo →</a>
     </div>
     <div class="price-card reveal">
       <div class="plan-name">Enterprise</div>
-      <div class="plan-price" style="font-size:32px">Custom</div>
-      <div class="plan-period">contact us</div>
-      <div class="plan-who">For large finance teams</div>
+      <div class="plan-price" style="font-size:36px">Custom</div>
+      <div class="plan-period">contact sales</div>
+      <div class="plan-who">For finance teams &gt;1,000 invoices/mo or multi-entity</div>
       <ul class="plan-features">
         <li>Unlimited invoices</li>
-        <li>Unlimited ERPs</li>
-        <li>All AI Agents</li>
+        <li>Multiple ERP integrations</li>
+        <li>SSO / SAML</li>
+        <li>SOC 2 documentation (in progress)</li>
         <li>Dedicated CSM</li>
         <li>SLA guarantee</li>
-        <li>SSO / SAML</li>
+        <li>Custom integrations</li>
+        <li>Multi-entity support</li>
+        <li>Annual contract pricing</li>
       </ul>
-      <a href="mailto:hello@billtiq.app" class="plan-btn plan-btn-outline">Contact Sales</a>
+      <a href="mailto:hello@billtiq.com?subject=Enterprise Plan Inquiry" class="plan-btn plan-btn-outline">Contact Sales</a>
     </div>
   </div>
+  <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:32px;max-width:600px;margin-left:auto;margin-right:auto">All plans include unlimited users · No long-term contracts · 30-day money-back guarantee</p>
 </section>
 
 
@@ -1034,13 +1047,13 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 
 <!-- CTA -->
 <section class="cta-section">
-  <h2 class="cta-h reveal">Ready to eliminate<br>manual invoice <span>processing?</span></h2>
-  <p class="cta-p reveal">Join finance teams saving 40+ hours per month. Suppliers use it free. You just connect your ERP.</p>
+  <h2 class="cta-h reveal">Ready to fix Oracle AP<br>exception <span>handling?</span></h2>
+  <p class="cta-p reveal">15 minutes. We'll show you a real Oracle Fusion invoice push end-to-end — including exception resolution, PDF attachment, and approval routing.</p>
   <div class="reveal" style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-    <a href="/login?signup=true" class="btn-primary" style="font-size:15px;padding:16px 32px">Start Free Trial →</a>
-    <a href="/login" class="btn-secondary" style="font-size:15px;padding:16px 28px">Sign In</a>
+    <a href="/login?signup=true" class="btn-primary" style="font-size:15px;padding:16px 32px">Book a 15-min Oracle Demo →</a>
+    <a href="/login?signup=true" class="btn-secondary" style="font-size:15px;padding:16px 28px">Try with one invoice</a>
   </div>
-  <div class="cta-note reveal">No credit card required · 14-day free trial · Suppliers always free</div>
+  <div class="cta-note reveal">Suppliers always use Billtiq free · No credit card required for demo · 30-day money-back guarantee</div>
 </section>
 
 <footer>
@@ -1050,11 +1063,12 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     <li><a href="#solutions">Solutions</a></li>
     <li><a href="#integrations">Integrations</a></li>
     <li><a href="#pricing">Pricing</a></li>
+    <li><a href="/security">Security</a></li>
     <li><a href="/login">Privacy Policy</a></li>
     <li><a href="/login">Terms of Service</a></li>
-    <li><a href="mailto:hello@billtiq.app">Contact</a></li>
+    <li><a href="mailto:hello@billtiq.com">Contact</a></li>
   </ul>
-  <div class="foot-copy">© 2026 Billtiq · hello@billtiq.app</div>
+  <div class="foot-copy">© 2026 Billtiq · hello@billtiq.com</div>
 </footer>
 
 <script>
