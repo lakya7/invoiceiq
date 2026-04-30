@@ -501,7 +501,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           >
             <div className="stat-card-icon" style={{ background: pending > 0 ? "rgba(245,158,11,0.15)" : "#f3f4f6", color: pending > 0 ? "#d97706" : "#7a7a6e" }}>⏳</div>
             <div className="stat-card-body">
-              <div className="stat-card-value" style={{ color: pending > 0 ? "#92400e" : "var(--ink)" }}>{pending}</div>
+              <div className="stat-card-value" style={{ color: pending > 0 ? "#92400e" : "#cbc5b8" }}>{pending}</div>
               <div className="stat-card-label">Pending Review</div>
               <div className="stat-card-sub">{pending > 0 ? "Action required" : "No invoices pending review"}</div>
             </div>
@@ -523,7 +523,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           >
             <div className="stat-card-icon" style={{ background: matchExceptions > 0 ? "rgba(220,38,38,0.12)" : "#f3f4f6", color: matchExceptions > 0 ? "#dc2626" : "#7a7a6e" }}>🧩</div>
             <div className="stat-card-body">
-              <div className="stat-card-value" style={{ color: matchExceptions > 0 ? "#991b1b" : "var(--ink)" }}>{matchExceptions}</div>
+              <div className="stat-card-value" style={{ color: matchExceptions > 0 ? "#991b1b" : "#cbc5b8" }}>{matchExceptions}</div>
               <div className="stat-card-label">Match Exceptions</div>
               <div className="stat-card-sub">{matchExceptions > 0 ? "Unmatched / mismatched" : "All POs matched"}</div>
             </div>
@@ -545,7 +545,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           >
             <div className="stat-card-icon" style={{ background: duplicateSuspects > 0 ? "rgba(220,38,38,0.12)" : "#f3f4f6", color: duplicateSuspects > 0 ? "#dc2626" : "#7a7a6e" }}>🚨</div>
             <div className="stat-card-body">
-              <div className="stat-card-value" style={{ color: duplicateSuspects > 0 ? "#991b1b" : "var(--ink)" }}>{duplicateSuspects}</div>
+              <div className="stat-card-value" style={{ color: duplicateSuspects > 0 ? "#991b1b" : "#cbc5b8" }}>{duplicateSuspects}</div>
               <div className="stat-card-label">Duplicate Suspects</div>
               <div className="stat-card-sub">{duplicateSuspects > 0 ? "Review before pushing" : "No duplicates flagged"}</div>
             </div>
@@ -555,7 +555,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="stat-card" style={{ background: "white", borderColor: "var(--border)" }}>
             <div className="stat-card-icon" style={{ background: "rgba(13,79,60,0.1)", color: "#0a3d2f" }}>💰</div>
             <div className="stat-card-body">
-              <div className="stat-card-value" style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(pendingApprovalAmount)}</div>
+              <div className="stat-card-value" style={{ color: pendingApprovalAmount > 0 ? "var(--ink)" : "#cbc5b8", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(pendingApprovalAmount)}</div>
               <div className="stat-card-label">$ Pending Approval</div>
               <div className="stat-card-sub">{pending} invoice{pending === 1 ? '' : 's'} awaiting</div>
             </div>

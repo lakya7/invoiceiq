@@ -278,7 +278,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .invoices-table tr.row-exception:hover td { background: #fff7ec; }
 .btn-mark-paid { background: white; color: #166534; border: 1px solid #86efac; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: all 0.15s; }
 .btn-mark-paid:hover { background: #16a34a; color: white; border-color: #16a34a; }
-.inv-num { font-family: 'DM Mono', monospace; color: var(--ink); font-size: 12px; font-weight: 600; }
+.inv-num { font-family: 'DM Mono', monospace; color: #0a3d2f; font-size: 12px; font-weight: 600; letter-spacing: 0.2px; }
 .inv-vendor { font-weight: 600; color: var(--ink); }
 .inv-date { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .inv-amount { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
