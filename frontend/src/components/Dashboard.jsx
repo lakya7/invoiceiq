@@ -78,6 +78,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [savingComment, setSavingComment] = useState(false);
   const [auditInvoice, setAuditInvoice] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
+  const [setupDismissed, setSetupDismissed] = useState(() => {
+    try { return localStorage.getItem("billtiq_setup_dismissed") === "1"; } catch { return false; }
+  });
+  const dismissSetup = () => {
+    try { localStorage.setItem("billtiq_setup_dismissed", "1"); } catch {}
+    setSetupDismissed(true);
+  };
   const [auditLoading, setAuditLoading] = useState(false);
 
   // Mark-paid modal state
@@ -145,7 +152,17 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
 
   // ── SEARCH FILTER ─────────────────────────────────────────────
   const filtered = invoices.filter(inv => {
-    const matchesFilter = filter === "all" || inv.status === filter;
+    let matchesFilter = filter === "all" || inv.status === filter;
+    // Exception filter — match_status indicates problems
+    if (filter === "exceptions") {
+      matchesFilter = inv.match_status === "unmatched" || inv.match_status === "mismatch" || inv.match_status === "partial";
+    }
+    // Duplicates filter — anomalies indicate possible duplicates
+    if (filter === "duplicates") {
+      matchesFilter = inv.anomalies && Array.isArray(inv.anomalies) && inv.anomalies.some(a =>
+        typeof a === 'string' ? a.toLowerCase().includes('duplicate') : (a.type === 'duplicate' || a.label?.toLowerCase().includes('duplicate'))
+      );
+    }
     if (!search.trim()) return matchesFilter;
     const q = search.toLowerCase();
     return matchesFilter && (
@@ -309,6 +326,28 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const pushed = invoices.filter(i=>i.status==="pushed").length;
   const matched = invoices.filter(i=>i.match_status==="matched").length;
 
+  // Exception-focused metrics for the new dashboard layout
+  const matchExceptions = invoices.filter(i =>
+    i.match_status === "unmatched" || i.match_status === "mismatch" || i.match_status === "partial"
+  ).length;
+  const duplicateSuspects = invoices.filter(i =>
+    i.anomalies && Array.isArray(i.anomalies) && i.anomalies.some(a =>
+      typeof a === 'string' ? a.toLowerCase().includes('duplicate') : (a.type === 'duplicate' || a.label?.toLowerCase().includes('duplicate'))
+    )
+  ).length;
+  const pendingApprovalAmount = invoices
+    .filter(i => i.status === "pending")
+    .reduce((s, i) => s + (i.total || 0), 0);
+  const formatCurrency = (n) => {
+    if (n >= 1000000) return `$${(n/1000000).toFixed(1)}M`;
+    if (n >= 1000) return `$${(n/1000).toFixed(1)}K`;
+    return `$${n.toFixed(0)}`;
+  };
+
+  // Determine the right page header based on what needs attention
+  const totalActionRequired = pending + matchExceptions + duplicateSuspects;
+  const hasActionItems = totalActionRequired > 0;
+
   return (
     <div className="dashboard">
       {/* Sidebar */}
@@ -376,8 +415,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         {/* Header */}
         <div className="dash-header">
           <div>
-            <h1 className="dash-title">Good morning, {firstName} 👋</h1>
-            <p className="dash-sub">{team ? `${team.name} workspace` : "Your invoice processing overview"}</p>
+            <h1 className="dash-title">
+              {hasActionItems
+                ? <>Action Required <span style={{ color: "#dc2626" }}>· {totalActionRequired}</span></>
+                : "Inbox"
+              }
+            </h1>
+            <p className="dash-sub">{team ? `${team.name} · ${invoices.length} invoice${invoices.length === 1 ? '' : 's'} processed` : "Your AP exception handling overview"}</p>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             {!team && Array.isArray(teams) && teams.length === 0 && (
@@ -386,29 +430,34 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             {team && (
               <button className="btn-secondary-action" onClick={onReport}>📊 Monthly Report</button>
             )}
-            <button className="btn-approve" onClick={onNewInvoice}>+ Process Invoice</button>
+            <button className="btn-approve" onClick={onNewInvoice}>+ New Invoice</button>
           </div>
         </div>
 
-        {/* Setup progress banner — shows until all steps complete */}
-        {team && team.role === "admin" && !setupComplete && (
-          <div style={{ background:"linear-gradient(135deg,#fff4f0,#fff8f5)", border:"1px solid #fcd3c0", borderRadius:14, padding:"16px 20px", marginBottom:20, display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ fontSize:24 }}>🚀</div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontWeight:700, fontSize:14, color:"#0a0f1e", marginBottom:4 }}>
-                Complete your setup — {setupDone} of {setupTotal} steps done
-              </div>
-              <div style={{ height:6, background:"#fcd3c0", borderRadius:100, overflow:"hidden", maxWidth:200 }}>
-                <div style={{ height:"100%", width:`${(setupDone/setupTotal)*100}%`, background:"#e8531a", borderRadius:100, transition:"width 0.4s" }} />
-              </div>
+        {/* Setup progress — small dismissible widget instead of dominant banner */}
+        {team && team.role === "admin" && !setupComplete && !setupDismissed && (
+          <div style={{ background:"#faf9f7", border:"1px solid #e2ddd4", borderRadius:10, padding:"10px 14px", marginBottom:18, display:"flex", alignItems:"center", gap:12, fontSize:13 }}>
+            <div style={{ fontSize:14, opacity:0.7 }}>🚀</div>
+            <div style={{ flex:1, color:"#7a7a6e" }}>
+              Setup {setupDone}/{setupTotal} complete
+              <span style={{ display:"inline-block", marginLeft:10, height:4, background:"#e2ddd4", borderRadius:100, overflow:"hidden", width:120, verticalAlign:"middle" }}>
+                <span style={{ display:"block", height:"100%", width:`${(setupDone/setupTotal)*100}%`, background:"#0a3d2f", borderRadius:100, transition:"width 0.4s" }} />
+              </span>
             </div>
             <button
               onClick={onOnboarding}
-              style={{ background:"#e8531a", color:"white", border:"none", padding:"8px 16px", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+              style={{ background:"transparent", color:"#0a3d2f", border:"1px solid #0a3d2f", padding:"5px 12px", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
             >
-              Continue Setup →
+              Continue →
             </button>
-            </div>
+            <button
+              onClick={dismissSetup}
+              title="Dismiss"
+              style={{ background:"transparent", color:"#7a7a6e", border:"none", padding:"4px 8px", borderRadius:6, fontSize:14, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+            >
+              ✕
+            </button>
+          </div>
         )}
 
         {/* Create team prompt - only show if user has no teams at all */}
@@ -434,21 +483,83 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           </div>
         )}
 
-        {/* Stats */}
+        {/* Stats — exception-focused, click to filter */}
         <div className="stats-grid">
-          <StatCard icon="📄" label="Total Invoices" value={invoices.length} sub="All time" accent="#e8531a" />
-          <StatCard icon="💰" label="Total Processed" multiLine value={(() => {
-            const byCurrency = invoices.reduce((acc, inv) => {
-              const cur = inv.raw_data?.currency || "USD";
-              const sym = cur === "INR" ? "₹" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : "$";
-              acc[sym] = (acc[sym] || 0) + (inv.total || 0);
-              return acc;
-            }, {});
-            const lines = Object.entries(byCurrency).map(([sym, amt]) => `${sym}${amt.toLocaleString("en-US",{minimumFractionDigits:2})}`);
-            return lines.length ? lines : ["$0"];
-          })()} sub="This month" accent="#1a6be8" />
-          <StatCard icon="✅" label="PO Matched" value={matched} sub={`of ${invoices.length} invoices`} accent="#16a34a" />
-          <StatCard icon="⏳" label="Pending Review" value={pending} sub={pending>0?"Needs attention":"All clear!"} accent="#f59e0b" />
+          {/* Pending Review — most important, larger if has items */}
+          <div
+            className="stat-card stat-clickable"
+            onClick={() => setFilter("pending")}
+            style={{
+              cursor: "pointer",
+              background: pending > 0 ? "#fffbeb" : "white",
+              borderColor: pending > 0 ? "#fcd34d" : "var(--border)",
+              borderWidth: pending > 0 ? "1.5px" : "1px",
+              outline: filter === "pending" ? "2px solid #f59e0b" : "none",
+              outlineOffset: "-2px",
+            }}
+            title="Click to filter table"
+          >
+            <div className="stat-card-icon" style={{ background: pending > 0 ? "rgba(245,158,11,0.15)" : "#f3f4f6", color: pending > 0 ? "#d97706" : "#7a7a6e" }}>⏳</div>
+            <div className="stat-card-body">
+              <div className="stat-card-value" style={{ color: pending > 0 ? "#92400e" : "var(--ink)" }}>{pending}</div>
+              <div className="stat-card-label">Pending Review</div>
+              <div className="stat-card-sub">{pending > 0 ? "Action required" : "No invoices pending review"}</div>
+            </div>
+          </div>
+
+          {/* Match Exceptions */}
+          <div
+            className="stat-card stat-clickable"
+            onClick={() => setFilter("exceptions")}
+            style={{
+              cursor: "pointer",
+              background: matchExceptions > 0 ? "#fef2f2" : "white",
+              borderColor: matchExceptions > 0 ? "#fca5a5" : "var(--border)",
+              borderWidth: matchExceptions > 0 ? "1.5px" : "1px",
+              outline: filter === "exceptions" ? "2px solid #dc2626" : "none",
+              outlineOffset: "-2px",
+            }}
+            title="Click to filter table"
+          >
+            <div className="stat-card-icon" style={{ background: matchExceptions > 0 ? "rgba(220,38,38,0.12)" : "#f3f4f6", color: matchExceptions > 0 ? "#dc2626" : "#7a7a6e" }}>🧩</div>
+            <div className="stat-card-body">
+              <div className="stat-card-value" style={{ color: matchExceptions > 0 ? "#991b1b" : "var(--ink)" }}>{matchExceptions}</div>
+              <div className="stat-card-label">Match Exceptions</div>
+              <div className="stat-card-sub">{matchExceptions > 0 ? "Unmatched / mismatched" : "All POs matched"}</div>
+            </div>
+          </div>
+
+          {/* Duplicate Suspects */}
+          <div
+            className="stat-card stat-clickable"
+            onClick={() => setFilter("duplicates")}
+            style={{
+              cursor: "pointer",
+              background: duplicateSuspects > 0 ? "#fef2f2" : "white",
+              borderColor: duplicateSuspects > 0 ? "#fca5a5" : "var(--border)",
+              borderWidth: duplicateSuspects > 0 ? "1.5px" : "1px",
+              outline: filter === "duplicates" ? "2px solid #dc2626" : "none",
+              outlineOffset: "-2px",
+            }}
+            title="Click to filter table"
+          >
+            <div className="stat-card-icon" style={{ background: duplicateSuspects > 0 ? "rgba(220,38,38,0.12)" : "#f3f4f6", color: duplicateSuspects > 0 ? "#dc2626" : "#7a7a6e" }}>🚨</div>
+            <div className="stat-card-body">
+              <div className="stat-card-value" style={{ color: duplicateSuspects > 0 ? "#991b1b" : "var(--ink)" }}>{duplicateSuspects}</div>
+              <div className="stat-card-label">Duplicate Suspects</div>
+              <div className="stat-card-sub">{duplicateSuspects > 0 ? "Review before pushing" : "No duplicates flagged"}</div>
+            </div>
+          </div>
+
+          {/* $ Pending Approval */}
+          <div className="stat-card" style={{ background: "white", borderColor: "var(--border)" }}>
+            <div className="stat-card-icon" style={{ background: "rgba(13,79,60,0.1)", color: "#0a3d2f" }}>💰</div>
+            <div className="stat-card-body">
+              <div className="stat-card-value" style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(pendingApprovalAmount)}</div>
+              <div className="stat-card-label">$ Pending Approval</div>
+              <div className="stat-card-sub">{pending} invoice{pending === 1 ? '' : 's'} awaiting</div>
+            </div>
+          </div>
         </div>
 
         {/* Invoice table */}
