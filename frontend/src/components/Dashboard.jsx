@@ -375,27 +375,27 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
           <div className="nav-item" onClick={onSettings}>⚙️ Settings</div>
-          {team && team.role === "admin" && <div className="nav-item" onClick={onOnboarding} style={{ color:"rgba(232,83,26,0.8)" }}>🚀 Setup Guide</div>}
+          {team && team.role === "admin" && <div className="nav-item" onClick={onOnboarding} style={{ color: "var(--ink)", fontWeight: 600 }}>🚀 Setup Guide</div>}
         </nav>
 
         <div style={{ padding: "0 16px 12px", display: "flex", gap: 12, fontSize: 11 }}>
-          <span style={{ color: "rgba(245,242,235,0.3)", cursor: "pointer" }} onClick={onPrivacy}>Privacy</span>
-          <span style={{ color: "rgba(245,242,235,0.3)" }}>·</span>
-          <span style={{ color: "rgba(245,242,235,0.3)", cursor: "pointer" }} onClick={onTerms}>Terms</span>
+          <span style={{ color: "#9ca3af", cursor: "pointer" }} onClick={onPrivacy}>Privacy</span>
+          <span style={{ color: "#d1d5db" }}>·</span>
+          <span style={{ color: "#9ca3af", cursor: "pointer" }} onClick={onTerms}>Terms</span>
         </div>
 
         {/* Need Help Button */}
         <div style={{ padding: "0 16px 12px" }}>
           <button
             onClick={onSupport}
-            style={{ width:"100%", display:"flex", alignItems:"center", gap:8, background:"rgba(232,83,26,0.12)", border:"1px solid rgba(232,83,26,0.25)", color:"#f87c4f", padding:"10px 14px", borderRadius:10, fontSize:13, fontWeight:500, textDecoration:"none", transition:"all 0.2s", cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(232,83,26,0.2)"}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(232,83,26,0.12)"}
+            style={{ width:"100%", display:"flex", alignItems:"center", gap:8, background:"white", border:"1px solid #e2ddd4", color:"#4b5563", padding:"10px 14px", borderRadius:8, fontSize:13, fontWeight:500, textDecoration:"none", transition:"all 0.2s", cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#faf9f7"; e.currentTarget.style.borderColor = "#cbc5b8"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#e2ddd4"; }}
           >
             <span style={{ fontSize:16 }}>🆘</span>
             <div style={{ textAlign:"left" }}>
-              <div style={{ fontSize:13, fontWeight:600 }}>Need Help?</div>
-              <div style={{ fontSize:11, color:"rgba(248,124,79,0.7)", marginTop:1 }}>Help & Support</div>
+              <div style={{ fontSize:13, fontWeight:600, color:"#1f2937" }}>Need Help?</div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>Help & Support</div>
             </div>
           </button>
         </div>
@@ -660,7 +660,8 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                               {showMarkPaid && (
                                 <button
                                   onClick={() => openMarkPaid(inv)}
-                                  style={{ background:"#16a34a", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                                  className="btn-mark-paid"
+                                  title="Mark as paid"
                                 >💰 Mark Paid</button>
                               )}
                               <button
