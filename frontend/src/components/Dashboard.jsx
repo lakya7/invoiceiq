@@ -267,6 +267,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     setBulkActionLoading(true);
     let successCount = 0;
     let failCount = 0;
+    let firstError = null;
     const noteText = bulkNoteText.trim();
     for (const invoiceId of selectedIds) {
       try {
@@ -278,8 +279,18 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           comment: noteText,
           created_at: new Date().toISOString(),
         });
-        if (error) failCount++; else successCount++;
-      } catch { failCount++; }
+        if (error) {
+          if (!firstError) firstError = error;
+          console.error("Bulk note insert error:", error, "for invoice", invoiceId);
+          failCount++;
+        } else {
+          successCount++;
+        }
+      } catch (e) {
+        if (!firstError) firstError = e;
+        console.error("Bulk note exception:", e);
+        failCount++;
+      }
     }
     setBulkActionLoading(false);
     setShowBulkNote(false);
@@ -288,7 +299,8 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     if (failCount === 0) {
       alert(`Added note to ${successCount} invoice(s).`);
     } else {
-      alert(`Added note to ${successCount} invoice(s). ${failCount} failed.`);
+      const errMsg = firstError?.message || firstError?.error_description || "Unknown error";
+      alert(`Added note to ${successCount} invoice(s). ${failCount} failed.\n\nError: ${errMsg}`);
     }
   };
 
