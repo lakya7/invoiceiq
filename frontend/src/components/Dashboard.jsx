@@ -78,11 +78,18 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const [savingComment, setSavingComment] = useState(false);
   const [auditInvoice, setAuditInvoice] = useState(null);
   const [auditLog, setAuditLog] = useState([]);
-  const [setupDismissed, setSetupDismissed] = useState(() => {
-    try { return localStorage.getItem("billtiq_setup_dismissed") === "1"; } catch { return false; }
-  });
+  // Team-scoped key — dismissing on Team A doesn't hide banner on Team B
+  const setupDismissedKey = team?.id ? `billtiq_setup_dismissed_${team.id}` : null;
+  const [setupDismissed, setSetupDismissed] = useState(false);
+  // Re-read dismissed state whenever team changes
+  useEffect(() => {
+    if (!setupDismissedKey) { setSetupDismissed(false); return; }
+    try { setSetupDismissed(localStorage.getItem(setupDismissedKey) === "1"); }
+    catch { setSetupDismissed(false); }
+  }, [setupDismissedKey]);
   const dismissSetup = () => {
-    try { localStorage.setItem("billtiq_setup_dismissed", "1"); } catch {}
+    if (!setupDismissedKey) return;
+    try { localStorage.setItem(setupDismissedKey, "1"); } catch {}
     setSetupDismissed(true);
   };
   const [auditLoading, setAuditLoading] = useState(false);
@@ -90,6 +97,19 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   // ── BULK SELECTION ─────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // ── ROW ACTION OVERFLOW MENU ───────────────────────────────
+  const [openMenuId, setOpenMenuId] = useState(null);
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = (e) => {
+      // Don't close if clicking inside an open menu or its trigger
+      if (e.target.closest?.("[data-row-menu]")) return;
+      setOpenMenuId(null);
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [openMenuId]);
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -366,10 +386,11 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   });
 
   // ── CSV EXPORT ─────────────────────────────────────────────────
+  // Exports the currently-filtered view (respects search + filter tabs)
   const exportCSV = () => {
     const rows = [
       ["Invoice #","Vendor","Date","Amount","Currency","PO Match","Status","ERP Reference","Created At"],
-      ...invoices.map(inv => [
+      ...filtered.map(inv => [
         inv.invoice_number || "",
         inv.vendor_name || "",
         inv.invoice_date || "",
@@ -632,7 +653,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
         {!team && !creatingTeam && Array.isArray(teams) && teams.length === 0 && (
           <div className="onboarding-card">
             <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
-            <div style={{ fontFamily:"Syne,sans-serif", fontWeight:700, fontSize:18, marginBottom:6 }}>Create a Team Workspace</div>
+            <div style={{ fontFamily:"DM Sans,sans-serif", fontWeight:700, fontSize:18, marginBottom:6 }}>Create a Team Workspace</div>
             <p style={{ color:"var(--muted)", fontSize:14, marginBottom:16, lineHeight:1.6 }}>Collaborate with your finance team, share purchase orders, and manage invoices together.</p>
             <button className="btn-approve" onClick={() => setCreatingTeam(true)}>Create Team →</button>
           </div>
@@ -750,11 +771,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                   </button>
                 ))}
               </div>
-              {/* CSV Export */}
-              <button
-                onClick={exportCSV}
-                style={{ background:"white", border:"1px solid #e2ddd4", color:"#374151", padding:"7px 14px", borderRadius:8, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
-              >⬇ Export CSV</button>
+              {/* CSV Export — hidden during bulk selection to avoid two competing export buttons */}
+              {selectedIds.size === 0 && (
+                <button
+                  onClick={exportCSV}
+                  style={{ background:"white", border:"1px solid #e2ddd4", color:"#374151", padding:"7px 14px", borderRadius:8, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                >⬇ Export {filter === "all" && !search.trim() ? "all" : "filtered"}</button>
+              )}
             </div>
           </div>
 
@@ -773,7 +796,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
               <button
                 onClick={bulkExportCSV}
                 style={{ background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.3)", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-              >⬇ Export selected</button>
+              >⬇ Export {selectedIds.size} selected</button>
               <button
                 onClick={() => setShowBulkNote(true)}
                 style={{ background:"transparent", color:"white", border:"1px solid rgba(255,255,255,0.3)", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
@@ -856,42 +879,81 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                         <td>{inv.status === "pushed" ? <span className="status-badge" style={{background:pc.bg,color:pc.color}}>{pc.label}</span> : <span style={{color:"#9ca3af",fontSize:12}}>—</span>}</td>
                         <td>
                           {inv.status === "pending" && (
-                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                            <div style={{ display:"flex", gap:6, alignItems:"center", position:"relative" }}>
                               <button
                                 onClick={() => approveInvoice(inv.id)}
-                                style={{ background:"#16a34a", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                                style={{ background:"#0a3d2f", color:"white", border:"none", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
                               >✓ Approve</button>
-                              <button
-                                onClick={() => rejectInvoice(inv.id)}
-                                style={{ background:"transparent", color:"#dc2626", border:"1px solid #fecaca", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
-                              >✗ Reject</button>
-                              <button
-                                onClick={() => openComments(inv)}
-                                style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-                              >💬</button>
-                              <button
-                                onClick={() => openAudit(inv)}
-                                style={{ background:"#f5f3ff", border:"1px solid #c4b5fd", color:"#7c3aed", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-                              >🕐</button>
+                              <div data-row-menu style={{ position:"relative" }}>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === inv.id ? null : inv.id); }}
+                                  title="More actions"
+                                  style={{ background:"white", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 8px", borderRadius:6, fontSize:14, lineHeight:1, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                >⋯</button>
+                                {openMenuId === inv.id && (
+                                  <div style={{ position:"absolute", top:"calc(100% + 4px)", right:0, background:"white", border:"1px solid #e2ddd4", borderRadius:8, boxShadow:"0 6px 20px rgba(10,61,47,0.12)", padding:4, minWidth:160, zIndex:50 }}>
+                                    <button
+                                      onClick={() => { setOpenMenuId(null); rejectInvoice(inv.id); }}
+                                      style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", color:"#C53030", padding:"8px 12px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                      onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                    >✗ Reject</button>
+                                    <button
+                                      onClick={() => { setOpenMenuId(null); openComments(inv); }}
+                                      style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", color:"#374151", padding:"8px 12px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                      onMouseEnter={e => e.currentTarget.style.background = "#faf9f7"}
+                                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                    >💬 Add note</button>
+                                    <button
+                                      onClick={() => { setOpenMenuId(null); openAudit(inv); }}
+                                      style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", color:"#374151", padding:"8px 12px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                      onMouseEnter={e => e.currentTarget.style.background = "#faf9f7"}
+                                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                    >🕐 View history</button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                           {inv.status !== "pending" && (
-                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                              {showMarkPaid && (
+                            <div style={{ display:"flex", gap:6, alignItems:"center", position:"relative" }}>
+                              {showMarkPaid ? (
                                 <button
                                   onClick={() => openMarkPaid(inv)}
                                   className="btn-mark-paid"
                                   title="Mark as paid"
                                 >💰 Mark Paid</button>
+                              ) : (
+                                <button
+                                  onClick={() => openComments(inv)}
+                                  style={{ background:"white", border:"1px solid #e2ddd4", color:"#374151", padding:"4px 10px", borderRadius:6, fontSize:11, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif", whiteSpace:"nowrap" }}
+                                >💬 Note</button>
                               )}
-                              <button
-                                onClick={() => openComments(inv)}
-                                style={{ background:"none", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-                              >💬 Note</button>
-                              <button
-                                onClick={() => openAudit(inv)}
-                                style={{ background:"#f5f3ff", border:"1px solid #c4b5fd", color:"#7c3aed", padding:"4px 10px", borderRadius:6, fontSize:11, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
-                              >🕐 History</button>
+                              <div data-row-menu style={{ position:"relative" }}>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === inv.id ? null : inv.id); }}
+                                  title="More actions"
+                                  style={{ background:"white", border:"1px solid #e2ddd4", color:"#6b7280", padding:"4px 8px", borderRadius:6, fontSize:14, lineHeight:1, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                >⋯</button>
+                                {openMenuId === inv.id && (
+                                  <div style={{ position:"absolute", top:"calc(100% + 4px)", right:0, background:"white", border:"1px solid #e2ddd4", borderRadius:8, boxShadow:"0 6px 20px rgba(10,61,47,0.12)", padding:4, minWidth:160, zIndex:50 }}>
+                                    {showMarkPaid && (
+                                      <button
+                                        onClick={() => { setOpenMenuId(null); openComments(inv); }}
+                                        style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", color:"#374151", padding:"8px 12px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                        onMouseEnter={e => e.currentTarget.style.background = "#faf9f7"}
+                                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                      >💬 Add note</button>
+                                    )}
+                                    <button
+                                      onClick={() => { setOpenMenuId(null); openAudit(inv); }}
+                                      style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", color:"#374151", padding:"8px 12px", borderRadius:6, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"DM Sans,sans-serif" }}
+                                      onMouseEnter={e => e.currentTarget.style.background = "#faf9f7"}
+                                      onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                    >🕐 View history</button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </td>
@@ -944,7 +1006,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             {/* Header */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
               <div>
-                <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
+                <div style={{ fontFamily:"DM Sans,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
                   Audit History — Invoice #{auditInvoice.invoice_number}
                 </div>
                 <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>
@@ -1025,7 +1087,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div style={{ background:"white", borderRadius:16, padding:28, maxWidth:480, width:"100%", fontFamily:"DM Sans,sans-serif", maxHeight:"80vh", display:"flex", flexDirection:"column" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <div>
-                <div style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
+                <div style={{ fontFamily:"DM Sans,sans-serif", fontWeight:800, fontSize:16, color:"#0a0f1e" }}>
                   Notes — Invoice #{commentInvoice.invoice_number}
                 </div>
                 <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{commentInvoice.vendor_name} · {commentInvoice.invoice_date}</div>
@@ -1078,7 +1140,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div style={{ background:"white", borderRadius:20, padding:32, maxWidth:480, width:"100%", fontFamily:"DM Sans, sans-serif" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
               <div>
-                <div style={{ fontFamily:"Syne, sans-serif", fontWeight:800, fontSize:18, color:"#0a0f1e" }}>
+                <div style={{ fontFamily:"DM Sans, sans-serif", fontWeight:800, fontSize:18, color:"#0a0f1e" }}>
                   Mark as Paid 💰
                 </div>
                 <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>
