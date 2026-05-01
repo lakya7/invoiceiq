@@ -266,21 +266,30 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     if (!bulkNoteText.trim()) return;
     setBulkActionLoading(true);
     let successCount = 0;
+    let failCount = 0;
+    const noteText = bulkNoteText.trim();
     for (const invoiceId of selectedIds) {
       try {
-        const res = await fetch(`${API}/api/invoices/${invoiceId}/comments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ teamId: team?.id, userId: user?.id, comment: bulkNoteText, userName: user?.user_metadata?.full_name || user?.email }),
+        const { error } = await supabase.from("invoice_comments").insert({
+          invoice_id: invoiceId,
+          team_id: team?.id,
+          user_id: user.id,
+          user_email: user.email,
+          comment: noteText,
+          created_at: new Date().toISOString(),
         });
-        if (res.ok) successCount++;
-      } catch {}
+        if (error) failCount++; else successCount++;
+      } catch { failCount++; }
     }
     setBulkActionLoading(false);
     setShowBulkNote(false);
     setBulkNoteText("");
     clearSelection();
-    alert(`Added note to ${successCount} invoice(s).`);
+    if (failCount === 0) {
+      alert(`Added note to ${successCount} invoice(s).`);
+    } else {
+      alert(`Added note to ${successCount} invoice(s). ${failCount} failed.`);
+    }
   };
 
   const createTeam = async (e) => {
