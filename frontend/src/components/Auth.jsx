@@ -53,13 +53,13 @@ export default function Auth() {
       <div className="auth-left">
         <div className="auth-brand">
           <div className="logo">Bill<span>tiq</span></div>
-          <p className="auth-tagline">AI-powered invoice processing for modern finance teams</p>
+          <p className="auth-tagline">Oracle Fusion AP exception handling for mid-market finance teams</p>
         </div>
         <div className="auth-stats">
           {[
-            { num: "92%", label: "Less manual entry" },
-            { num: "4 sec", label: "Per invoice" },
-            { num: "$40K", label: "Saved per year" },
+            { num: "6 ERPs", label: "Oracle, NetSuite, QuickBooks, Xero, Zoho, Dynamics 365" },
+            { num: "Match", label: "exception resolution without IT tickets" },
+            { num: "Audit", label: "trail on every approval" },
           ].map((s, i) => (
             <div key={i} className="auth-stat">
               <div className="auth-stat-num">{s.num}</div>
@@ -72,7 +72,7 @@ export default function Auth() {
       <div className="auth-right">
         <div className="auth-card">
           <div className="auth-card-title">{forgotMode ? "Reset password" : mode === "signup" ? "Create your account" : "Welcome back"}</div>
-          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : mode === "signup" ? "Start your 14-day free trial" : "Sign in to your Billtiq account"}</div>
+          <div className="auth-card-sub">{forgotMode ? "We'll send you a reset link" : mode === "signup" ? "Get started in minutes" : "Sign in to your Billtiq account"}</div>
 
           {!forgotMode && (
             <>
@@ -114,7 +114,7 @@ export default function Auth() {
           </form>
 
           <div className="auth-switch">
-            {!forgotMode && mode === "login" && <>Don't have an account? <button onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>Sign up free</button></>}
+            {!forgotMode && mode === "login" && <>Don't have an account? <button onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>Sign up</button></>}
             {!forgotMode && mode === "signup" && <>Already have an account? <button onClick={() => { setMode("login"); setError(null); setMessage(null); }}>Sign in</button></>}
             {forgotMode && <button onClick={() => { setForgotMode(false); setError(null); setMessage(null); }}>← Back to sign in</button>}
           </div>
