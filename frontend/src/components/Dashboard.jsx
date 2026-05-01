@@ -606,7 +606,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div>
             <h1 className="dash-title">
               {hasActionItems
-                ? <>Action Required <span style={{ color: "#C53030", fontWeight: 700 }}>· {totalActionRequired}</span></>
+                ? <>{totalActionRequired} AP {(matchExceptions + duplicateSuspects) > 0 ? "Exception" : "Invoice"}{totalActionRequired === 1 ? "" : "s"} Requiring Review</>
                 : "Inbox"
               }
             </h1>
@@ -871,9 +871,19 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                         <td className="inv-vendor">{inv.vendor_name||"—"}</td>
                         <td style={{ color: age.color, fontWeight: 600, fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{age.text}</td>
                         <td className="inv-amount">{sym}{Number(inv.total||0).toLocaleString("en-US",{minimumFractionDigits:2})}</td>
-                        <td><span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span></td>
-                        <td style={{ color: reason ? "#991b1b" : "#9ca3af", fontSize: 12, maxWidth: 220 }}>
-                          {reason || "—"}
+                        <td>
+                          {/* For pushed invoices, the exception is historical (was reviewed and approved). Show a muted "Approved" label instead of the alarming red badge. */}
+                          {inv.status === "pushed" && (inv.match_status === "unmatched" || inv.match_status === "mismatch" || inv.match_status === "partial") ? (
+                            <span className="status-badge" style={{ background: "#f3f4f6", color: "#6b7280", fontWeight: 500 }} title={`Originally ${mc.label || inv.match_status}, approved by reviewer`}>
+                              Approved · {mc.label || inv.match_status}
+                            </span>
+                          ) : (
+                            <span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span>
+                          )}
+                        </td>
+                        <td style={{ color: (reason && inv.status !== "pushed") ? "#991b1b" : "#9ca3af", fontSize: 12, maxWidth: 220 }}>
+                          {/* For pushed rows, the exception reason is informational, not actionable — fade it */}
+                          {reason ? (inv.status === "pushed" ? <span style={{ fontStyle: "italic" }}>{reason}</span> : reason) : "—"}
                         </td>
                         <td><span className="status-badge" style={{background:sc.bg,color:sc.color}}>{inv.status}</span></td>
                         <td>{inv.status === "pushed" ? <span className="status-badge" style={{background:pc.bg,color:pc.color}}>{pc.label}</span> : <span style={{color:"#9ca3af",fontSize:12}}>—</span>}</td>
