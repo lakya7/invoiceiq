@@ -4,49 +4,62 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 const PLANS = [
   {
-    id: "free",
+    id: "starter",
     name: "Starter",
-    price: "$0",
+    price: "$499",
     period: "/month",
-    desc: "Try Billtiq with no commitment",
-    docs: 50,
-    features: ["50 invoices/month", "1 ERP integration", "AI extraction", "Supplier portal"],
-    cta: "Current Plan",
+    desc: "For SMBs on QuickBooks, Xero, or Zoho",
+    docs: 200,
+    features: [
+      "200 invoices/month",
+      "1 ERP integration",
+      "Core AI extraction",
+      "Duplicate detection",
+      "Email + portal capture",
+      "Audit trail",
+      "Email support",
+    ],
+    cta: "Subscribe to Starter",
     color: "#6b7280",
     highlight: false,
   },
   {
     id: "growth",
     name: "Growth",
-    price: "$299",
+    price: "$1,500",
     period: "/month",
-    desc: "For growing AP teams",
-    docs: 500,
-    features: ["500 invoices/month", "1 ERP integration", "PO matching", "Duplicate detection", "AI Agents (7 live)", "14-day free trial"],
-    cta: "Upgrade to Growth",
+    desc: "For mid-market on Oracle Fusion or NetSuite",
+    docs: 1000,
+    features: [
+      "1,000 invoices/month",
+      "Up to 3 ERP integrations",
+      "PO matching (2-way)",
+      "All AI Agents",
+      "Team management & approval workflows",
+      "Analytics dashboard",
+      "Priority email support",
+    ],
+    cta: "Subscribe to Growth",
     color: "#e8531a",
     highlight: true,
-  },
-  {
-    id: "scale",
-    name: "Scale",
-    price: "$799",
-    period: "/month",
-    desc: "For high-volume AP teams",
-    docs: 2000,
-    features: ["2,000 invoices/month", "3 ERP integrations", "All AI Agents", "Team management", "Analytics dashboard", "Priority support", "14-day free trial"],
-    cta: "Upgrade to Scale",
-    color: "#1a6be8",
-    highlight: false,
   },
   {
     id: "enterprise",
     name: "Enterprise",
     price: "Custom",
     period: "",
-    desc: "For large finance teams",
+    desc: "For large finance teams & multi-entity",
     docs: Infinity,
-    features: ["Unlimited invoices", "Unlimited ERPs", "All AI Agents", "Dedicated CSM", "SLA guarantee", "On-premise option", "SSO / SAML"],
+    features: [
+      "Unlimited invoices",
+      "Unlimited ERPs",
+      "Dedicated CSM",
+      "SLA guarantee",
+      "SOC 2 documentation & DPA",
+      "SSO / SAML",
+      "On-premise / VPC deployment",
+      "Custom integrations",
+    ],
     cta: "Contact Sales",
     color: "#7c3aed",
     highlight: false,
@@ -149,7 +162,8 @@ export default function Billing({ user, team, onBack }) {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const currentPlan = sub?.plan || "free";
+  const currentPlan = sub?.plan || null;
+  const currentPlanData = currentPlan ? PLANS.find(p => p.id === currentPlan) : null;
   const isOwner = team?.role === "admin";
 
   return (
@@ -178,15 +192,21 @@ export default function Billing({ user, team, onBack }) {
             <div className="billing-current-card">
               <div className="billing-current-left">
                 <div className="billing-plan-tag">Current Plan</div>
-                <div className="billing-current-name">{PLANS.find(p=>p.id===currentPlan)?.name || "Free"}</div>
-                <div className="billing-current-price">
-                  {PLANS.find(p=>p.id===currentPlan)?.price}
-                  <span>{PLANS.find(p=>p.id===currentPlan)?.period}</span>
-                </div>
-                {sub?.status === "trialing" && sub?.trial_end && (
-                  <div className="trial-badge">
-                    🎁 Trial ends {new Date(sub.trial_end).toLocaleDateString("en-US", { month:"short", day:"numeric" })}
-                  </div>
+                {currentPlanData ? (
+                  <>
+                    <div className="billing-current-name">{currentPlanData.name}</div>
+                    <div className="billing-current-price">
+                      {currentPlanData.price}
+                      <span>{currentPlanData.period}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="billing-current-name">No active plan</div>
+                    <div className="billing-current-price" style={{ fontSize: 16, color: "var(--muted)", fontWeight: 500 }}>
+                      Choose a plan below to activate invoice processing
+                    </div>
+                  </>
                 )}
                 {sub?.cancel_at_period_end && (
                   <div className="cancel-badge">
@@ -198,8 +218,8 @@ export default function Billing({ user, team, onBack }) {
                 )}
               </div>
               <div className="billing-current-right">
-                {usage && <UsageBar used={usage.used} limit={usage.limit} plan={currentPlan} />}
-                {sub?.current_period_end && (
+                {usage && currentPlanData && <UsageBar used={usage.used} limit={usage.limit} plan={currentPlan} />}
+                {sub?.current_period_end && currentPlanData && (
                   <div style={{ marginTop:12, fontSize:12, color:"var(--muted)" }}>
                     Next renewal: {new Date(sub.current_period_end).toLocaleDateString("en-US", { month:"long", day:"numeric", year:"numeric" })}
                   </div>
@@ -211,7 +231,7 @@ export default function Billing({ user, team, onBack }) {
             {isOwner && (
               <>
                 <div className="billing-section-title">
-                  {currentPlan === "free" ? "Choose a Plan" : "Switch Plan"}
+                  {!currentPlanData ? "Choose a Plan" : "Switch Plan"}
                 </div>
                 <div className="billing-plans-grid">
                   {PLANS.map(plan => {
@@ -245,10 +265,6 @@ export default function Billing({ user, team, onBack }) {
                         >
                           {checkoutLoading === plan.id ? "Loading..." : isCurrent ? "Current Plan" : plan.cta}
                         </button>
-
-                        {!isCurrent && plan.id !== "free" && plan.id !== "enterprise" && (
-                          <div className="bpc-trial-note">Includes 14-day free trial</div>
-                        )}
                       </div>
                     );
                   })}

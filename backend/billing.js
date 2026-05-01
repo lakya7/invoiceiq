@@ -5,12 +5,13 @@ const { createClient } = require("@supabase/supabase-js");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-// Plan config — update price IDs from your Stripe dashboard
+// Plan config — update price IDs from your Stripe dashboard.
+// Internal keys: 'starter' | 'growth' | 'enterprise'. The `price` field is metadata
+// for logs/debugging; Stripe charges whatever amount the priceId points to.
 const PLANS = {
-  free:       { name: "Starter",    docs: 50,       price: 0,    priceId: null },
-  growth:     { name: "Growth",     docs: 500,       price: 299,  priceId: process.env.STRIPE_PRICE_GROWTH },
-  scale:      { name: "Scale",      docs: 2000,      price: 799,  priceId: process.env.STRIPE_PRICE_SCALE },
-  enterprise: { name: "Enterprise", docs: Infinity,  price: null, priceId: process.env.STRIPE_PRICE_ENTERPRISE },
+  starter:    { name: "Starter",    docs: 200,       price: 499,   priceId: process.env.STRIPE_PRICE_STARTER },
+  growth:     { name: "Growth",     docs: 1000,      price: 1500,  priceId: process.env.STRIPE_PRICE_GROWTH },
+  enterprise: { name: "Enterprise", docs: Infinity,  price: null,  priceId: process.env.STRIPE_PRICE_ENTERPRISE },
 };
 
 // ── GET OR CREATE STRIPE CUSTOMER ──────────────────────────────
@@ -32,7 +33,7 @@ async function getOrCreateCustomer(teamId, email, teamName) {
   await supabase.from("subscriptions").upsert({
     team_id: teamId,
     stripe_customer_id: customer.id,
-    plan: "free",
+    plan: null, // No free tier — team must choose a paid plan to activate
     updated_at: new Date().toISOString(),
   }, { onConflict: "team_id" });
 
@@ -54,7 +55,6 @@ async function createCheckoutSession({ teamId, plan, email, teamName, successUrl
     success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}&upgraded=true`,
     cancel_url: cancelUrl,
     subscription_data: {
-      trial_period_days: 14,
       metadata: { team_id: teamId, plan },
     },
     metadata: { team_id: teamId, plan },
@@ -103,7 +103,7 @@ async function handleWebhook(rawBody, signature) {
           stripe_customer_id: data.customer,
           stripe_subscription_id: data.subscription,
           plan,
-          status: "trialing",
+          status: "active",
           updated_at: new Date().toISOString(),
         }, { onConflict: "team_id" });
         // Update team plan
@@ -138,9 +138,9 @@ async function handleWebhook(rawBody, signature) {
     }
 
     case "customer.subscription.deleted": {
-      await supabase.from("subscriptions").update({ status: "canceled", plan: "free", updated_at: new Date().toISOString() }).eq("stripe_subscription_id", data.id);
+      await supabase.from("subscriptions").update({ status: "canceled", plan: null, updated_at: new Date().toISOString() }).eq("stripe_subscription_id", data.id);
       const teamId = await getTeamByCustomer(data.customer);
-      if (teamId) await supabase.from("teams").update({ plan: "free" }).eq("id", teamId);
+      if (teamId) await supabase.from("teams").update({ plan: null }).eq("id", teamId);
       break;
     }
 
@@ -170,9 +170,13 @@ async function checkUsageLimit(teamId) {
     .eq("team_id", teamId)
     .single();
 
-  const plan = sub?.plan || "free";
+  const plan = sub?.plan || null;
   const used = sub?.docs_used_this_period || 0;
-  const limit = PLANS[plan]?.docs || 50;
+  // No active plan = no document processing allowed. Team must subscribe to a paid tier.
+  if (!plan || !PLANS[plan]) {
+    return { allowed: false, plan: null, used: 0, limit: 0, remaining: 0, percentUsed: 0, reason: "no_active_plan" };
+  }
+  const limit = PLANS[plan].docs;
   const allowed = limit === Infinity || used < limit;
 
   return {
@@ -202,10 +206,10 @@ async function getSubscription(teamId) {
     .eq("team_id", teamId)
     .single();
 
-  const plan = data?.plan || "free";
+  const plan = data?.plan || null;
   return {
     ...data,
-    planConfig: PLANS[plan],
+    planConfig: plan ? PLANS[plan] : null,
     allPlans: PLANS,
   };
 }
