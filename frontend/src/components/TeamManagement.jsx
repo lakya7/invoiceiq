@@ -22,6 +22,7 @@ export default function TeamManagement({ user, team, onBack }) {
   const [inviting, setInviting] = useState(false);
   const [toast, setToast] = useState(null);
   const [tab, setTab] = useState("members"); // members | roles
+  const [resendingFor, setResendingFor] = useState(null); // email currently being resent
 
   const isAdmin = team?.role === "admin";
 
@@ -79,6 +80,23 @@ export default function TeamManagement({ user, team, onBack }) {
       setMembers(m => m.filter(x => x.id !== memberId));
       showToast("Member removed", "success");
     } catch (e) { showToast(e.message, "error"); }
+  };
+
+  const resendInvite = async (email) => {
+    setResendingFor(email);
+    try {
+      const res = await fetch(`${API}/api/teams/${team.id}/invite/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Failed to resend invite");
+      showToast(`Invite re-sent to ${email}`, "success");
+    } catch (e) {
+      showToast(e.message, "error");
+    }
+    setResendingFor(null);
   };
 
   const showToast = (msg, type = "success") => {
@@ -167,6 +185,27 @@ export default function TeamManagement({ user, team, onBack }) {
                             >
                               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
+                            {m.status === "pending" && (
+                              <button
+                                onClick={() => resendInvite(m.email)}
+                                disabled={resendingFor === m.email}
+                                title="Re-send the invitation email"
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: "#0a3d2f",
+                                  background: "#fff",
+                                  border: "1px solid #0a3d2f",
+                                  borderRadius: 6,
+                                  cursor: resendingFor === m.email ? "wait" : "pointer",
+                                  opacity: resendingFor === m.email ? 0.6 : 1,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {resendingFor === m.email ? "Sending..." : "Resend"}
+                              </button>
+                            )}
                             <button className="remove-btn" onClick={() => removeMember(m.id, m.email)}>✕</button>
                           </>
                         ) : (
