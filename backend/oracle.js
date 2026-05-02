@@ -21,6 +21,126 @@ async function getOracleToken(teamId) {
   return { credentials, baseUrl: conn.base_url };
 }
 
+// ── ADDRESS NORMALIZER ──────────────────────────────────────────
+// Intentionally minimal — we're matching against the customer's own Oracle data,
+// not arbitrary addresses. Strict USPS-grade normalization is overkill here.
+function normalizeAddress(s) {
+  if (!s) return "";
+  return String(s)
+    .toLowerCase()
+    .replace(/[.,#]/g, "")              // remove punctuation
+    .replace(/\s+/g, " ")               // collapse whitespace
+    .replace(/\bstreet\b/g, "st")       // common abbreviations
+    .replace(/\bavenue\b/g, "ave")
+    .replace(/\bboulevard\b/g, "blvd")
+    .replace(/\broad\b/g, "rd")
+    .replace(/\bsuite\b/g, "ste")
+    .replace(/\bfloor\b/g, "fl")
+    .replace(/\bbuilding\b/g, "bldg")
+    .replace(/\bpo box\b/g, "pobox")
+    .replace(/\bp o box\b/g, "pobox")
+    .trim();
+}
+
+// Build a comparable string from Oracle's structured site address
+function siteToNormalizedString(site) {
+  return normalizeAddress(
+    [site.AddressLine1, site.AddressLine2, site.City, site.State, site.PostalCode]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+// ── SUPPLIER SITE MATCHER ───────────────────────────────────────
+// Given an Oracle SupplierId and an invoice address, find the matching SupplierSite.
+// 2-tier strategy (Option 1 — strict):
+//   Tier 1 (Strong match): postal code AND street line 1 normalized match → auto-select silently
+//   Tier 2 (No match): warn + return primary pay site as fallback
+// Returns { match: "strong" | "fallback" | "none", site, warning }
+async function findMatchingSupplierSite({ supplierId, invoiceAddress, credentials, baseUrl }) {
+  if (!supplierId || !credentials || !baseUrl) {
+    return { match: "none", site: null, warning: "Site matching skipped — missing supplier ID or Oracle credentials" };
+  }
+
+  let sites = [];
+  try {
+    const res = await axios.get(
+      `${baseUrl}/fscmRestApi/resources/11.13.18.05/suppliers/${supplierId}/child/supplierSites?limit=50`,
+      {
+        headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+        timeout: 8000,
+      }
+    );
+    sites = res.data?.items || [];
+  } catch (e) {
+    return { match: "none", site: null, warning: `Could not fetch supplier sites from Oracle (${e.message}) — sending without site code` };
+  }
+
+  // Filter to active pay sites only — purchasing-only and inactive sites cannot receive invoices
+  const today = new Date();
+  const paySites = sites.filter(s => {
+    const isInactive = s.InactiveDate && new Date(s.InactiveDate) <= today;
+    if (isInactive) return false;
+    // PaySiteFlag is a string "true"/"false" or boolean depending on Oracle config — handle both
+    const isPaySite = s.PaySiteFlag === true || s.PaySiteFlag === "true";
+    return isPaySite;
+  });
+
+  if (paySites.length === 0) {
+    return {
+      match: "none",
+      site: null,
+      warning: `Supplier ${supplierId} has no active pay sites in Oracle — Oracle will likely reject the invoice or require manual site assignment`,
+    };
+  }
+
+  // If we have no invoice address to match against, fall back to primary pay site
+  if (!invoiceAddress || !invoiceAddress.trim()) {
+    const primary = paySites.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || paySites[0];
+    return {
+      match: "fallback",
+      site: primary,
+      warning: `No supplier address on invoice — defaulted to primary pay site "${primary.SupplierSiteCode}". Verify before approving.`,
+    };
+  }
+
+  // Tier 1: Strong match — postal code AND street line 1 normalized match
+  const normalizedInvoice = normalizeAddress(invoiceAddress);
+  const strongMatches = paySites.filter(site => {
+    if (!site.PostalCode) return false;
+    // Postal code must appear in the invoice address (any format — full or first 5 chars of US ZIP)
+    const zipShort = String(site.PostalCode).split("-")[0].trim();
+    if (!normalizedInvoice.includes(zipShort.toLowerCase())) return false;
+    // Street line 1 must appear in the invoice address (after normalization)
+    const normalizedStreet = normalizeAddress(site.AddressLine1 || "");
+    if (!normalizedStreet) return false;
+    return normalizedInvoice.includes(normalizedStreet);
+  });
+
+  if (strongMatches.length === 1) {
+    return { match: "strong", site: strongMatches[0], warning: null };
+  }
+
+  if (strongMatches.length > 1) {
+    // Multiple sites matched — prefer the primary pay site
+    const primary = strongMatches.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || strongMatches[0];
+    return {
+      match: "strong",
+      site: primary,
+      warning: `${strongMatches.length} supplier sites matched the invoice address — selected primary pay site "${primary.SupplierSiteCode}"`,
+    };
+  }
+
+  // Tier 2: No strong match — fall back to primary pay site with loud warning
+  const primary = paySites.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || paySites[0];
+  const allSiteCodes = paySites.map(s => s.SupplierSiteCode).join(", ");
+  return {
+    match: "fallback",
+    site: primary,
+    warning: `Invoice address "${invoiceAddress}" did not match any of supplier's ${paySites.length} pay site(s) [${allSiteCodes}]. Pushed to primary site "${primary.SupplierSiteCode}" — please verify this is the correct remit-to.`,
+  };
+}
+
 // ── PRE-PUSH VALIDATION ─────────────────────────────────────────
 // Validates invoice data before sending to Oracle Fusion
 // Returns { valid: bool, errors: [], warnings: [] }
@@ -102,6 +222,7 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
   }
 
   // ── 7. SUPPLIER VALIDATION IN ORACLE ─────────────────────────
+  let matchedSupplier = null;  // captured here, used later for site matching
   if (credentials && baseUrl && invoiceData.vendor?.name) {
     try {
       const supplierRes = await axios.get(
@@ -127,6 +248,9 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
             `Supplier name "${invoiceData.vendor.name}" has a partial match in Oracle: "${suppliers[0].Supplier}". ` +
             `Verify the correct supplier before approving.`
           );
+          matchedSupplier = suppliers[0];  // partial match, but we have something to work with
+        } else {
+          matchedSupplier = exactMatch;
         }
       }
     } catch (e) {
@@ -200,6 +324,7 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
     valid: errors.length === 0,
     errors,
     warnings,
+    matchedSupplier,  // null if no Oracle match found, else the Oracle supplier object with SupplierId
     summary: `${errors.length} error(s), ${warnings.length} warning(s)`,
   };
 }
@@ -259,6 +384,26 @@ async function pushInvoice(teamId, invoiceData) {
   // Oracle Fusion Payables REST API endpoint
   const endpoint = `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices`;
 
+  // ── SUPPLIER SITE MATCHING ──────────────────────────────────
+  // If we matched a supplier in Oracle, find the right SupplierSite (remit-to)
+  // by matching invoice address against the supplier's pay sites.
+  let siteMatch = { match: "none", site: null, warning: null };
+  if (validation.matchedSupplier?.SupplierId) {
+    siteMatch = await findMatchingSupplierSite({
+      supplierId: validation.matchedSupplier.SupplierId,
+      invoiceAddress: invoiceData.vendor?.address,
+      credentials,
+      baseUrl,
+    });
+    if (siteMatch.warning) {
+      validation.warnings.push(siteMatch.warning);
+      console.warn("Site matching:", siteMatch.warning);
+    }
+    if (siteMatch.match === "strong") {
+      console.log(`Site matched (strong): ${siteMatch.site.SupplierSiteCode}`);
+    }
+  }
+
   // Map invoice data to Oracle Fusion format
   const oracleInvoice = {
     InvoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
@@ -270,7 +415,9 @@ async function pushInvoice(teamId, invoiceData) {
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
     SupplierName: invoiceData.vendor?.name,
-    SupplierSite: invoiceData.vendor?.address,
+    // SupplierSite expects Oracle's SiteCode (a string identifier), NOT raw address text.
+    // Falls back to address text only if site matching couldn't find anything (legacy behavior).
+    SupplierSite: siteMatch.site?.SupplierSiteCode || invoiceData.vendor?.address,
     InvoiceType: "STANDARD",
     Source: "APFlow",
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => {
@@ -351,6 +498,11 @@ async function pushInvoice(teamId, invoiceData) {
         amount: oracle.InvoiceAmount,
         warnings: validation.warnings,
         pdfAttachment,
+        siteMatch: {
+          quality: siteMatch.match,                          // "strong" | "fallback" | "none"
+          siteCode: siteMatch.site?.SupplierSiteCode || null,
+          siteId: siteMatch.site?.SupplierSiteId || null,
+        },
       }
     };
   } catch (err) {
