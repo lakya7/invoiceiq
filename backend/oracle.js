@@ -154,6 +154,11 @@ function matchInvoiceLine({ invoiceLine, poLines, receiptLines, tolerances }) {
     reason: issues.length === 0 ? "Invoice line matches PO and receipt" : issues.join("; "),
     poLine: { number: matchedPOLine.LineNumber, qty: poQty, price: poPrice },
     receivedQty,
+    receipts: matchingReceipts.map(rl => ({
+      receiptNumber: rl.receiptNumber || rl.ReceiptNumber || null,
+      quantity: parseFloat(rl.Quantity) || 0,
+      receivedDate: rl.TransactionDate || rl.ReceiptDate || null,
+    })),
     issues,
   };
 }
@@ -208,10 +213,21 @@ async function performThreeWayMatch({ invoiceData, poHeaderId, credentials, base
     aggregateReason = `All ${lineResults.length} line(s) match PO and receipts`;
   }
 
+  // Collect unique receipt numbers across all matched lines (for dashboard display).
+  // E.g. if 3 invoice lines all matched against RCV-9876, show "RCV-9876" once, not three times.
+  const receiptNumberSet = new Set();
+  lineResults.forEach(lr => {
+    (lr.receipts || []).forEach(r => {
+      if (r.receiptNumber) receiptNumberSet.add(r.receiptNumber);
+    });
+  });
+  const receiptNumbers = Array.from(receiptNumberSet);
+
   return {
     status: aggregateStatus,
     reason: aggregateReason,
     lines: lineResults,
+    receiptNumbers,        // unique receipt numbers used in matching, for dashboard display
     poLineCount: poLines.length,
     receiptLineCount: receiptLines.length,
     tolerancesUsed: tolerances,
