@@ -21,7 +21,204 @@ async function getOracleToken(teamId) {
   return { credentials, baseUrl: conn.base_url };
 }
 
-// ── ADDRESS NORMALIZER ──────────────────────────────────────────
+// ── 3-WAY MATCH (Invoice ↔ PO ↔ Goods Receipt) ──────────────────
+// Validates that invoice lines match what was ordered (PO) AND what was received (GRN).
+// Performed BEFORE the invoice is pushed to Oracle, so issues are caught early.
+//
+// Tolerances are hardcoded for v1; will be configurable per-team in a later iteration.
+// Defaults match what Oracle Payables typically uses out of the box.
+const THREE_WAY_MATCH_TOLERANCES = {
+  pricePercent: 10,    // ±10% on unit price
+  quantityPercent: 5,  // ±5% on quantity
+};
+
+// Fetch PO line items from Oracle. Returns array of lines or [] on failure.
+async function fetchPOLines({ poHeaderId, credentials, baseUrl }) {
+  if (!poHeaderId || !credentials || !baseUrl) return [];
+  try {
+    const res = await axios.get(
+      `${baseUrl}/fscmRestApi/resources/11.13.18.05/purchaseOrders/${poHeaderId}/child/lines?limit=200`,
+      {
+        headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+        timeout: 8000,
+      }
+    );
+    return res.data?.items || [];
+  } catch (e) {
+    console.warn(`[3-way match] Could not fetch PO lines for ${poHeaderId}:`, e.message);
+    return [];
+  }
+}
+
+// Fetch Goods Receipt lines for a PO from Oracle. Returns array of receipt line records.
+// Oracle Receiving REST API: receiving receipts have a child "lines" collection that
+// references the PO line they were received against.
+async function fetchReceiptsForPO({ poHeaderId, credentials, baseUrl }) {
+  if (!poHeaderId || !credentials || !baseUrl) return [];
+  try {
+    // Oracle's Receiving Receipt Requests API can be queried by PO header ID.
+    // We pull the line-level receipts because that's what we need to match against.
+    const res = await axios.get(
+      `${baseUrl}/fscmRestApi/resources/11.13.18.05/receivingReceiptRequests?q=DocumentNumber=${encodeURIComponent(poHeaderId)};DocumentType=PO&limit=200&expand=lines`,
+      {
+        headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
+        timeout: 8000,
+      }
+    );
+    // Flatten: each receipt has a lines array. We want a single array of all received lines.
+    const receipts = res.data?.items || [];
+    const allLines = [];
+    receipts.forEach(r => {
+      (r.lines || []).forEach(line => allLines.push({ ...line, receiptNumber: r.ReceiptNumber }));
+    });
+    return allLines;
+  } catch (e) {
+    console.warn(`[3-way match] Could not fetch receipts for PO ${poHeaderId}:`, e.message);
+    return [];
+  }
+}
+
+// Match a single invoice line against PO lines + receipt lines.
+// Strategy:
+//   1. Find matching PO line by description / item code (best-effort fuzzy)
+//   2. Find matching receipt lines for that PO line
+//   3. Sum received quantity across all receipts for that PO line
+//   4. Compare: Invoice qty vs PO qty (within tolerance) AND Invoice qty vs Received qty
+// Returns { status, reason, poLine, receivedQty } per invoice line.
+function matchInvoiceLine({ invoiceLine, poLines, receiptLines, tolerances }) {
+  if (!invoiceLine.description) {
+    return { status: "no_match", reason: "Invoice line has no description to match against" };
+  }
+  // Fuzzy match: case-insensitive substring match on description, OR exact item number match
+  const invDesc = invoiceLine.description.toLowerCase().trim();
+  const matchedPOLine = poLines.find(pl => {
+    const poDesc = (pl.Description || pl.ItemDescription || "").toLowerCase().trim();
+    if (!poDesc) return false;
+    // Exact match wins
+    if (poDesc === invDesc) return true;
+    // Partial match if invoice desc is in PO desc or vice versa (handles slight variations)
+    if (poDesc.includes(invDesc) || invDesc.includes(poDesc)) return true;
+    return false;
+  });
+
+  if (!matchedPOLine) {
+    return {
+      status: "no_po_line",
+      reason: `Invoice line "${invoiceLine.description}" not found on PO`,
+    };
+  }
+
+  // Sum received quantity across all receipts for this PO line
+  const matchingReceipts = receiptLines.filter(rl => {
+    return rl.POLineId === matchedPOLine.POLineId ||
+           rl.POLineNumber === matchedPOLine.LineNumber;
+  });
+  const receivedQty = matchingReceipts.reduce((sum, rl) => sum + (parseFloat(rl.Quantity) || 0), 0);
+
+  const invQty = parseFloat(invoiceLine.quantity) || 0;
+  const invPrice = parseFloat(invoiceLine.unitPrice) || 0;
+  const poQty = parseFloat(matchedPOLine.Quantity || matchedPOLine.QuantityOrdered) || 0;
+  const poPrice = parseFloat(matchedPOLine.Price || matchedPOLine.UnitPrice) || 0;
+
+  const issues = [];
+
+  // Check 1: Invoice qty vs PO qty (within tolerance)
+  if (poQty > 0) {
+    const qtyDeviationPct = Math.abs((invQty - poQty) / poQty) * 100;
+    if (qtyDeviationPct > tolerances.quantityPercent) {
+      issues.push(`Quantity mismatch: Invoice ${invQty} vs PO ${poQty} (${qtyDeviationPct.toFixed(1)}% off, tolerance ${tolerances.quantityPercent}%)`);
+    }
+  }
+
+  // Check 2: Invoice price vs PO price (within tolerance)
+  if (poPrice > 0 && invPrice > 0) {
+    const priceDeviationPct = Math.abs((invPrice - poPrice) / poPrice) * 100;
+    if (priceDeviationPct > tolerances.pricePercent) {
+      issues.push(`Unit price mismatch: Invoice $${invPrice} vs PO $${poPrice} (${priceDeviationPct.toFixed(1)}% off, tolerance ${tolerances.pricePercent}%)`);
+    }
+  }
+
+  // Check 3: Receipt validation (the "3rd way")
+  if (receiptLines.length === 0) {
+    // No receipts at all for this PO — could be a service PO (no receiving) or unreceived
+    issues.push(`No goods receipts found for this PO — verify items have been received`);
+  } else if (matchingReceipts.length === 0) {
+    issues.push(`This invoice line has no matching receipt — items may not have been received yet`);
+  } else if (receivedQty < invQty) {
+    // Billed more than received
+    issues.push(`Billing ${invQty} but only ${receivedQty} received against this PO line`);
+  }
+
+  return {
+    status: issues.length === 0 ? "matched" : "mismatch",
+    reason: issues.length === 0 ? "Invoice line matches PO and receipt" : issues.join("; "),
+    poLine: { number: matchedPOLine.LineNumber, qty: poQty, price: poPrice },
+    receivedQty,
+    issues,
+  };
+}
+
+// Main 3-way match function. Returns aggregate result + per-line details.
+async function performThreeWayMatch({ invoiceData, poHeaderId, credentials, baseUrl, tolerances = THREE_WAY_MATCH_TOLERANCES }) {
+  // Skip if we have nothing to match against
+  if (!invoiceData.lineItems || invoiceData.lineItems.length === 0) {
+    return { status: "skipped", reason: "Invoice has no line items to match", lines: [] };
+  }
+  if (!poHeaderId) {
+    return { status: "skipped", reason: "No PO number on invoice — cannot perform 3-way match", lines: [] };
+  }
+  if (!credentials || !baseUrl) {
+    return { status: "skipped", reason: "Oracle not connected — 3-way match unavailable", lines: [] };
+  }
+
+  // Fetch PO lines and receipts in parallel for speed
+  const [poLines, receiptLines] = await Promise.all([
+    fetchPOLines({ poHeaderId, credentials, baseUrl }),
+    fetchReceiptsForPO({ poHeaderId, credentials, baseUrl }),
+  ]);
+
+  if (poLines.length === 0) {
+    return {
+      status: "no_data",
+      reason: `Could not fetch PO line details from Oracle for ${poHeaderId}`,
+      lines: [],
+    };
+  }
+
+  // Match each invoice line — but only ITEM lines (skip TAX, FREIGHT, MISC)
+  const itemLines = invoiceData.lineItems.filter(l => {
+    const lt = (l.lineType || "").toUpperCase();
+    return !lt || lt === "ITEM" || lt === "GOODS";
+  });
+
+  const lineResults = itemLines.map(invLine =>
+    matchInvoiceLine({ invoiceLine: invLine, poLines, receiptLines, tolerances })
+  );
+
+  // Aggregate status: matched if all lines matched, mismatch if any failed
+  const anyMismatch = lineResults.some(r => r.status === "mismatch");
+  const anyNoMatch = lineResults.some(r => r.status === "no_po_line" || r.status === "no_match");
+  let aggregateStatus, aggregateReason;
+  if (anyMismatch || anyNoMatch) {
+    aggregateStatus = "mismatch";
+    const failedCount = lineResults.filter(r => r.status !== "matched").length;
+    aggregateReason = `${failedCount} of ${lineResults.length} line(s) have 3-way match issues`;
+  } else {
+    aggregateStatus = "matched";
+    aggregateReason = `All ${lineResults.length} line(s) match PO and receipts`;
+  }
+
+  return {
+    status: aggregateStatus,
+    reason: aggregateReason,
+    lines: lineResults,
+    poLineCount: poLines.length,
+    receiptLineCount: receiptLines.length,
+    tolerancesUsed: tolerances,
+  };
+}
+
+
 // Intentionally minimal — we're matching against the customer's own Oracle data,
 // not arbitrary addresses. Strict USPS-grade normalization is overkill here.
 function normalizeAddress(s) {
@@ -259,6 +456,7 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
   }
 
   // ── 8. PO VALIDATION ─────────────────────────────────────────
+  let matchedPOHeaderId = null;  // captured here, used for 3-way match below
   if (invoiceData.poNumber && credentials && baseUrl) {
     try {
       const poRes = await axios.get(
@@ -276,6 +474,7 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
         );
       } else {
         const po = pos[0];
+        matchedPOHeaderId = po.POHeaderId;
         // Check PO amount tolerance (±10%)
         if (po.OrderedAmount) {
           const tolerance = po.OrderedAmount * 0.1;
@@ -289,6 +488,33 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
       }
     } catch (e) {
       // PO lookup failed — not critical
+    }
+  }
+
+  // ── 8.5. 3-WAY MATCH (Invoice ↔ PO ↔ Goods Receipt) ──────────
+  // Pre-validates that the invoice matches what was ordered AND received.
+  // Catches mismatches before the invoice is pushed to Oracle.
+  // Uses warnings (not errors) so users can override — matches existing pattern.
+  let threeWayMatch = null;
+  if (matchedPOHeaderId) {
+    threeWayMatch = await performThreeWayMatch({
+      invoiceData,
+      poHeaderId: matchedPOHeaderId,
+      credentials,
+      baseUrl,
+    });
+    if (threeWayMatch.status === "mismatch") {
+      warnings.push(`3-way match: ${threeWayMatch.reason}`);
+      // Add line-level details for visibility
+      threeWayMatch.lines.forEach((lineResult, i) => {
+        if (lineResult.status !== "matched") {
+          warnings.push(`  • Line ${i + 1}: ${lineResult.reason}`);
+        }
+      });
+    } else if (threeWayMatch.status === "no_data") {
+      warnings.push(`3-way match: ${threeWayMatch.reason}`);
+    } else if (threeWayMatch.status === "matched") {
+      console.log(`[3-way match] ✓ ${threeWayMatch.reason}`);
     }
   }
 
@@ -325,6 +551,7 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
     errors,
     warnings,
     matchedSupplier,  // null if no Oracle match found, else the Oracle supplier object with SupplierId
+    threeWayMatch,    // null if not run, else { status, reason, lines: [...] } — see performThreeWayMatch
     summary: `${errors.length} error(s), ${warnings.length} warning(s)`,
   };
 }
