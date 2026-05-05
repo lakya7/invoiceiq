@@ -1144,7 +1144,7 @@ app.post("/api/erp/push", async (req, res) => {
 
     // Save to Supabase
     if (teamId) {
-      // Extract 3-way match fields from validation result (Oracle only — other ERPs don't run this)
+      // Extract match validation fields from validation result (Oracle only — other ERPs don't run this)
       const tw = result?.validation?.threeWayMatch;
       const threeWayMatchFields = tw ? {
         three_way_match_status: tw.status || null,
@@ -1152,6 +1152,7 @@ app.post("/api/erp/push", async (req, res) => {
         three_way_match_receipts: (tw.receiptNumbers && tw.receiptNumbers.length > 0)
           ? tw.receiptNumbers.join(",")
           : null,
+        match_type: tw.matchType || null,  // "2-way" | "3-way" | null — drives dashboard badge
       } : {};
 
       const { data: savedInvoice } = await supabase.from("invoices").insert({

@@ -877,8 +877,8 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                             <span className="status-badge" style={{ background: "#f3f4f6", color: "#6b7280", fontWeight: 500 }} title={`Originally ${mc.label || inv.match_status}, approved by reviewer`}>
                               Approved · {mc.label || inv.match_status}
                             </span>
-                          ) : inv.three_way_match_status === "matched" ? (
-                            // 3-way match passed — show with the receipt numbers it matched against
+                          ) : inv.three_way_match_status === "matched" && inv.match_type === "3-way" ? (
+                            // 3-way match passed — show receipt numbers
                             <span
                               className="status-badge"
                               style={{ background: "#dcfce7", color: "#16a34a" }}
@@ -886,14 +886,32 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                             >
                               ✓ 3-Way{inv.three_way_match_receipts ? ` · ${inv.three_way_match_receipts}` : ""}
                             </span>
+                          ) : inv.three_way_match_status === "matched" && inv.match_type === "2-way" ? (
+                            // 2-way match passed — no receipts needed for this PO
+                            <span
+                              className="status-badge"
+                              style={{ background: "#dcfce7", color: "#16a34a" }}
+                              title={inv.three_way_match_reason || "Invoice matches PO"}
+                            >
+                              ✓ 2-Way
+                            </span>
+                          ) : inv.three_way_match_status === "receipt_missing" ? (
+                            // 3-way required, receipt not yet available — distinct exception state
+                            <span
+                              className="status-badge"
+                              style={{ background: "#fef3c7", color: "#92400e" }}
+                              title={inv.three_way_match_reason || "3-way match required but receipt is missing"}
+                            >
+                              ⚠ Receipt Missing
+                            </span>
                           ) : inv.three_way_match_status === "mismatch" ? (
-                            // 3-way match failed — show with reason on hover
+                            // Mismatch on either qty or price (label varies by match type)
                             <span
                               className="status-badge"
                               style={{ background: "#fee2e2", color: "#dc2626" }}
                               title={inv.three_way_match_reason || "Invoice does not match PO and/or receipts"}
                             >
-                              ⚠ 3-Way Mismatch
+                              ⚠ {inv.match_type === "2-way" ? "2-Way" : "3-Way"} Mismatch
                             </span>
                           ) : (
                             <span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span>
