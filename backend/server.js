@@ -47,41 +47,18 @@ const gmailTransport = nodemailer.createTransport({
   },
 });
 
-// Smart email sender — Resend primary, Gmail fallback.
-// Why: Resend is purpose-built for transactional email, has better deliverability
-// for system messages, and gives us a dashboard to debug failures. Gmail SMTP is
-// kept as a fallback in case Resend has an outage.
-// Returns: { sent: true, via: "resend"|"gmail" } on success, throws on total failure.
+// Smart email sender — tries Gmail first, falls back to Resend
 async function sendEmail({ to, subject, html }) {
-  // Try Resend first
-  if (resend) {
-    try {
-      await resend.emails.send({
-        from: "Billtiq <notifications@billtiq.com>",
-        to, subject, html
-      });
-      console.log(`[email] Sent via Resend to ${to}: ${subject}`);
-      return { sent: true, via: "resend" };
-    } catch (err) {
-      console.error(`[email] Resend failed for ${to}:`, err.message);
-      // Fall through to Gmail
-    }
-  }
-  // Fall back to Gmail SMTP
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    try {
-      await gmailTransport.sendMail({
-        from: `Billtiq <${process.env.GMAIL_USER}>`,
-        to, subject, html,
-      });
-      console.log(`[email] Sent via Gmail to ${to}: ${subject}`);
-      return { sent: true, via: "gmail" };
-    } catch (err) {
-      console.error(`[email] Gmail also failed for ${to}:`, err.message);
-      throw new Error(`All email providers failed. Last error: ${err.message}`);
-    }
+    await gmailTransport.sendMail({
+      from: `Billtiq <${process.env.GMAIL_USER}>`,
+      to, subject, html,
+    });
+  } else if (resend) {
+    await resend.emails.send({ from: "Billtiq <notifications@billtiq.app>", to, subject, html });
+  } else {
+    console.log("No email provider configured");
   }
-  throw new Error("No email provider configured (Resend and Gmail both unavailable)");
 }
 
 app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","PUT","DELETE"] }));
@@ -119,7 +96,7 @@ app.post("/api/check-duplicate", async (req, res) => {
             subject: `⚠️ Duplicate Invoice Detected — #${invoiceNumber}`,
             html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
               <div style="background:#0a0f1e;padding:24px 32px;">
-                <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
+                <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
               </div>
               <div style="padding:32px;">
                 <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
@@ -583,10 +560,18 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).single();
     const inviterEmail = await getUserEmail(invitedBy);
 
-    // Build invite URL and email content
+    // Create invite record
+    await supabase.from("team_invites").insert({ team_id: teamId, email, role, token, invited_by: invitedBy });
+
+    // Add as pending member
+    await supabase.from("team_members").insert({ team_id: teamId, email, role, status: "pending", invited_by: invitedBy });
+
+    // Send invite email
     const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
-    const emailSubject = `${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`;
-    const emailHtml = `
+    await sendEmail({
+      to: email,
+      subject: `${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`,
+      html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
     <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
@@ -599,76 +584,11 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
     <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have a Billtiq account, you'll be asked to create one.</p>
   </div>
-</div>`;
-
-    // Send email FIRST. If email fails, abort entirely — don't create
-    // "pending" rows that lie about an invite being sent.
-    await sendEmail({ to: email, subject: emailSubject, html: emailHtml });
-
-    // Email succeeded — now create the DB records
-    await supabase.from("team_invites").insert({ team_id: teamId, email, role, token, invited_by: invitedBy });
-    await supabase.from("team_members").insert({ team_id: teamId, email, role, status: "pending", invited_by: invitedBy });
+</div>`
+    });
 
     res.json({ success: true, message: `Invitation sent to ${email}` });
-  } catch (err) {
-    console.error("[invite] Failed:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Resend invite — for invites stuck in "pending" status due to past email failures.
-// Generates a new token (invalidates the old one) and re-sends the email.
-app.post("/api/teams/:teamId/invite/resend", async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: "email required" });
-
-    // Find the existing pending member record
-    const { data: member } = await supabase
-      .from("team_members")
-      .select("id, role, invited_by, status")
-      .eq("team_id", teamId)
-      .eq("email", email)
-      .single();
-
-    if (!member) return res.status(404).json({ error: "No invite found for this email on this team" });
-    if (member.status === "active") return res.status(400).json({ error: "User has already accepted the invite" });
-
-    // Get team info + inviter email
-    const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).single();
-    const inviterEmail = await getUserEmail(member.invited_by);
-
-    // Generate fresh token and replace any existing invite record
-    const token = crypto.randomBytes(32).toString("hex");
-    await supabase.from("team_invites").delete().eq("team_id", teamId).eq("email", email);
-    await supabase.from("team_invites").insert({ team_id: teamId, email, role: member.role, token, invited_by: member.invited_by });
-
-    // Build email content (same template as initial invite)
-    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
-    const emailSubject = `Reminder: ${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`;
-    const emailHtml = `
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-  <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
-  </div>
-  <div style="padding:32px;">
-    <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">Your invite is still waiting 👋</h2>
-    <p style="font-size:15px;color:#7a7a6e;line-height:1.6;margin:0 0 24px;">
-      <strong style="color:#0a0f1e;">${inviterEmail}</strong> previously invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${member.role}</strong>. Click below to accept.
-    </p>
-    <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
-    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days.</p>
-  </div>
-</div>`;
-
-    await sendEmail({ to: email, subject: emailSubject, html: emailHtml });
-
-    res.json({ success: true, message: `Invitation re-sent to ${email}` });
-  } catch (err) {
-    console.error("[invite/resend] Failed:", err);
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
 // Accept invite
@@ -727,10 +647,10 @@ app.post("/api/settings", async (req, res) => {
 app.post("/api/settings/test-email", async (req, res) => {
   try {
     const { email } = req.body;
-    await sendEmail({
-      to: email,
+    await resend.emails.send({
+      from: "Billtiq <notifications@billtiq.app>", to: email,
       subject: "✅ Billtiq Test Notification",
-      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e2ddd4;"><div style="font-size:20px;font-weight:800;margin-bottom:16px;">Bill<span style="color:#e8531a;">tiq</span></div><h2 style="font-size:18px;margin-bottom:8px;">Test notification working! 🎉</h2><p style="color:#7a7a6e;font-size:14px;line-height:1.6;">Email notifications are configured correctly.</p></div>`
+      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:40px auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e2ddd4;"><div style="font-size:20px;font-weight:800;margin-bottom:16px;">Invoice<span style="color:#e8531a;">IQ</span></div><h2 style="font-size:18px;margin-bottom:8px;">Test notification working! 🎉</h2><p style="color:#7a7a6e;font-size:14px;line-height:1.6;">Email notifications are configured correctly.</p></div>`
     });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -748,11 +668,11 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
     no_po: "➖ No POs on File",
   }[matchResult.matchStatus] || "" : "";
 
-  await sendEmail({
-    to: recipients,
+  await resend.emails.send({
+    from: "Billtiq <notifications@billtiq.app>", to: recipients,
     subject: `✅ Invoice ${invoiceData.invoiceNumber||"N/A"} Approved — ${total}`,
     html: `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-  <div style="background:#0a0f1e;padding:24px 32px;"><div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div></div>
+  <div style="background:#0a0f1e;padding:24px 32px;"><div style="font-size:20px;font-weight:800;color:#fff;">Invoice<span style="color:#e8531a;">IQ</span></div></div>
   <div style="padding:32px 32px 16px;">
     <div style="font-size:40px;margin-bottom:12px;">✅</div>
     <h1 style="font-size:20px;font-weight:700;color:#0a0f1e;margin:0 0 8px;">Invoice Approved & Pushed to ERP</h1>
@@ -1144,6 +1064,16 @@ app.post("/api/erp/push", async (req, res) => {
 
     // Save to Supabase
     if (teamId) {
+      // Extract 3-way match fields from validation result (Oracle only — other ERPs don't run this)
+      const tw = result?.validation?.threeWayMatch;
+      const threeWayMatchFields = tw ? {
+        three_way_match_status: tw.status || null,
+        three_way_match_reason: tw.reason || null,
+        three_way_match_receipts: (tw.receiptNumbers && tw.receiptNumbers.length > 0)
+          ? tw.receiptNumbers.join(",")
+          : null,
+      } : {};
+
       const { data: savedInvoice } = await supabase.from("invoices").insert({
         user_id: req.body.userId,
         team_id: teamId,
@@ -1156,6 +1086,7 @@ app.post("/api/erp/push", async (req, res) => {
         status: "pushed",
         erp_reference: result.erpReference,
         raw_data: invoiceData,
+        ...threeWayMatchFields,
       }).select().single();
 
       // ── FIRE SLACK/TEAMS NOTIFICATION ──────────────────────────
@@ -1291,7 +1222,7 @@ app.post("/api/agent/email/check", async (req, res) => {
             html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
     <div style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;margin-top:4px;">EMAIL INVOICE AGENT</div>
   </div>
   <div style="padding:32px;">
@@ -1418,12 +1349,12 @@ app.post("/api/support", async (req, res) => {
     if (!message || !email) return res.status(400).json({ error: "Email and message required" });
 
     await sendEmail({
-      to: "help@billtiq.com",
+      to: "help@billtiq.app",
       subject: `[${issueType}] Support Request from ${name || email}`,
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
     <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;">SUPPORT REQUEST</div>
   </div>
   <div style="padding:32px;">
@@ -1449,7 +1380,7 @@ app.post("/api/support", async (req, res) => {
       html: `
 <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
+    <div style="font-size:20px;font-weight:800;color:#fff;">AP<span style="color:#e8531a;">Flow</span></div>
   </div>
   <div style="padding:32px;">
     <div style="font-size:36px;margin-bottom:12px;">✅</div>

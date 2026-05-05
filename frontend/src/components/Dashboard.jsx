@@ -877,6 +877,24 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
                             <span className="status-badge" style={{ background: "#f3f4f6", color: "#6b7280", fontWeight: 500 }} title={`Originally ${mc.label || inv.match_status}, approved by reviewer`}>
                               Approved · {mc.label || inv.match_status}
                             </span>
+                          ) : inv.three_way_match_status === "matched" ? (
+                            // 3-way match passed — show with the receipt numbers it matched against
+                            <span
+                              className="status-badge"
+                              style={{ background: "#dcfce7", color: "#16a34a" }}
+                              title={inv.three_way_match_reason || "Invoice matches PO and goods receipts"}
+                            >
+                              ✓ 3-Way{inv.three_way_match_receipts ? ` · ${inv.three_way_match_receipts}` : ""}
+                            </span>
+                          ) : inv.three_way_match_status === "mismatch" ? (
+                            // 3-way match failed — show with reason on hover
+                            <span
+                              className="status-badge"
+                              style={{ background: "#fee2e2", color: "#dc2626" }}
+                              title={inv.three_way_match_reason || "Invoice does not match PO and/or receipts"}
+                            >
+                              ⚠ 3-Way Mismatch
+                            </span>
                           ) : (
                             <span className="status-badge" style={{background:mc.bg,color:mc.color}}>{mc.label || (inv.match_status||"unmatched").replace(/_/g," ")}</span>
                           )}
