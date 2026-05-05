@@ -333,10 +333,10 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   </div>
 
   <div class="stats-bar">
-    <div class="stat"><div class="stat-n">80<em>%</em></div><div class="stat-l">Faster exception resolution</div></div>
-    <div class="stat"><div class="stat-n">4<em>sec</em></div><div class="stat-l">Per invoice extraction</div></div>
-    <div class="stat"><div class="stat-n">99<em>%</em></div><div class="stat-l">Extraction accuracy</div></div>
-    <div class="stat"><div class="stat-n">6<em>+</em></div><div class="stat-l">ERPs supported</div></div>
+    <div class="stat"><div class="stat-n">6<em>+</em></div><div class="stat-l">ERP integrations</div></div>
+    <div class="stat"><div class="stat-n">3<em>-way</em></div><div class="stat-l">Match (Oracle level-aware)</div></div>
+    <div class="stat"><div class="stat-n">Pre<em>-push</em></div><div class="stat-l">Validation before ERP</div></div>
+    <div class="stat"><div class="stat-n">ZIP</div><div class="stat-l">Batch upload</div></div>
     <div class="stat"><div class="stat-n">Zero</div><div class="stat-l">IT effort required</div></div>
   </div>
 
@@ -479,8 +479,8 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:16px">02 — EXTRACT</div>
       <div style="font-size:28px;margin-bottom:14px">🤖</div>
       <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:white;margin-bottom:8px">AI reads everything</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Claude AI extracts every field — vendor, amounts, dates, line items — from any format with 99% accuracy in 4 seconds.</div>
-      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">4 seconds</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;font-weight:300">Claude AI extracts every field — vendor, amounts, dates, line items — from any format including PDFs, images, and scans. No templates required.</div>
+      <div style="margin-top:14px;background:rgba(245,184,110,0.08);color:var(--orange);padding:3px 10px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;display:inline-block">Multi-format</div>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px">
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);letter-spacing:2px;margin-bottom:16px">03 — VALIDATE</div>
@@ -619,10 +619,10 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
       <h2 class="section-h" style="font-size:clamp(28px,3.5vw,48px)">See where <span>AI automation</span><br>can take your AP team</h2>
       <p style="font-size:15px;color:var(--muted);line-height:1.75;font-weight:300;margin-bottom:28px">From invoice receipt to ERP sync — Billtiq eliminates every manual step. Your team focuses on exceptions only. Claude AI handles the rest.</p>
       <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
-        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Invoice processed in 4 seconds — not 4 minutes</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Invoice extracted in seconds — not minutes of manual entry</div>
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Supplier notified instantly via Slack when paid</div>
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Zero manual entry into Oracle or QuickBooks</div>
-        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>$40K saved per year on average</div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>3-way match validation respects your Oracle MatchApprovalLevel</div>
       </div>
       <a href="#" class="btn-primary" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book Oracle Demo →</a>
     </div>
@@ -657,12 +657,12 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
           <div style="width:36px;height:36px;background:rgba(34,197,94,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🔔</div>
           <div style="flex:1">
             <div style="font-size:12px;font-weight:600;color:white">Teams / Slack alert sent</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">Buyer & supplier notified · 4 seconds total</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Buyer & supplier notified · End of flow</div>
           </div>
           <div style="font-size:10px;color:#22c55e;font-family:'DM Mono',monospace;background:rgba(34,197,94,0.08);padding:3px 8px;border-radius:100px">Sent ✓</div>
         </div>
       </div>
-      <div style="margin-top:16px;padding:12px 16px;background:rgba(245,184,110,0.06);border:1px solid rgba(245,184,110,0.15);border-radius:10px;font-size:12px;color:#ffce8a;font-family:'DM Mono',monospace">⚡ Total time: 4 seconds · Zero manual steps</div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(245,184,110,0.06);border:1px solid rgba(245,184,110,0.15);border-radius:10px;font-size:12px;color:#ffce8a;font-family:'DM Mono',monospace">⚡ Receive → Extract → Match → Push · Zero manual steps</div>
     </div>
   </div>
 </section>
@@ -847,13 +847,13 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <div class="uc-mini-row" style="background:rgba(220,38,38,0.1)"><div class="uc-mini-dot" style="background:#dc2626"></div><div class="uc-mini-text">Invoice #1213 · $2,809</div><div class="uc-mini-badge" style="background:#dc2626;color:white">Blocked ✗</div></div>
       </div>
       <div class="uc-card-title">Same invoice submitted twice by supplier</div>
-      <div class="uc-card-desc">Anomaly agent catches duplicates instantly, blocks before ERP, and automatically emails the supplier — saving $1,800 avg per incident.</div>
+      <div class="uc-card-desc">Anomaly agent catches duplicates instantly, blocks before ERP, and automatically emails the supplier — preventing duplicate payments before they happen.</div>
     </div>
     <div class="uc-card" style="background:#f5f3ff">
       <div class="uc-num">04 — SCANNED PDF</div>
       <div class="uc-mini" style="background:#ede9fe">
         <div class="uc-mini-row"><div class="uc-mini-dot" style="background:#7c3aed"></div><div class="uc-mini-text">Handwritten invoice.pdf</div></div>
-        <div class="uc-mini-row" style="background:rgba(124,58,237,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">All fields extracted</div><div class="uc-mini-badge" style="background:#7c3aed;color:white">99% accuracy</div></div>
+        <div class="uc-mini-row" style="background:rgba(124,58,237,0.1)"><div class="uc-mini-dot" style="background:#22c55e"></div><div class="uc-mini-text">All fields extracted</div><div class="uc-mini-badge" style="background:#7c3aed;color:white">Multi-format</div></div>
       </div>
       <div class="uc-card-title">Scanned or handwritten invoice IDR can't read</div>
       <div class="uc-card-desc">Claude Vision reads any format — handwritten, scanned, low-res, non-standard layouts. No templates, no training required.</div>
@@ -964,7 +964,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <li>Up to 1,000 invoices/month</li>
         <li>Oracle Fusion or NetSuite integration</li>
         <li>Match exception resolution</li>
-        <li>3-way matching (PO + receipt + invoice)</li>
+        <li>3-way matching with Oracle MatchApprovalLevel awareness</li>
         <li>PDF attachment at Oracle header</li>
         <li>Vendor master matching (4-layer)</li>
         <li>Approval routing without scripts</li>
@@ -997,51 +997,6 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 </section>
 
 
-<!-- TESTIMONIALS -->
-<section style="padding:80px 60px;border-bottom:1px solid var(--border)">
-  <div class="eyebrow reveal" style="text-align:center">What AP teams say</div>
-  <h2 class="section-h reveal" style="text-align:center;margin-bottom:48px">The last invoice tool<br><span>your team will ever need.</span></h2>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;max-width:1100px;margin:0 auto" class="reveal">
-
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px">
-      <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
-      <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">We used to spend 3 hours a day entering invoices into Oracle. Billtiq cut that to zero. The freight line mapping alone saved us hours of recoding every week.</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">S</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:white">Sarah K.</div>
-          <div style="font-size:11px;color:var(--dim)">AP Manager · Energy Company</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px">
-      <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
-      <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">The Slack approval feature is a game changer. I approve invoices from my phone without opening a single system. My team loves it.</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:#1a6be8;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">M</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:white">Michael R.</div>
-          <div style="font-size:11px;color:var(--dim)">Finance Director · Healthcare</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px">
-      <div style="font-size:32px;color:var(--orange);margin-bottom:16px;line-height:1">"</div>
-      <div style="font-size:15px;color:rgba(245,242,235,0.8);line-height:1.75;margin-bottom:20px">Setup took 10 minutes. Basware wanted 6 months and $100K. Billtiq was live the same day and works better for our Oracle Fusion environment.</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:50%;background:#16a34a;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:white">P</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:white">Priya M.</div>
-          <div style="font-size:11px;color:var(--dim)">CFO · Manufacturing</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
 <!-- CTA -->
 <section class="cta-section">
   <h2 class="cta-h reveal">Ready to fix Oracle AP<br>exception <span>handling?</span></h2>
@@ -1061,8 +1016,6 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     <li><a href="#integrations">Integrations</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="/security">Security</a></li>
-    <li><a href="/login">Privacy Policy</a></li>
-    <li><a href="/login">Terms of Service</a></li>
     <li><a href="mailto:hello@billtiq.com">Contact</a></li>
   </ul>
   <div class="foot-copy">© 2026 Billtiq · hello@billtiq.com</div>
