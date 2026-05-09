@@ -613,7 +613,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
             <p className="dash-sub">{team ? `${team.name} · ${invoices.length} invoice${invoices.length === 1 ? '' : 's'} processed` : "Your AP exception handling overview"}</p>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-            {!team && Array.isArray(teams) && teams.length === 0 && (
+            {Array.isArray(teams) && teams.some(t => t.role === "admin") && (
               <button className="btn-secondary-action" onClick={() => setCreatingTeam(true)}>+ Create Team</button>
             )}
             {team && (
@@ -649,13 +649,13 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           </div>
         )}
 
-        {/* Create team prompt - only show if user has no teams at all */}
+        {/* Invite-only: users with zero teams must book a demo to get onboarded */}
         {!team && !creatingTeam && Array.isArray(teams) && teams.length === 0 && (
           <div className="onboarding-card">
-            <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
-            <div style={{ fontFamily:"DM Sans,sans-serif", fontWeight:700, fontSize:18, marginBottom:6 }}>Create a Team Workspace</div>
-            <p style={{ color:"var(--muted)", fontSize:14, marginBottom:16, lineHeight:1.6 }}>Collaborate with your finance team, share purchase orders, and manage invoices together.</p>
-            <button className="btn-approve" onClick={() => setCreatingTeam(true)}>Create Team →</button>
+            <div style={{ fontSize:36, marginBottom:12 }}>👋</div>
+            <div style={{ fontFamily:"DM Sans,sans-serif", fontWeight:700, fontSize:18, marginBottom:6 }}>You need an invite to get started</div>
+            <p style={{ color:"var(--muted)", fontSize:14, marginBottom:16, lineHeight:1.6 }}>Billtiq is currently invite-only. Book a quick demo and we'll get you set up with your team workspace.</p>
+            <a href="https://cal.com/lakya-r-uh2c7c/oracle-demo" target="_blank" rel="noopener noreferrer" className="btn-approve" style={{ textDecoration:"none", display:"inline-block" }}>Book a demo →</a>
           </div>
         )}
 

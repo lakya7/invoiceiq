@@ -510,6 +510,20 @@ app.post("/api/push-erp", async (req, res) => {
 app.post("/api/teams", async (req, res) => {
   try {
     const { name, userId } = req.body;
+
+    // ── Guard: only existing admins can create teams ──
+    // Billtiq is invite-only. New users get a team via invite, not by creating one.
+    const userEmailForCheck = await getUserEmail(userId);
+    const { data: existing } = await supabase.from("team_members")
+      .select("role")
+      .or(`user_id.eq.${userId},email.eq.${userEmailForCheck}`)
+      .eq("status", "active");
+
+    const isAdminSomewhere = (existing || []).some(m => m.role === "admin");
+    if (!isAdminSomewhere) {
+      return res.status(403).json({ error: "Team creation is invite-only. Please book a demo to get started." });
+    }
+
     const slug = name.toLowerCase().replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-") + "-" + Date.now().toString(36);
 
     const { data: team, error: teamErr } = await supabase.from("teams").insert({ name, slug, owner_id: userId }).select().single();

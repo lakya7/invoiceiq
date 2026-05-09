@@ -2,7 +2,10 @@ import { useState } from "react";
 import { supabase } from "../supabase";
 
 export default function Auth() {
-  const isSignup = new URLSearchParams(window.location.search).get("signup") === "true";
+  const params = new URLSearchParams(window.location.search);
+  const hasInvite = !!params.get("invite");
+  // Signup is invite-only. Without an invite token, signup mode is disabled.
+  const isSignup = hasInvite && params.get("signup") === "true";
   const [mode, setMode] = useState(isSignup ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -114,7 +117,8 @@ export default function Auth() {
           </form>
 
           <div className="auth-switch">
-            {!forgotMode && mode === "login" && <>Don't have an account? <button onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>Sign up</button></>}
+            {!forgotMode && mode === "login" && hasInvite && <>Don't have an account? <button onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>Sign up</button></>}
+            {!forgotMode && mode === "login" && !hasInvite && <>Don't have an account? <a href="https://cal.com/lakya-r-uh2c7c/oracle-demo" target="_blank" rel="noopener noreferrer" style={{ color: "#e8531a", fontWeight: 600, textDecoration: "none" }}>Book a demo →</a></>}
             {!forgotMode && mode === "signup" && <>Already have an account? <button onClick={() => { setMode("login"); setError(null); setMessage(null); }}>Sign in</button></>}
             {forgotMode && <button onClick={() => { setForgotMode(false); setError(null); setMessage(null); }}>← Back to sign in</button>}
           </div>
