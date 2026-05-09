@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import Auth from "./components/Auth";
+import ResetPassword from "./components/ResetPassword";
 import Dashboard from "./components/Dashboard";
 import Settings from "./components/Settings";
 import TeamManagement from "./components/TeamManagement";
@@ -245,6 +246,13 @@ export default function App() {
     setExtractedData(null); setMatchResult(null); setErpResult(null);
     setView("invoice");
   };
+
+  // Password reset flow — must run BEFORE authLoading and !user checks.
+  // Supabase signs the user in temporarily when the recovery token resolves,
+  // so we can't gate this on user being null.
+  if (window.location.pathname === "/reset-password") {
+    return <ResetPassword />;
+  }
 
   if (authLoading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#f5f2eb" }}>
