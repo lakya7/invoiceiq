@@ -601,19 +601,48 @@ app.post("/api/teams/:teamId/invite", async (req, res) => {
     const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
     const emailSubject = `${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`;
     const emailHtml = `
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-  <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
-  </div>
-  <div style="padding:32px;">
-    <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">You've been invited! 🎉</h2>
-    <p style="font-size:15px;color:#7a7a6e;line-height:1.6;margin:0 0 24px;">
-      <strong style="color:#0a0f1e;">${inviterEmail}</strong> has invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${role}</strong>.
-    </p>
-    <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
-    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days. If you don't have a Billtiq account, you'll be asked to create one.</p>
-  </div>
-</div>`;
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f5ee;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:560px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(10,61,47,0.08);">
+      <tr>
+        <td style="background-color:#0a3d2f;padding:28px 40px;border-bottom:3px solid #f5b86e;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:800;font-size:26px;color:#ffffff;letter-spacing:-0.02em;">
+            Bill<span style="color:#f5b86e;">tiq</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px;">
+          <h1 style="font-family:'DM Sans',sans-serif;font-size:24px;color:#0a3d2f;margin:0 0 16px;font-weight:700;letter-spacing:-0.01em;">You've been invited 🎉</h1>
+          <p style="font-size:15px;color:#1a1a1a;line-height:1.6;margin:0 0 24px;">
+            <strong style="color:#0a3d2f;">${inviterEmail}</strong> has invited you to join <strong style="color:#0a3d2f;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${role}</strong>.
+          </p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="border-radius:6px;background-color:#0a3d2f;">
+                <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;font-family:-apple-system,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">Accept invitation →</a>
+              </td>
+            </tr>
+          </table>
+          <p style="font-size:13px;color:#5a5a4e;line-height:1.6;margin:32px 0 0;">If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${inviteUrl}" style="color:#e8531a;word-break:break-all;">${inviteUrl}</a>
+          </p>
+          <p style="font-size:13px;color:#5a5a4e;line-height:1.6;margin:24px 0 0;">This invitation expires in 7 days. If you don't have a Billtiq account, you'll be asked to create one.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:24px 40px;background-color:#f8f5ee;border-top:1px solid #d8d3c4;text-align:center;">
+          <p style="font-size:12px;color:#5a5a4e;margin:0 0 8px;">Billtiq — Oracle Fusion AP exception handling</p>
+          <p style="font-size:12px;color:#5a5a4e;margin:0;">
+            <a href="https://billtiq.com" style="color:#0a3d2f;text-decoration:none;">billtiq.com</a> ·
+            <a href="https://billtiq.com/privacy" style="color:#0a3d2f;text-decoration:none;">Privacy</a> ·
+            <a href="https://billtiq.com/terms" style="color:#0a3d2f;text-decoration:none;">Terms</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>`;
 
     // Send email FIRST. If email fails, abort entirely — don't create
     // "pending" rows that lie about an invite being sent.
@@ -662,19 +691,48 @@ app.post("/api/teams/:teamId/invite/resend", async (req, res) => {
     const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/login?invite=${token}`;
     const emailSubject = `Reminder: ${inviterEmail} invited you to join ${team?.name || "a team"} on Billtiq`;
     const emailHtml = `
-<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-  <div style="background:#0a0f1e;padding:24px 32px;">
-    <div style="font-size:20px;font-weight:800;color:#fff;">Bill<span style="color:#e8531a;">tiq</span></div>
-  </div>
-  <div style="padding:32px;">
-    <h2 style="font-size:20px;margin:0 0 12px;color:#0a0f1e;">Your invite is still waiting 👋</h2>
-    <p style="font-size:15px;color:#7a7a6e;line-height:1.6;margin:0 0 24px;">
-      <strong style="color:#0a0f1e;">${inviterEmail}</strong> previously invited you to join <strong style="color:#0a0f1e;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${member.role}</strong>. Click below to accept.
-    </p>
-    <a href="${inviteUrl}" style="display:inline-block;background:#e8531a;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;">Accept Invitation →</a>
-    <p style="font-size:12px;color:#aaa;margin-top:20px;">This invitation expires in 7 days.</p>
-  </div>
-</div>`;
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f5ee;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:560px;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(10,61,47,0.08);">
+      <tr>
+        <td style="background-color:#0a3d2f;padding:28px 40px;border-bottom:3px solid #f5b86e;">
+          <div style="font-family:'DM Sans',sans-serif;font-weight:800;font-size:26px;color:#ffffff;letter-spacing:-0.02em;">
+            Bill<span style="color:#f5b86e;">tiq</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px;">
+          <h1 style="font-family:'DM Sans',sans-serif;font-size:24px;color:#0a3d2f;margin:0 0 16px;font-weight:700;letter-spacing:-0.01em;">Your invite is still waiting 👋</h1>
+          <p style="font-size:15px;color:#1a1a1a;line-height:1.6;margin:0 0 24px;">
+            <strong style="color:#0a3d2f;">${inviterEmail}</strong> previously invited you to join <strong style="color:#0a3d2f;">${team?.name || "their team"}</strong> on Billtiq as a <strong style="color:#e8531a;">${member.role}</strong>. Click below to accept.
+          </p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="border-radius:6px;background-color:#0a3d2f;">
+                <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;font-family:-apple-system,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">Accept invitation →</a>
+              </td>
+            </tr>
+          </table>
+          <p style="font-size:13px;color:#5a5a4e;line-height:1.6;margin:32px 0 0;">If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${inviteUrl}" style="color:#e8531a;word-break:break-all;">${inviteUrl}</a>
+          </p>
+          <p style="font-size:13px;color:#5a5a4e;line-height:1.6;margin:24px 0 0;">This invitation expires in 7 days.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:24px 40px;background-color:#f8f5ee;border-top:1px solid #d8d3c4;text-align:center;">
+          <p style="font-size:12px;color:#5a5a4e;margin:0 0 8px;">Billtiq — Oracle Fusion AP exception handling</p>
+          <p style="font-size:12px;color:#5a5a4e;margin:0;">
+            <a href="https://billtiq.com" style="color:#0a3d2f;text-decoration:none;">billtiq.com</a> ·
+            <a href="https://billtiq.com/privacy" style="color:#0a3d2f;text-decoration:none;">Privacy</a> ·
+            <a href="https://billtiq.com/terms" style="color:#0a3d2f;text-decoration:none;">Terms</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>`;
 
     await sendEmail({ to: email, subject: emailSubject, html: emailHtml });
 
