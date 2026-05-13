@@ -753,7 +753,10 @@ async function pushInvoice(teamId, invoiceData) {
     InvoiceAmount: invoiceData.total || 0,
     InvoiceDate: invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
     DueDate: invoiceData.dueDate,
-    PaymentTerms: invoiceData.paymentTerms || "ALT_Immidiate",
+    // Payment Terms: Oracle requires a value from its configured payment-terms list.
+    // The extractor may pull arbitrary strings ("Due on receipt", "Net 30") that don't
+    // match Oracle's codes. Force ALT_Immidiate until we build a mapping per team.
+    PaymentTerms: "ALT_Immidiate",
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
     Supplier: invoiceData.vendor?.name,
