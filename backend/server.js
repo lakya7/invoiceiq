@@ -330,14 +330,16 @@ app.post("/api/pos", upload.single("file"), async (req, res) => {
 app.post("/api/push-erp", async (req, res) => {
   try {
     const { invoiceData, userId, teamId, matchResult, pdfBase64, pdfFilename } = req.body;
-    await new Promise(r => setTimeout(r, 1000));
-    const erpReference = `ERP-${Date.now()}`;
+    // Local fallback reference. Overwritten below with the real Oracle InvoiceId if push succeeds.
+    let erpReference = `ERP-${Date.now()}`;
     const timestamp = new Date().toISOString();
 
     // Check if real ERP is connected for this team
     let erpType = "mock";
     let validationStatus = "mock";
     let validationMessage = "Invoice saved to Billtiq. No real ERP connected.";
+    let pushedToErp = false;
+    let pushError = null;
 
     if (teamId) {
       const { data: connections } = await supabase
@@ -352,6 +354,31 @@ app.post("/api/push-erp", async (req, res) => {
         validationMessage = erpType === "oracle"
           ? "Invoice submitted to Oracle Fusion Payables. Go to Payables → Invoices → Validate to complete."
           : "Invoice submitted to ERP. Awaiting validation.";
+
+        // ── ACTUALLY PUSH TO ORACLE ───────────────────────────────
+        // Only Oracle is wired up for real push today; other ERPs use the mock flow above.
+        if (erpType === "oracle") {
+          try {
+            const oracle = require("./oracle");
+            console.log(`Oracle push: starting for invoice #${invoiceData.invoiceNumber}`);
+            const oracleResult = await oracle.pushInvoice(teamId, invoiceData);
+            const realRef = oracleResult?.erpReference || oracleResult?.InvoiceId || oracleResult?.invoiceId;
+            if (realRef) {
+              erpReference = String(realRef);
+              pushedToErp = true;
+              console.log(`Oracle push: success, InvoiceId=${erpReference}`);
+            } else {
+              console.warn("Oracle push: returned without an InvoiceId. Full result:", JSON.stringify(oracleResult));
+              validationStatus = "push_uncertain";
+              validationMessage = "Oracle accepted the request but did not return an invoice ID. Verify in Oracle Payables.";
+            }
+          } catch (err) {
+            pushError = err.message;
+            validationStatus = "push_failed";
+            validationMessage = `Failed to push to Oracle: ${err.message}`;
+            console.error(`Oracle push FAILED for invoice #${invoiceData.invoiceNumber}:`, err.message);
+          }
+        }
       }
     }
 
