@@ -127,7 +127,19 @@ export default function App() {
         const r = await fetch(`${API}/api/billing/check/${team.id}`);
         const d = await r.json();
         if (d.success && !d.allowed) {
-          alert(`You've reached your ${d.plan} plan limit of ${d.limit} documents/month. Please upgrade your plan.`);
+          let msg;
+          if (d.reason === "trial_expired") {
+            msg = "Your 30-day trial has ended. Please subscribe to continue processing invoices. Your existing data is still accessible.";
+          } else if (d.reason === "trial_doc_limit") {
+            msg = "You've used all 100 documents in your trial. Subscribe to a paid plan to keep processing invoices.";
+          } else if (d.reason === "plan_doc_limit") {
+            msg = `You've reached your ${d.plan} plan limit of ${d.limit} documents this month. Upgrade your plan to keep going.`;
+          } else if (d.reason === "no_active_plan") {
+            msg = "Your team doesn't have an active plan yet. Please subscribe to start processing invoices.";
+          } else {
+            msg = "Document processing is currently unavailable. Please check your plan or contact support.";
+          }
+          alert(msg);
           setView("billing");
           return;
         }

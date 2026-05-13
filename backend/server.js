@@ -755,6 +755,10 @@ app.post("/api/invite/accept", async (req, res) => {
     const userEmail = await getUserEmail(userId);
     await supabase.from("team_members").update({ user_id: userId, status: "active", joined_at: new Date().toISOString() }).eq("team_id", invite.team_id).eq("email", invite.email);
     await supabase.from("team_invites").update({ accepted_at: new Date().toISOString() }).eq("token", token);
+
+    // Start 30-day trial if this is the first member to accept (idempotent — no-op if a plan already exists)
+    try { await billing.startTrial(invite.team_id); } catch (trialErr) { console.error("Trial start failed:", trialErr); }
+
     res.json({ success: true, teamId: invite.team_id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

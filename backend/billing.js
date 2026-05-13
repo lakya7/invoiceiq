@@ -9,6 +9,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // Internal keys: 'starter' | 'growth' | 'enterprise'. The `price` field is metadata
 // for logs/debugging; Stripe charges whatever amount the priceId points to.
 const PLANS = {
+  trial:      { name: "Trial",      docs: 100,       price: 0,     priceId: null, durationDays: 30 },
   starter:    { name: "Starter",    docs: 200,       price: 499,   priceId: process.env.STRIPE_PRICE_STARTER },
   growth:     { name: "Growth",     docs: 1000,      price: 1500,  priceId: process.env.STRIPE_PRICE_GROWTH },
   enterprise: { name: "Enterprise", docs: Infinity,  price: null,  priceId: process.env.STRIPE_PRICE_ENTERPRISE },
@@ -162,22 +163,84 @@ async function handleWebhook(rawBody, signature) {
   return { received: true, type: event.type };
 }
 
+// ── START TRIAL (idempotent) ────────────────────────────────────
+// Triggered when the first member of a team accepts their invite.
+// Sets the team to 'trial' plan with a 30-day trial_end if no plan is set.
+// Safe to call multiple times — only acts when no plan exists yet.
+async function startTrial(teamId) {
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("plan, trial_end")
+    .eq("team_id", teamId)
+    .single();
+
+  // Already on a plan (trial OR paid) — don't touch.
+  if (sub?.plan) return { started: false, reason: "already_on_plan", plan: sub.plan };
+
+  const trialEnd = new Date();
+  trialEnd.setDate(trialEnd.getDate() + PLANS.trial.durationDays);
+
+  const trialData = {
+    plan: "trial",
+    status: "trialing",
+    trial_end: trialEnd.toISOString(),
+    docs_used_this_period: 0,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (sub) {
+    // Existing row (subscriptions was created during invite/customer creation)
+    await supabase.from("subscriptions").update(trialData).eq("team_id", teamId);
+  } else {
+    // No row yet — create one
+    await supabase.from("subscriptions").insert({ team_id: teamId, ...trialData });
+  }
+
+  // Mirror plan to teams table for any code that reads it there
+  await supabase.from("teams").update({ plan: "trial" }).eq("id", teamId);
+
+  return { started: true, plan: "trial", trialEnd: trialEnd.toISOString() };
+}
+
 // ── CHECK USAGE LIMIT ───────────────────────────────────────────
 async function checkUsageLimit(teamId) {
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("plan, docs_used_this_period, status")
+    .select("plan, docs_used_this_period, status, trial_end")
     .eq("team_id", teamId)
     .single();
 
   const plan = sub?.plan || null;
   const used = sub?.docs_used_this_period || 0;
-  // No active plan = no document processing allowed. Team must subscribe to a paid tier.
+
+  // No plan at all = no document processing allowed.
   if (!plan || !PLANS[plan]) {
     return { allowed: false, plan: null, used: 0, limit: 0, remaining: 0, percentUsed: 0, reason: "no_active_plan" };
   }
+
+  // Trial-specific: check if trial period has expired.
+  if (plan === "trial" && sub?.trial_end) {
+    const now = new Date();
+    const trialEnd = new Date(sub.trial_end);
+    if (now > trialEnd) {
+      return {
+        allowed: false,
+        plan: "trial",
+        used,
+        limit: PLANS.trial.docs,
+        remaining: 0,
+        percentUsed: 100,
+        trialEnd: sub.trial_end,
+        reason: "trial_expired",
+      };
+    }
+  }
+
   const limit = PLANS[plan].docs;
   const allowed = limit === Infinity || used < limit;
+  const reason = !allowed
+    ? (plan === "trial" ? "trial_doc_limit" : "plan_doc_limit")
+    : null;
 
   return {
     allowed,
@@ -186,6 +249,8 @@ async function checkUsageLimit(teamId) {
     limit: limit === Infinity ? "Unlimited" : limit,
     remaining: limit === Infinity ? "Unlimited" : Math.max(0, limit - used),
     percentUsed: limit === Infinity ? 0 : Math.round((used / limit) * 100),
+    trialEnd: sub?.trial_end || null,
+    reason,
   };
 }
 
@@ -227,4 +292,4 @@ async function getTeamByCustomer(customerId) {
   return data?.team_id;
 }
 
-module.exports = { createCheckoutSession, createPortalSession, handleWebhook, checkUsageLimit, incrementUsage, getSubscription, PLANS };
+module.exports = { createCheckoutSession, createPortalSession, handleWebhook, checkUsageLimit, incrementUsage, getSubscription, startTrial, PLANS };
