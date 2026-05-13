@@ -842,7 +842,16 @@ async function pushInvoice(teamId, invoiceData) {
       }
     };
   } catch (err) {
-    const msg = err.response?.data?.detail || err.response?.data?.title || err.message;
+    // Log the full Oracle response so we can see exactly what was rejected.
+    // Oracle Fusion's error JSON shape varies; check several fields.
+    console.error("Oracle push error — HTTP", err.response?.status);
+    console.error("Oracle push error — response body:", JSON.stringify(err.response?.data, null, 2));
+    console.error("Oracle push error — request payload sent:", JSON.stringify(oracleInvoice, null, 2));
+    const msg = err.response?.data?.detail
+      || err.response?.data?.title
+      || err.response?.data?.message
+      || err.response?.data?.["o:errorDetails"]?.[0]?.detail
+      || (err.response?.data ? JSON.stringify(err.response.data).slice(0, 500) : err.message);
     throw new Error(`Oracle Fusion error: ${msg}`);
   }
 }
