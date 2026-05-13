@@ -741,7 +741,13 @@ async function pushInvoice(teamId, invoiceData) {
   }
 
   // Map invoice data to Oracle Fusion format
+  // Oracle REST API key names (per AP REST docs):
+  //   - BusinessUnit (required in multi-org)
+  //   - Supplier (NOT "SupplierName")
+  //   - SupplierSite (the Site Name as shown in the supplier sites tab)
+  // BusinessUnit is hard-coded for now; TODO: store per-team in erp_connections.
   const oracleInvoice = {
+    BusinessUnit: "ALT_US BUSINESS UNIT",
     InvoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
     InvoiceCurrency: invoiceData.currency || "USD",
     InvoiceAmount: invoiceData.total || 0,
@@ -750,10 +756,10 @@ async function pushInvoice(teamId, invoiceData) {
     PaymentTerms: invoiceData.paymentTerms || "NET30",
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
-    SupplierName: invoiceData.vendor?.name,
-    // SupplierSite expects Oracle's SiteCode (a string identifier), NOT raw address text.
-    // Falls back to address text only if site matching couldn't find anything (legacy behavior).
-    SupplierSite: siteMatch.site?.SupplierSiteCode || invoiceData.vendor?.address,
+    Supplier: invoiceData.vendor?.name,
+    // Prefer the matched site code if validateInvoice found one; otherwise fall back
+    // to a known good site name. Sending raw address text causes Oracle to 400.
+    SupplierSite: siteMatch.site?.SupplierSiteCode || "ALT_US Supplier Address",
     InvoiceType: "STANDARD",
     Source: "APFlow",
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => {
