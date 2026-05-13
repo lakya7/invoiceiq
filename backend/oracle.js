@@ -753,14 +753,14 @@ async function pushInvoice(teamId, invoiceData) {
     InvoiceAmount: invoiceData.total || 0,
     InvoiceDate: invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
     DueDate: invoiceData.dueDate,
-    PaymentTerms: invoiceData.paymentTerms || "NET30",
+    PaymentTerms: invoiceData.paymentTerms || "ALT_Immidiate",
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
     Supplier: invoiceData.vendor?.name,
     // Prefer the matched site code if validateInvoice found one; otherwise fall back
     // to a known good site name. Sending raw address text causes Oracle to 400.
     SupplierSite: siteMatch.site?.SupplierSiteCode || "ALT_US Supplier Address",
-    InvoiceType: "STANDARD",
+    InvoiceType: "Standard",
     Source: "APFlow",
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => {
       const lineType = getOracleLineType(item);
