@@ -752,7 +752,8 @@ async function pushInvoice(teamId, invoiceData) {
     InvoiceCurrency: invoiceData.currency || "USD",
     InvoiceAmount: invoiceData.total || 0,
     InvoiceDate: invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
-    DueDate: invoiceData.dueDate,
+    // DueDate omitted — Oracle computes it from InvoiceDate + PaymentTerms.
+    // Sending it returns: "Invalid attribute DueDate in the payload."
     // Payment Terms: Oracle requires a value from its configured payment-terms list.
     // The extractor may pull arbitrary strings ("Due on receipt", "Net 30") that don't
     // match Oracle's codes. Force ALT_Immidiate until we build a mapping per team.
