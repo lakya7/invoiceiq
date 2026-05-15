@@ -971,11 +971,11 @@ async function attachPDFToInvoice({ invoiceId, pdfBase64, filename, credentials,
     const safeFilename = (filename || "invoice.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
 
     const payload = {
-      // CategoryName omitted — Oracle returns "Invalid attribute CategoryName in the payload"
-      // on the invoice attachments endpoint. It's valid on some Oracle endpoints but not this one.
+      // Oracle's invoice attachments endpoint accepts a narrower schema than other
+      // attachment endpoints. CategoryName, DatatypeCode, ContentRepositoryFileShared
+      // all return "Invalid attribute in payload." Stripped to minimum viable fields;
+      // Oracle defaults the rest.
       Title: safeFilename,
-      ContentRepositoryFileShared: false,
-      DatatypeCode: "FILE",
       FileName: safeFilename,
       FileContents: pdfBase64,
     };
