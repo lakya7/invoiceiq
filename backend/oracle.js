@@ -667,25 +667,27 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
 
 // ── LINE TYPE MAPPER ────────────────────────────────────────────
 // Maps extracted lineType to Oracle Fusion LineType field
+// Oracle Fusion REST API expects title-case values: Item, Freight, Tax, Miscellaneous.
+// All-caps values like "ITEM" cause: "You must provide a valid value for the Line Type attribute."
 // Falls back to keyword detection if lineType not set by Claude
 function getOracleLineType(item) {
   if (item.lineType) {
     const lt = item.lineType.toUpperCase();
-    if (lt === "FREIGHT") return "FREIGHT";
-    if (lt === "TAX") return "TAX";
-    if (lt === "MISCELLANEOUS") return "MISCELLANEOUS";
-    if (lt === "DISCOUNT") return "ITEM"; // Oracle uses negative ITEM amount for discounts
-    return "ITEM";
+    if (lt === "FREIGHT") return "Freight";
+    if (lt === "TAX") return "Tax";
+    if (lt === "MISCELLANEOUS") return "Miscellaneous";
+    if (lt === "DISCOUNT") return "Item"; // Oracle uses negative Item amount for discounts
+    return "Item";
   }
   // Fallback keyword detection
   const desc = (item.description || "").toLowerCase();
   const freightKw = ["freight", "shipping", "delivery", "courier", "carriage", "postage", "transport", "haulage"];
   const miscKw = ["handling", "packing", "packaging", "insurance", "surcharge", "fuel surcharge", "admin fee", "processing fee"];
   const taxKw = ["tax", "gst", "vat", "sales tax", "hst", "duty", "excise"];
-  if (freightKw.some(k => desc.includes(k))) return "FREIGHT";
-  if (taxKw.some(k => desc.includes(k))) return "TAX";
-  if (miscKw.some(k => desc.includes(k))) return "MISCELLANEOUS";
-  return "ITEM";
+  if (freightKw.some(k => desc.includes(k))) return "Freight";
+  if (taxKw.some(k => desc.includes(k))) return "Tax";
+  if (miscKw.some(k => desc.includes(k))) return "Miscellaneous";
+  return "Item";
 }
 
 // ── PUSH INVOICE TO ORACLE PAYABLES ────────────────────────────
@@ -779,28 +781,28 @@ async function pushInvoice(teamId, invoiceData) {
         LineType: lineType,
         LineAmount: item.amount || 0,
         Description: item.description,
-        Quantity: lineType === "ITEM" ? (item.quantity || 1) : undefined,
-        UnitPrice: lineType === "ITEM" ? (item.unitPrice || 0) : undefined,
+        Quantity: lineType === "Item" ? (item.quantity || 1) : undefined,
+        UnitPrice: lineType === "Item" ? (item.unitPrice || 0) : undefined,
       };
     }),
   };
 
   // Add tax line only if not already in line items
-  const hasTaxLine = (invoiceData.lineItems || []).some(l => getOracleLineType(l) === "TAX");
+  const hasTaxLine = (invoiceData.lineItems || []).some(l => getOracleLineType(l) === "Tax");
   if (invoiceData.tax && invoiceData.tax > 0 && !hasTaxLine) {
     oracleInvoice.invoiceLines.push({
       LineNumber: (invoiceData.lineItems?.length || 0) + 1,
-      LineType: "TAX",
+      LineType: "Tax",
       LineAmount: invoiceData.tax,
       Description: "Tax",
     });
   }
 
   // Log freight summary
-  const freightLines = oracleInvoice.invoiceLines.filter(l => l.LineType === "FREIGHT");
+  const freightLines = oracleInvoice.invoiceLines.filter(l => l.LineType === "Freight");
   if (freightLines.length > 0) {
     const freightTotal = freightLines.reduce((s, l) => s + (l.LineAmount || 0), 0);
-    console.log(`Oracle push: ${freightLines.length} FREIGHT line(s) detected — total: ${freightTotal}`);
+    console.log(`Oracle push: ${freightLines.length} Freight line(s) detected — total: ${freightTotal}`);
   }
 
   try {
