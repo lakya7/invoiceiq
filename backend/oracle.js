@@ -745,9 +745,10 @@ async function pushInvoice(teamId, invoiceData) {
   //   - BusinessUnit (required in multi-org)
   //   - Supplier (NOT "SupplierName")
   //   - SupplierSite (the Site Name as shown in the supplier sites tab)
-  // BusinessUnit is hard-coded for now; TODO: store per-team in erp_connections.
+  // BU/Supplier/Site/Terms are hard-coded to current Oracle demo values.
+  // Oracle demo refreshed May 14 2026 — TODO: store per-team in erp_connections.
   const oracleInvoice = {
-    BusinessUnit: "ALT_US BUSINESS UNIT",
+    BusinessUnit: "US1 Business Unit",
     InvoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
     InvoiceCurrency: invoiceData.currency || "USD",
     InvoiceAmount: invoiceData.total || 0,
@@ -756,14 +757,14 @@ async function pushInvoice(teamId, invoiceData) {
     // Sending it returns: "Invalid attribute DueDate in the payload."
     // Payment Terms: Oracle requires a value from its configured payment-terms list.
     // The extractor may pull arbitrary strings ("Due on receipt", "Net 30") that don't
-    // match Oracle's codes. Force ALT_Immidiate until we build a mapping per team.
-    PaymentTerms: "ALT_Immidiate",
+    // match Oracle's codes. Force to current demo value.
+    PaymentTerms: "Immediate",
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
     PurchaseOrder: invoiceData.poNumber,
-    Supplier: invoiceData.vendor?.name,
-    // Prefer the matched site code if validateInvoice found one; otherwise fall back
-    // to a known good site name. Sending raw address text causes Oracle to 400.
-    SupplierSite: siteMatch.site?.SupplierSiteCode || "ALT_US Supplier Address",
+    // Supplier forced to demo value because invoice PDFs still say "ALT_US Supplier"
+    // but Oracle demo was refreshed and now has "ABC Consulting" as the test supplier.
+    Supplier: "ABC Consulting",
+    SupplierSite: "ABC US1",
     InvoiceType: "Standard",
     Source: "APFlow",
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => {
