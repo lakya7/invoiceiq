@@ -768,7 +768,9 @@ async function pushInvoice(teamId, invoiceData) {
     Supplier: "ABC Consulting",
     SupplierSite: "ABC US1",
     InvoiceType: "Standard",
-    Source: "APFlow",
+    // Source field removed — Oracle returns "Invalid attribute Source in payload".
+    // Oracle's REST API likely uses InvoiceSource and/or sets it server-side from
+    // the integrating app's identity. Leave it for Oracle to default.
     invoiceLines: (invoiceData.lineItems || []).map((item, i) => {
       const lineType = getOracleLineType(item);
       console.log(`  Line ${i+1}: "${item.description}" → Oracle LineType: ${lineType} (${item.amount})`);
