@@ -691,7 +691,8 @@ function getOracleLineType(item) {
 }
 
 // ── PUSH INVOICE TO ORACLE PAYABLES ────────────────────────────
-async function pushInvoice(teamId, invoiceData) {
+async function pushInvoice(teamId, invoiceData, opts = {}) {
+  const { pdfBase64, pdfFilename } = opts;
   const { credentials, baseUrl } = await getOracleToken(teamId);
 
   // ── RUN PRE-PUSH VALIDATION ────────────────────────────────
