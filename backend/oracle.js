@@ -358,7 +358,7 @@ async function findMatchingSupplierSite({ supplierId, invoiceAddress, credential
   let sites = [];
   try {
     const res = await axios.get(
-      `${baseUrl}/fscmRestApi/resources/11.13.18.05/suppliers/${supplierId}/child/supplierSites?limit=50`,
+      `${baseUrl}/fscmRestApi/resources/11.13.18.05/suppliers/${supplierId}/child/sites?limit=50`,
       {
         headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
         timeout: 8000,
@@ -369,14 +369,13 @@ async function findMatchingSupplierSite({ supplierId, invoiceAddress, credential
     return { match: "none", site: null, warning: `Could not fetch supplier sites from Oracle (${e.message}) — sending without site code` };
   }
 
-  // Filter to active pay sites only — purchasing-only and inactive sites cannot receive invoices
+  // Filter to active pay sites only — purchasing-only and inactive sites cannot receive invoices.
+  // Oracle's site purpose flags are booleans: SitePurposePayFlag, SitePurposePurchasingFlag, etc.
   const today = new Date();
   const paySites = sites.filter(s => {
     const isInactive = s.InactiveDate && new Date(s.InactiveDate) <= today;
     if (isInactive) return false;
-    // PaySiteFlag is a string "true"/"false" or boolean depending on Oracle config — handle both
-    const isPaySite = s.PaySiteFlag === true || s.PaySiteFlag === "true";
-    return isPaySite;
+    return s.SitePurposePayFlag === true;
   });
 
   if (paySites.length === 0) {
@@ -389,15 +388,20 @@ async function findMatchingSupplierSite({ supplierId, invoiceAddress, credential
 
   // If we have no invoice address to match against, fall back to primary pay site
   if (!invoiceAddress || !invoiceAddress.trim()) {
-    const primary = paySites.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || paySites[0];
+    const primary = paySites.find(s => s.SitePurposePrimaryPayFlag === true) || paySites[0];
     return {
       match: "fallback",
       site: primary,
-      warning: `No supplier address on invoice — defaulted to primary pay site "${primary.SupplierSiteCode}". Verify before approving.`,
+      warning: `No supplier address on invoice — defaulted to primary pay site "${primary.SupplierSite}". Verify before approving.`,
     };
   }
 
   // Tier 1: Strong match — postal code AND street line 1 normalized match
+  // TODO: PostalCode and AddressLine1 are NOT in the sites endpoint response — Oracle returns
+  // a single concatenated `Address` field instead. The strong-match block below will always
+  // return zero matches until we rewrite to parse the combined Address string. For now,
+  // matching silently falls through to the primary-pay-site fallback (Tier 2 below), which
+  // is acceptable for single-site suppliers. Revisit when onboarding a multi-site customer.
   const normalizedInvoice = normalizeAddress(invoiceAddress);
   const strongMatches = paySites.filter(site => {
     if (!site.PostalCode) return false;
@@ -416,21 +420,21 @@ async function findMatchingSupplierSite({ supplierId, invoiceAddress, credential
 
   if (strongMatches.length > 1) {
     // Multiple sites matched — prefer the primary pay site
-    const primary = strongMatches.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || strongMatches[0];
+    const primary = strongMatches.find(s => s.SitePurposePrimaryPayFlag === true) || strongMatches[0];
     return {
       match: "strong",
       site: primary,
-      warning: `${strongMatches.length} supplier sites matched the invoice address — selected primary pay site "${primary.SupplierSiteCode}"`,
+      warning: `${strongMatches.length} supplier sites matched the invoice address — selected primary pay site "${primary.SupplierSite}"`,
     };
   }
 
   // Tier 2: No strong match — fall back to primary pay site with loud warning
-  const primary = paySites.find(s => s.PrimaryPaySiteFlag === true || s.PrimaryPaySiteFlag === "true") || paySites[0];
-  const allSiteCodes = paySites.map(s => s.SupplierSiteCode).join(", ");
+  const primary = paySites.find(s => s.SitePurposePrimaryPayFlag === true) || paySites[0];
+  const allSiteCodes = paySites.map(s => s.SupplierSite).join(", ");
   return {
     match: "fallback",
     site: primary,
-    warning: `Invoice address "${invoiceAddress}" did not match any of supplier's ${paySites.length} pay site(s) [${allSiteCodes}]. Pushed to primary site "${primary.SupplierSiteCode}" — please verify this is the correct remit-to.`,
+    warning: `Invoice address "${invoiceAddress}" did not match any of supplier's ${paySites.length} pay site(s) [${allSiteCodes}]. Pushed to primary site "${primary.SupplierSite}" — please verify this is the correct remit-to.`,
   };
 }
 
@@ -739,7 +743,7 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
       console.warn("Site matching:", siteMatch.warning);
     }
     if (siteMatch.match === "strong") {
-      console.log(`Site matched (strong): ${siteMatch.site.SupplierSiteCode}`);
+      console.log(`Site matched (strong): ${siteMatch.site.SupplierSite}`);
     }
   }
 
@@ -757,7 +761,6 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
   const resolved = {
     Supplier: validation.matchedSupplier?.Supplier || FALLBACK.Supplier,
     SupplierSite: siteMatch.site?.SupplierSite
-      || siteMatch.site?.SupplierSiteCode
       || FALLBACK.SupplierSite,
     BusinessUnit: siteMatch.site?.ProcurementBU
       || siteMatch.site?.BusinessUnit
@@ -874,7 +877,7 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
         pdfAttachment,
         siteMatch: {
           quality: siteMatch.match,                          // "strong" | "fallback" | "none"
-          siteCode: siteMatch.site?.SupplierSiteCode || null,
+          siteCode: siteMatch.site?.SupplierSite || null,
           siteId: siteMatch.site?.SupplierSiteId || null,
         },
       }
