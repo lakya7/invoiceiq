@@ -991,7 +991,14 @@ async function attachPDFToInvoice({ invoiceId, pdfBase64, filename, credentials,
     console.log(`PDF attached to Oracle Invoice ID ${invoiceId}: ${safeFilename}`);
     return { success: true, invoiceId, filename: safeFilename };
   } catch (err) {
-    const msg = err.response?.data?.detail || err.response?.data?.title || err.message;
+    // Log the full Oracle response body so we can see exactly what was rejected.
+    console.error("Oracle attachment error — HTTP", err.response?.status);
+    console.error("Oracle attachment error — response body:", JSON.stringify(err.response?.data, null, 2));
+    const msg = err.response?.data?.detail
+      || err.response?.data?.title
+      || err.response?.data?.message
+      || err.response?.data?.["o:errorDetails"]?.[0]?.detail
+      || (err.response?.data ? JSON.stringify(err.response.data).slice(0, 500) : err.message);
     console.error(`Oracle PDF attachment failed: ${msg}`);
     return { success: false, error: msg };
   }
