@@ -743,33 +743,53 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
     }
   }
 
-  // Map invoice data to Oracle Fusion format
-  // Oracle REST API key names (per AP REST docs):
-  //   - BusinessUnit (required in multi-org)
-  //   - Supplier (NOT "SupplierName")
-  //   - SupplierSite (the Site Name as shown in the supplier sites tab)
-  // BU/Supplier/Site/Terms are hard-coded to current Oracle demo values.
-  // Oracle demo refreshed May 14 2026 — TODO: store per-team in erp_connections.
-  const oracleInvoice = {
+  // ── DYNAMICALLY RESOLVE BU / SUPPLIER / SITE / PAYMENT TERMS ────
+  // Pull from Oracle's matched supplier and site records, NOT from hard-coded values.
+  // This is essential because the email agent processes invoices unattended — we cannot
+  // ask a human to pick BU/Site/Terms per invoice. Falls back to demo defaults so the
+  // existing Demo Finance test setup keeps working until a real customer is onboarded.
+  const FALLBACK = {
     BusinessUnit: "US1 Business Unit",
+    Supplier: "ABC Consulting",
+    SupplierSite: "ABC US1",
+    PaymentTerms: "Immediate",
+  };
+  const resolved = {
+    Supplier: validation.matchedSupplier?.Supplier || FALLBACK.Supplier,
+    SupplierSite: siteMatch.site?.SupplierSite
+      || siteMatch.site?.SupplierSiteCode
+      || FALLBACK.SupplierSite,
+    BusinessUnit: siteMatch.site?.ProcurementBU
+      || siteMatch.site?.BusinessUnit
+      || siteMatch.site?.BusinessUnitName
+      || FALLBACK.BusinessUnit,
+    PaymentTerms: siteMatch.site?.PaymentTerms
+      || validation.matchedSupplier?.PaymentTerms
+      || validation.matchedSupplier?.DefaultPaymentTermsName
+      || FALLBACK.PaymentTerms,
+  };
+  const usedFallback = [];
+  if (resolved.Supplier === FALLBACK.Supplier && !validation.matchedSupplier) usedFallback.push("Supplier");
+  if (resolved.SupplierSite === FALLBACK.SupplierSite && !siteMatch.site) usedFallback.push("SupplierSite");
+  if (resolved.BusinessUnit === FALLBACK.BusinessUnit && !siteMatch.site) usedFallback.push("BusinessUnit");
+  if (resolved.PaymentTerms === FALLBACK.PaymentTerms && !siteMatch.site?.PaymentTerms && !validation.matchedSupplier?.PaymentTerms) usedFallback.push("PaymentTerms");
+  console.log(`Oracle resolution: Supplier=${resolved.Supplier}, Site=${resolved.SupplierSite}, BU=${resolved.BusinessUnit}, Terms=${resolved.PaymentTerms}`);
+  if (usedFallback.length > 0) {
+    console.warn(`Oracle resolution: using demo FALLBACK for [${usedFallback.join(", ")}] — Oracle didn't return these for this supplier/site.`);
+  }
+
+  // Map invoice data to Oracle Fusion format
+  const oracleInvoice = {
+    BusinessUnit: resolved.BusinessUnit,
     InvoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
     InvoiceCurrency: invoiceData.currency || "USD",
     InvoiceAmount: invoiceData.total || 0,
     InvoiceDate: invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
     // DueDate omitted — Oracle computes it from InvoiceDate + PaymentTerms.
-    // Sending it returns: "Invalid attribute DueDate in the payload."
-    // Payment Terms: Oracle requires a value from its configured payment-terms list.
-    // The extractor may pull arbitrary strings ("Due on receipt", "Net 30") that don't
-    // match Oracle's codes. Force to current demo value.
-    PaymentTerms: "Immediate",
+    PaymentTerms: resolved.PaymentTerms,
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
-    // PurchaseOrder field removed — Oracle returns "Invalid attribute PurchaseOrder in payload"
-    // because PO matching is done via PurchaseOrderHeaderId/LineId on invoice LINES, not on
-    // the invoice header. Re-add at the line level when we wire up PO matching.
-    // Supplier forced to demo value because invoice PDFs still say "ALT_US Supplier"
-    // but Oracle demo was refreshed and now has "ABC Consulting" as the test supplier.
-    Supplier: "ABC Consulting",
-    SupplierSite: "ABC US1",
+    Supplier: resolved.Supplier,
+    SupplierSite: resolved.SupplierSite,
     InvoiceType: "Standard",
     // Source field removed — Oracle returns "Invalid attribute Source in payload".
     // Oracle's REST API likely uses InvoiceSource and/or sets it server-side from
