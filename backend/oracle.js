@@ -760,7 +760,9 @@ async function pushInvoice(teamId, invoiceData) {
     // match Oracle's codes. Force to current demo value.
     PaymentTerms: "Immediate",
     Description: `Processed by APFlow. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
-    PurchaseOrder: invoiceData.poNumber,
+    // PurchaseOrder field removed — Oracle returns "Invalid attribute PurchaseOrder in payload"
+    // because PO matching is done via PurchaseOrderHeaderId/LineId on invoice LINES, not on
+    // the invoice header. Re-add at the line level when we wire up PO matching.
     // Supplier forced to demo value because invoice PDFs still say "ALT_US Supplier"
     // but Oracle demo was refreshed and now has "ABC Consulting" as the test supplier.
     Supplier: "ABC Consulting",
