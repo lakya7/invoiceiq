@@ -6,6 +6,8 @@ const VALIDATION_STATUS = {
   needs_validation: { bg:"#fef9c3", color:"#92400e", icon:"⏳", label:"Needs Validation", desc:"Invoice submitted to ERP. Awaiting Oracle validation before posting." },
   validated:        { bg:"#dcfce7", color:"#16a34a", icon:"✅", label:"Validated",         desc:"Oracle validated the invoice. Ready for payment processing." },
   validation_error: { bg:"#fee2e2", color:"#dc2626", icon:"🔴", label:"Validation Error",  desc:"Oracle found issues. Check ERP for details." },
+  push_failed:      { bg:"#fee2e2", color:"#dc2626", icon:"❌", label:"Push Failed",       desc:"ERP rejected this invoice. Data saved to Billtiq for retry." },
+  push_uncertain:   { bg:"#fef9c3", color:"#92400e", icon:"⚠️", label:"Push Uncertain",    desc:"ERP accepted the request but did not return an invoice ID. Verify in ERP." },
   mock:             { bg:"#dbeafe", color:"#1d4ed8", icon:"🔵", label:"Mock ERP",           desc:"No real ERP connected. Data saved to Billtiq database only." },
 };
 
@@ -24,15 +26,34 @@ export default function Success({ result, data, matchResult, onReset }) {
   const as = agentDecision ? AGENT_STATUS[agentDecision.decision] || AGENT_STATUS.manual : null;
   const anomaly = result?.anomalyResult;
 
+  // Header reflects what actually happened, not just "everything went fine"
+  const erpLabel = erpType === "oracle" ? "Oracle Fusion" : erpType === "quickbooks" ? "QuickBooks" : erpType === "netsuite" ? "NetSuite" : erpType === "xero" ? "Xero" : erpType === "zoho" ? "Zoho" : erpType === "dynamics" ? "Dynamics 365" : "Mock ERP";
+  let headerIcon = "✅";
+  let headerTitle = `Pushed to ${erpLabel} Successfully`;
+  let headerDesc = `Invoice processed and synced to ${erpLabel}.`;
+  if (validationStatus === "push_failed") {
+    headerIcon = "❌";
+    headerTitle = `Push to ${erpLabel} Failed`;
+    headerDesc = "Invoice saved to Billtiq, but the ERP rejected it. Review the details below.";
+  } else if (validationStatus === "push_uncertain") {
+    headerIcon = "⚠️";
+    headerTitle = "Push Status Uncertain";
+    headerDesc = `${erpLabel} accepted the request but did not confirm an invoice ID. Verify in your ERP.`;
+  } else if (erpType === "mock") {
+    headerIcon = "💾";
+    headerTitle = "Saved to Billtiq";
+    headerDesc = "Invoice processed and saved. No real ERP connected — connect one in ERP Connections for live sync.";
+  }
+
   const currency = data?.currency || "USD";
   const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
 
   return (
     <div className="success-page">
       <div className="success-card" style={{ maxWidth:580 }}>
-        <div className="success-icon">✅</div>
-        <h2>Pushed to ERP Successfully</h2>
-        <p>Invoice processed and synced to your ERP system.</p>
+        <div className="success-icon">{headerIcon}</div>
+        <h2>{headerTitle}</h2>
+        <p>{headerDesc}</p>
 
         {/* Anomaly Detection */}
         {anomaly && anomaly.totalFlags > 0 && (
@@ -86,7 +107,7 @@ export default function Success({ result, data, matchResult, onReset }) {
             <span style={{ fontSize:16 }}>{vs.icon}</span>
             <span style={{ fontWeight:700, color:vs.color, fontSize:14 }}>ERP Validation: {vs.label}</span>
             <span style={{ marginLeft:"auto", fontSize:11, color:"#888", background:"rgba(0,0,0,0.06)", padding:"2px 8px", borderRadius:10 }}>
-              {erpType === "oracle" ? "Oracle Fusion" : erpType === "quickbooks" ? "QuickBooks" : "Mock ERP"}
+              {erpLabel}
             </span>
           </div>
           <div style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{vs.desc}</div>
@@ -126,7 +147,7 @@ export default function Success({ result, data, matchResult, onReset }) {
         <div className="success-details">
           {[
             ["ERP Reference", result?.erpReference],
-            ["ERP Type", erpType === "oracle" ? "Oracle Fusion" : erpType === "quickbooks" ? "QuickBooks" : "Mock ERP"],
+            ["ERP Type", erpLabel],
             ["Invoice #", data?.invoiceNumber||"N/A"],
             ["Vendor", data?.vendor?.name||"N/A"],
             ["Total", `${sym}${Number(data?.total||0).toFixed(2)}`],
