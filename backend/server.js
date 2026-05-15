@@ -361,7 +361,7 @@ app.post("/api/push-erp", async (req, res) => {
           try {
             const oracle = require("./oracle");
             console.log(`Oracle push: starting for invoice #${invoiceData.invoiceNumber}`);
-            const oracleResult = await oracle.pushInvoice(teamId, invoiceData);
+            const oracleResult = await oracle.pushInvoice(teamId, invoiceData, { pdfBase64, pdfFilename });
             const realRef = oracleResult?.erpReference || oracleResult?.InvoiceId || oracleResult?.invoiceId;
             if (realRef) {
               erpReference = String(realRef);
