@@ -335,13 +335,28 @@ function normalizeAddress(s) {
     .trim();
 }
 
-// Build a comparable string from Oracle's structured site address
+// Build a comparable string from Oracle's site Address field.
+// Oracle's /child/sites endpoint returns a single concatenated `Address` string
+// (e.g., "1100 ABERNATHY ROAD,ATLANTA, GA 30328 FULTON"), NOT structured
+// AddressLine1/City/State/PostalCode fields. We compare against this string directly.
 function siteToNormalizedString(site) {
-  return normalizeAddress(
-    [site.AddressLine1, site.AddressLine2, site.City, site.State, site.PostalCode]
-      .filter(Boolean)
-      .join(" ")
-  );
+  return normalizeAddress(site.Address || "");
+}
+
+// Extract a 5-digit US ZIP code from any address string (handles 5-digit or 5+4).
+// Returns null if no ZIP found.
+function extractZip(s) {
+  if (!s) return null;
+  const m = String(s).match(/\b(\d{5})(?:-?\d{4})?\b/);
+  return m ? m[1] : null;
+}
+
+// Extract leading street number from an address string.
+// "1100 Abernathy Road, Atlanta" → "1100"
+function extractStreetNumber(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/^(\d+)\b/);
+  return m ? m[1] : null;
 }
 
 // ── SUPPLIER SITE MATCHER ───────────────────────────────────────
@@ -396,22 +411,19 @@ async function findMatchingSupplierSite({ supplierId, invoiceAddress, credential
     };
   }
 
-  // Tier 1: Strong match — postal code AND street line 1 normalized match
-  // TODO: PostalCode and AddressLine1 are NOT in the sites endpoint response — Oracle returns
-  // a single concatenated `Address` field instead. The strong-match block below will always
-  // return zero matches until we rewrite to parse the combined Address string. For now,
-  // matching silently falls through to the primary-pay-site fallback (Tier 2 below), which
-  // is acceptable for single-site suppliers. Revisit when onboarding a multi-site customer.
-  const normalizedInvoice = normalizeAddress(invoiceAddress);
+  // Tier 1: Strong match — both ZIP code AND street number must match between
+  // the invoice address and the site's Address string. Oracle returns a single
+  // concatenated `Address` field per site (no structured fields), so we extract
+  // ZIP and street number from each and compare. This handles formatting
+  // differences ("ROAD" vs "Road", missing commas, county appended, etc.)
+  // while staying strict enough to avoid wrong-site collisions.
+  const invoiceZip = extractZip(invoiceAddress);
+  const invoiceStreet = extractStreetNumber(invoiceAddress);
   const strongMatches = paySites.filter(site => {
-    if (!site.PostalCode) return false;
-    // Postal code must appear in the invoice address (any format — full or first 5 chars of US ZIP)
-    const zipShort = String(site.PostalCode).split("-")[0].trim();
-    if (!normalizedInvoice.includes(zipShort.toLowerCase())) return false;
-    // Street line 1 must appear in the invoice address (after normalization)
-    const normalizedStreet = normalizeAddress(site.AddressLine1 || "");
-    if (!normalizedStreet) return false;
-    return normalizedInvoice.includes(normalizedStreet);
+    const siteZip = extractZip(site.Address);
+    const siteStreet = extractStreetNumber(site.Address);
+    if (!invoiceZip || !siteZip || !invoiceStreet || !siteStreet) return false;
+    return invoiceZip === siteZip && invoiceStreet === siteStreet;
   });
 
   if (strongMatches.length === 1) {
