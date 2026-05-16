@@ -803,10 +803,10 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
     // DueDate omitted — Oracle computes it from InvoiceDate + PaymentTerms.
     PaymentTerms: resolved.PaymentTerms,
     Description: `Processed by Billtiq. Vendor: ${invoiceData.vendor?.name || "Unknown"}`,
-    // InvoiceSource: marks this invoice as submitted by Billtiq in Oracle's audit trail.
-    // If Oracle rejects with "Invalid attribute InvoiceSource", remove this line — the
-    // Description above already carries the Billtiq audit marker as a fallback.
-    InvoiceSource: "Billtiq",
+    // InvoiceSource attempted with "Billtiq" — Oracle rejected with AP-810667 because
+    // "Billtiq" isn't in their Source lookup table. Each Oracle customer would need to
+    // add it as a valid Source. Skipping the field; Description above provides the audit
+    // marker without per-customer config.
     Supplier: resolved.Supplier,
     SupplierSite: resolved.SupplierSite,
     InvoiceType: "Standard",
