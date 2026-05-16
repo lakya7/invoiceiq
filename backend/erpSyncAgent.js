@@ -1,35 +1,72 @@
-// erpSyncAgent.js — APFlow ERP Sync Agent
-// Checks Oracle Fusion and QuickBooks hourly for payment status updates
+// erpSyncAgent.js — Billtiq ERP Sync Agent
+// Checks Oracle Fusion (and later QuickBooks) hourly for payment / status updates,
+// then syncs back to Billtiq's invoices table so the UI reflects real ERP state.
+//
+// Bug-fix history (May 16 2026):
+//   1. OLD filter `.like(erp_reference, "ERP-%")` skipped all real Oracle invoices
+//      (which use "ORA-..." prefix). Now matches by erp_type via erp_connections.
+//   2. OLD code read `conn.credentials` which doesn't exist on the schema.
+//      Now reads conn.base_url / conn.username / conn.password directly.
+//   3. OLD field name `oracleInvoice.InvoiceStatus` doesn't exist in Oracle's response.
+//      Now uses the real fields: ValidationStatus, PaidStatus, CanceledFlag.
+//   4. OLD status values like "PAID" / "VALIDATED" don't match Oracle's "Paid" / "Validated".
+//      Now compares against the real values seen in production.
+//   5. OLD looked up Oracle invoices by InvoiceNumber (collides on duplicate pushes).
+//      Now looks up by InvoiceId — extracted from erp_reference ("ORA-300000324579131").
+//   6. OLD wrote to `erp_sync_at` column which doesn't exist. Use `last_synced_at`
+//      to match what the manual mark-paid endpoint writes.
 
 const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 // ── ORACLE FUSION SYNC ───────────────────────────────────────────
 async function syncOraclePayments({ teamId, connection }) {
-  const results = { updated: 0, errors: 0, details: [] };
+  const results = { updated: 0, errors: 0, checked: 0, details: [] };
 
   try {
-    const { baseUrl, username, password } = connection;
+    const { base_url: baseUrl, username, password } = connection;
+    if (!baseUrl || !username || !password) {
+      console.warn(`Oracle Sync: missing connection fields for team ${teamId}, skipping`);
+      return results;
+    }
     const auth = Buffer.from(`${username}:${password}`).toString("base64");
 
-    // Get all pushed invoices for this team with Oracle ERP refs
-    const { data: invoices } = await supabase
+    // Get all invoices for this team that have been pushed to Oracle.
+    // We look for ones still in non-terminal states — no point re-querying invoices
+    // that are already marked paid/cancelled.
+    const { data: invoices, error } = await supabase
       .from("invoices")
-      .select("id, invoice_number, erp_reference, status, total")
+      .select("id, invoice_number, erp_reference, status, payment_status, total")
       .eq("team_id", teamId)
-      .eq("status", "pushed")
-      .like("erp_reference", "ERP-%");
+      .like("erp_reference", "ORA-%")
+      .not("payment_status", "in", "(paid,cancelled)");
+
+    if (error) {
+      console.error("Oracle Sync: Supabase query failed:", error.message);
+      return { ...results, error: error.message };
+    }
 
     if (!invoices?.length) {
-      console.log("Oracle Sync: No pushed invoices to check");
+      console.log(`Oracle Sync: No invoices to check for team ${teamId}`);
       return results;
     }
 
+    console.log(`Oracle Sync: Checking ${invoices.length} invoice(s) for team ${teamId}`);
+    results.checked = invoices.length;
+
     for (const invoice of invoices) {
       try {
-        // Query Oracle Fusion Payables REST API for invoice status
+        // Extract Oracle InvoiceId from erp_reference (format: "ORA-300000324579131")
+        const invoiceId = String(invoice.erp_reference || "").replace(/^ORA-/, "");
+        if (!invoiceId || !/^\d+$/.test(invoiceId)) {
+          console.warn(`Oracle Sync: invalid InvoiceId in erp_reference "${invoice.erp_reference}"`);
+          continue;
+        }
+
+        // Query Oracle by InvoiceId (unique). Avoids the duplicate-InvoiceNumber problem
+        // that happens when the same invoice is pushed twice during testing.
         const oracleRes = await fetch(
-          `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices?q=InvoiceNumber=${encodeURIComponent(invoice.invoice_number)}`,
+          `${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices/${invoiceId}?onlyData=true`,
           {
             headers: {
               "Authorization": `Basic ${auth}`,
@@ -40,198 +77,171 @@ async function syncOraclePayments({ teamId, connection }) {
         );
 
         if (!oracleRes.ok) {
-          console.error(`Oracle API error for invoice ${invoice.invoice_number}: ${oracleRes.status}`);
+          console.error(`Oracle Sync: API ${oracleRes.status} for InvoiceId ${invoiceId}`);
           results.errors++;
           continue;
         }
 
-        const oracleData = await oracleRes.json();
-        const oracleInvoice = oracleData?.items?.[0];
-        if (!oracleInvoice) continue;
+        const oracleInvoice = await oracleRes.json();
 
-        // Map Oracle status to APFlow status
-        const oracleStatus = oracleInvoice.InvoiceStatus || "";
-        let newStatus = null;
-        let paymentDate = null;
+        // Map Oracle status fields to Billtiq updates.
+        // Status precedence (highest wins): Cancelled > Paid > Partial > Validated > Pushed.
+        const update = mapOracleToBilltiq(oracleInvoice, invoice);
+        if (!update) continue; // nothing changed — skip
 
-        if (oracleStatus === "PAID" || oracleStatus === "CANCELLED") {
-          newStatus = oracleStatus === "PAID" ? "paid" : "cancelled";
-          paymentDate = oracleInvoice.PaymentDate || null;
-        } else if (oracleStatus === "VALIDATED") {
-          newStatus = "validated";
-        } else if (oracleStatus === "NEEDS_REVALIDATION" || oracleStatus === "REJECTED") {
-          newStatus = "rejected";
+        const { error: updateErr } = await supabase
+          .from("invoices")
+          .update(update)
+          .eq("id", invoice.id);
+
+        if (updateErr) {
+          console.error(`Oracle Sync: update failed for ${invoice.invoice_number}: ${updateErr.message}`);
+          results.errors++;
+          continue;
         }
 
-        if (newStatus && newStatus !== invoice.status) {
-          await supabase.from("invoices").update({
-            status: newStatus,
-            payment_date: paymentDate,
-            erp_sync_at: new Date().toISOString(),
-            agent_reason: `ERP Sync: Oracle status updated to ${oracleStatus}`,
-          }).eq("id", invoice.id);
-
-          results.updated++;
-          results.details.push({
-            invoiceNumber: invoice.invoice_number,
-            oldStatus: invoice.status,
-            newStatus,
-            paymentDate,
-            erp: "oracle",
-          });
-          console.log(`Oracle Sync: Invoice #${invoice.invoice_number} → ${newStatus}`);
-        }
+        results.updated++;
+        results.details.push({
+          invoiceNumber: invoice.invoice_number,
+          oldPaymentStatus: invoice.payment_status,
+          newPaymentStatus: update.payment_status,
+          oracleValidation: oracleInvoice.ValidationStatus,
+          oraclePaid: oracleInvoice.PaidStatus,
+          erp: "oracle",
+        });
+        console.log(`Oracle Sync: #${invoice.invoice_number} → payment_status=${update.payment_status} (Oracle: ${oracleInvoice.ValidationStatus}/${oracleInvoice.PaidStatus})`);
       } catch (e) {
-        console.error(`Oracle sync error for ${invoice.invoice_number}:`, e.message);
+        console.error(`Oracle Sync: error for ${invoice.invoice_number}:`, e.message);
         results.errors++;
       }
     }
 
     return results;
   } catch (err) {
-    console.error("Oracle sync error:", err.message);
+    console.error("Oracle Sync: top-level error:", err.message);
     return { ...results, error: err.message };
   }
 }
 
-// ── QUICKBOOKS SYNC ──────────────────────────────────────────────
-async function syncQuickBooksPayments({ teamId, connection }) {
-  const results = { updated: 0, errors: 0, details: [] };
+// ── ORACLE → BILLTIQ STATUS MAPPING ───────────────────────────────
+// Returns a partial update object, or null if no change needed.
+// Oracle status fields (confirmed from production curl on May 16 2026):
+//   ValidationStatus: "Validated" | "Needs revalidation" | "Cannot be paid" | "Held"
+//   PaidStatus:        "Not paid" | "Partial" | "Paid"
+//   CanceledFlag:      true | false
+//   ApprovalStatus:    "Required" | "Initiated" | "Approved" | "Rejected" | "Not required"
+function mapOracleToBilltiq(oracleInvoice, billtiqInvoice) {
+  const validation = oracleInvoice.ValidationStatus;
+  const paid = oracleInvoice.PaidStatus;
+  const cancelled = oracleInvoice.CanceledFlag === true;
 
-  try {
-    const { accessToken, realmId } = connection;
+  let newPaymentStatus = billtiqInvoice.payment_status || "unpaid";
+  let newPaidAmount = null;
+  let newPaymentDate = null;
+  let agentReason = null;
 
-    // Get all pushed invoices for this team with QB ERP refs
-    const { data: invoices } = await supabase
-      .from("invoices")
-      .select("id, invoice_number, erp_reference, status, total, vendor_name")
-      .eq("team_id", teamId)
-      .eq("status", "pushed")
-      .like("erp_reference", "QB-%");
-
-    if (!invoices?.length) {
-      console.log("QuickBooks Sync: No pushed invoices to check");
-      return results;
-    }
-
-    for (const invoice of invoices) {
-      try {
-        // Extract QB bill ID from erp_reference (format: QB-{billId})
-        const billId = invoice.erp_reference?.replace("QB-", "");
-        if (!billId) continue;
-
-        // Query QuickBooks Bill endpoint
-        const qbRes = await fetch(
-          `https://quickbooks.api.intuit.com/v3/company/${realmId}/bill/${billId}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${accessToken}`,
-              "Accept": "application/json",
-            },
-          }
-        );
-
-        if (!qbRes.ok) {
-          console.error(`QB API error for invoice ${invoice.invoice_number}: ${qbRes.status}`);
-          results.errors++;
-          continue;
-        }
-
-        const qbData = await qbRes.json();
-        const bill = qbData?.Bill;
-        if (!bill) continue;
-
-        // Map QB balance to payment status
-        const balance = bill.Balance || 0;
-        const totalAmt = bill.TotalAmt || invoice.total || 0;
-
-        let newStatus = null;
-        if (balance === 0 && totalAmt > 0) {
-          newStatus = "paid";
-        } else if (balance < totalAmt && balance > 0) {
-          newStatus = "partial_payment";
-        }
-
-        if (newStatus && newStatus !== invoice.status) {
-          await supabase.from("invoices").update({
-            status: newStatus,
-            erp_sync_at: new Date().toISOString(),
-            agent_reason: `ERP Sync: QuickBooks balance updated — $${balance} remaining`,
-          }).eq("id", invoice.id);
-
-          results.updated++;
-          results.details.push({
-            invoiceNumber: invoice.invoice_number,
-            oldStatus: invoice.status,
-            newStatus,
-            remainingBalance: balance,
-            erp: "quickbooks",
-          });
-          console.log(`QuickBooks Sync: Invoice #${invoice.invoice_number} → ${newStatus} (balance: $${balance})`);
-        }
-      } catch (e) {
-        console.error(`QB sync error for ${invoice.invoice_number}:`, e.message);
-        results.errors++;
-      }
-    }
-
-    return results;
-  } catch (err) {
-    console.error("QuickBooks sync error:", err.message);
-    return { ...results, error: err.message };
+  if (cancelled) {
+    newPaymentStatus = "cancelled";
+    agentReason = "Oracle: invoice cancelled in Payables";
+  } else if (paid === "Paid") {
+    newPaymentStatus = "paid";
+    newPaidAmount = oracleInvoice.InvoiceAmount || billtiqInvoice.total || null;
+    // Oracle doesn't return a header-level PaymentDate; the actual date lives on the
+    // payment record. Use LastUpdateDate as a reasonable approximation since the
+    // invoice was last touched when paid. Better than nothing for now.
+    newPaymentDate = oracleInvoice.LastUpdateDate
+      ? String(oracleInvoice.LastUpdateDate).slice(0, 10)
+      : null;
+    agentReason = "Oracle: invoice marked Paid in Payables";
+  } else if (paid === "Partial") {
+    newPaymentStatus = "partial";
+    const unpaid = oracleInvoice.UnpaidAmount ?? 0;
+    const total = oracleInvoice.InvoiceAmount ?? billtiqInvoice.total ?? 0;
+    newPaidAmount = Math.max(0, total - unpaid);
+    agentReason = `Oracle: partial payment, ${newPaidAmount} of ${total} paid`;
+  } else if (validation === "Cannot be paid") {
+    newPaymentStatus = "blocked";
+    agentReason = "Oracle: invoice cannot be paid (validation failure or hold)";
   }
+  // Note: "Validated" (without payment) doesn't change payment_status — invoice is
+  // approved but not yet paid. That's still effectively "unpaid" from Billtiq's view.
+
+  // Skip update if nothing changed (avoid pointless writes and last_synced_at churn).
+  if (newPaymentStatus === billtiqInvoice.payment_status) {
+    return null;
+  }
+
+  const update = {
+    payment_status: newPaymentStatus,
+    last_synced_at: new Date().toISOString(),
+  };
+  if (newPaidAmount !== null) update.paid_amount = newPaidAmount;
+  if (newPaymentDate) update.payment_date = newPaymentDate;
+  if (agentReason) update.agent_reason = agentReason;
+
+  return update;
+}
+
+// ── QUICKBOOKS SYNC ──────────────────────────────────────────────
+// Stubbed. Will need accessToken + realmId fields added to erp_connections,
+// or a separate OAuth token store. Implement when QuickBooks integration tested.
+async function syncQuickBooksPayments({ teamId, connection }) {
+  console.log("QuickBooks Sync: not yet wired (need OAuth token storage)");
+  return { updated: 0, errors: 0, checked: 0, details: [] };
 }
 
 // ── MAIN: RUN ERP SYNC FOR A TEAM ───────────────────────────────
 async function runErpSync({ teamId }) {
   console.log(`ERP Sync Agent: Starting sync for team ${teamId}`);
-  const allResults = { oracle: null, quickbooks: null, totalUpdated: 0 };
+  const allResults = { oracle: null, quickbooks: null, totalUpdated: 0, totalChecked: 0 };
 
   try {
-    // Get ERP connections for this team
-    const { data: connections } = await supabase
+    const { data: connections, error } = await supabase
       .from("erp_connections")
-      .select("*")
+      .select("erp_type, base_url, username, password, status")
       .eq("team_id", teamId)
       .eq("status", "connected");
 
+    if (error) {
+      console.error("ERP Sync: erp_connections query failed:", error.message);
+      return { ...allResults, error: error.message };
+    }
+
     if (!connections?.length) {
-      console.log("ERP Sync: No connected ERPs for team");
+      console.log(`ERP Sync: No connected ERPs for team ${teamId}`);
       return allResults;
     }
 
     for (const conn of connections) {
-      if (conn.erp_type === "oracle" && conn.credentials) {
-        console.log("ERP Sync: Syncing Oracle Fusion...");
-        const result = await syncOraclePayments({
-          teamId,
-          connection: conn.credentials,
-        });
+      if (conn.erp_type === "oracle") {
+        const result = await syncOraclePayments({ teamId, connection: conn });
         allResults.oracle = result;
         allResults.totalUpdated += result.updated || 0;
+        allResults.totalChecked += result.checked || 0;
       }
-
-      if (conn.erp_type === "quickbooks" && conn.credentials) {
-        console.log("ERP Sync: Syncing QuickBooks...");
-        const result = await syncQuickBooksPayments({
-          teamId,
-          connection: conn.credentials,
-        });
+      if (conn.erp_type === "quickbooks") {
+        const result = await syncQuickBooksPayments({ teamId, connection: conn });
         allResults.quickbooks = result;
         allResults.totalUpdated += result.updated || 0;
+        allResults.totalChecked += result.checked || 0;
       }
     }
 
-    // Log sync run
-    await supabase.from("usage_events").insert({
-      team_id: teamId,
-      event_type: "erp_sync",
-      metadata: { totalUpdated: allResults.totalUpdated, timestamp: new Date().toISOString() },
-    });
+    // Log sync run (best-effort; don't fail if usage_events doesn't exist yet)
+    try {
+      await supabase.from("usage_events").insert({
+        team_id: teamId,
+        event_type: "erp_sync",
+        metadata: {
+          totalUpdated: allResults.totalUpdated,
+          totalChecked: allResults.totalChecked,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (_) { /* ignore */ }
 
-    console.log(`ERP Sync Agent: Done — ${allResults.totalUpdated} invoices updated`);
+    console.log(`ERP Sync Agent: Done — checked ${allResults.totalChecked}, updated ${allResults.totalUpdated}`);
     return allResults;
-
   } catch (err) {
     console.error("ERP Sync Agent error:", err.message);
     return { ...allResults, error: err.message };
@@ -244,14 +254,13 @@ async function startErpSyncScheduler() {
 
   const runForAllTeams = async () => {
     try {
-      // Get all teams with connected ERPs
       const { data: connections } = await supabase
         .from("erp_connections")
         .select("team_id")
         .eq("status", "connected");
 
       const teamIds = [...new Set((connections || []).map(c => c.team_id))];
-      console.log(`ERP Sync: Running for ${teamIds.length} teams`);
+      console.log(`ERP Sync: Running for ${teamIds.length} team(s)`);
 
       for (const teamId of teamIds) {
         await runErpSync({ teamId });
@@ -261,7 +270,6 @@ async function startErpSyncScheduler() {
     }
   };
 
-  // Run immediately on start, then every 60 minutes
   await runForAllTeams();
   setInterval(runForAllTeams, 60 * 60 * 1000);
 }

@@ -945,6 +945,17 @@ app.post("/api/invoices/:invoiceId/mark-paid", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Manually trigger ERP sync for a team (useful for testing — bypasses 60-min scheduler).
+// POST /api/erp-sync/trigger with body { teamId }
+app.post("/api/erp-sync/trigger", async (req, res) => {
+  try {
+    const { teamId } = req.body;
+    if (!teamId) return res.status(400).json({ error: "teamId required" });
+    const result = await runErpSync({ teamId });
+    res.json({ success: true, result });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post("/api/invoices/:invoiceId/comments", async (req, res) => {
   try {
     const { teamId, userId, userEmail, comment } = req.body;
