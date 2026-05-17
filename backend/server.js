@@ -1068,11 +1068,6 @@ app.post("/api/invoices/:invoiceId/audit/comment", async (req, res) => {
 
 
 app.listen(PORT, () => {
-  // Fail fast if ENCRYPTION_KEY is missing/malformed — better to crash at boot
-  // than silently fail on the first Oracle credential read/write.
-  const { assertKeyConfigured } = require("./lib/crypto");
-  assertKeyConfigured();
-
   console.log(`Billtiq backend on port ${PORT}`);
   // Start ERP Sync Agent scheduler
   startErpSyncScheduler().catch(e => console.error("ERP Sync scheduler failed to start:", e.message));
