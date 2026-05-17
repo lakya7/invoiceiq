@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Billtiq — Oracle Fusion AP Exception Handling for Mid-Market Teams</title>
-<meta name="description" content="Resolve Oracle Fusion match exceptions, prevent duplicate payments, unblock AP approvals. Built by Oracle Fusion experts. Also supports NetSuite, QuickBooks, Xero, Zoho, Dynamics 365.">
+<meta name="description" content="Resolve Oracle Fusion match exceptions, prevent duplicate payments, unblock AP approvals. Built by Oracle Fusion experts. More ERPs coming soon.">
 <meta property="og:title" content="Billtiq — Oracle Fusion AP Exception Handling">
 <meta property="og:description" content="Resolve match exceptions and unblock approvals — without IT tickets or workflow scripts.">
 <meta property="og:url" content="https://www.billtiq.com">
@@ -286,6 +286,32 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:32px 60px
 .nf-lang-cur{font-size:9px;color:var(--orange);font-family:'DM Mono',monospace;margin-top:4px}
 .nf-confirm{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(34,197,94,0.8)}
 @media(max-width:768px){.nf-grid{grid-template-columns:1fr}.nf-compare{grid-template-columns:1fr}}
+
+/* DEMO FORM */
+.demo-section{padding:100px 60px;border-bottom:1px solid var(--border)}
+.demo-wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+.demo-left .eyebrow{margin-bottom:12px}
+.demo-left h2{font-family:'Syne',sans-serif;font-size:clamp(28px,3vw,42px);font-weight:600;letter-spacing:-1.5px;line-height:1.1;color:white;margin-bottom:18px}
+.demo-left h2 span{color:var(--orange)}
+.demo-left p{font-size:15px;color:var(--muted);line-height:1.75;font-weight:300;margin-bottom:24px}
+.demo-bullets{display:flex;flex-direction:column;gap:12px}
+.demo-bullet{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:rgba(255,255,255,0.78);line-height:1.6}
+.demo-bullet-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0;margin-top:7px}
+.demo-form-card{background:white;border-radius:16px;padding:32px;box-shadow:0 20px 50px rgba(0,0,0,0.25)}
+.demo-field{margin-bottom:18px}
+.demo-label{display:block;font-size:13px;color:#333;margin-bottom:6px;font-family:'DM Sans',sans-serif}
+.demo-label .req{color:#dc2626}
+.demo-input,.demo-select{width:100%;padding:11px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#111;background:white;transition:border-color 0.15s}
+.demo-input:focus,.demo-select:focus{outline:none;border-color:var(--teal-light)}
+.demo-submit{width:100%;padding:14px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background 0.15s;margin-top:8px}
+.demo-submit:hover:not(:disabled){background:var(--teal-deep)}
+.demo-submit:disabled{opacity:0.6;cursor:not-allowed}
+.demo-captcha-note{font-size:11px;color:#666;margin:10px 0 4px;text-align:left}
+.demo-message{padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+.demo-message.show{display:block}
+.demo-message.success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.demo-message.error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+@media(max-width:768px){.demo-wrap{grid-template-columns:1fr;gap:32px}.demo-section{padding:60px 24px}.demo-form-card{padding:24px}}
 </style>
 </head>
 <body>
@@ -308,7 +334,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   <div class="nav-right">
     <a href="/security" class="btn-ghost">Security</a>
     <a href="/login" class="btn-ghost">Sign In</a>
-    <a href="#" class="btn-nav" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book Oracle Demo →</a>
+    <a href="#demo" class="btn-nav">Book a Demo →</a>
   </div>
 </nav>
 
@@ -316,24 +342,24 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 <section class="hero">
   <div class="hero-badge">Built by Oracle Fusion experts · For mid-market AP teams</div>
   <h1>Oracle Fusion AP exception<br>handling — <span>without IT tickets.</span></h1>
-  <p class="hero-sub" style="color:rgba(245,242,235,0.78)">Resolve match exceptions, prevent duplicate payments, and unblock approvals — without rewriting Oracle workflows or waiting on developers. Also works with NetSuite, QuickBooks, Xero, Zoho, and Dynamics 365.</p>
+  <p class="hero-sub" style="color:rgba(245,242,235,0.78)">Resolve match exceptions, prevent duplicate payments, and unblock approvals — without rewriting Oracle workflows or waiting on developers. More ERPs coming soon.</p>
   <div class="hero-btns">
-    <a href="#" class="btn-primary" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book a 15-min Oracle Demo →</a>
+    <a href="#demo" class="btn-primary">Book a Demo →</a>
     <a href="/login?signup=true" class="btn-secondary">Try with one invoice</a>
   </div>
 
   <div class="trust-strip">
-    <span class="trust-item">🔒 AES-256 encryption</span>
-    <span class="trust-dot">·</span>
-    <span class="trust-item">📋 SOC 2 in progress</span>
-    <span class="trust-dot">·</span>
     <span class="trust-item">🧾 Audit trail on every invoice</span>
     <span class="trust-dot">·</span>
     <span class="trust-item">👥 Role-based access</span>
+    <span class="trust-dot">·</span>
+    <span class="trust-item">🔒 Encryption at rest (roadmap)</span>
+    <span class="trust-dot">·</span>
+    <span class="trust-item">📋 SOC 2 planned</span>
   </div>
 
   <div class="stats-bar">
-    <div class="stat"><div class="stat-n">6<em>+</em></div><div class="stat-l">ERP integrations</div></div>
+    <div class="stat"><div class="stat-n">Oracle</div><div class="stat-l">Fusion LIVE today</div></div>
     <div class="stat"><div class="stat-n">3<em>-way</em></div><div class="stat-l">Match (Oracle level-aware)</div></div>
     <div class="stat"><div class="stat-n">Pre<em>-push</em></div><div class="stat-l">Validation before ERP</div></div>
     <div class="stat"><div class="stat-n">ZIP</div><div class="stat-l">Batch upload</div></div>
@@ -405,9 +431,9 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
 </section>
 
 
-<!-- SOCIAL PROOF -->
+<!-- INTEGRATION SCOPE -->
 <section style="padding:40px 60px;border-bottom:1px solid var(--border);text-align:center">
-  <div style="font-size:12px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px">Trusted by AP teams processing invoices with</div>
+  <div style="font-size:12px;color:var(--dim);font-family:'DM Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px">Built for the ERPs mid-market AP teams use</div>
   <div style="display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:10px;opacity:0.5">
       <div style="width:32px;height:32px;background:#f80000;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:white">O</div>
@@ -443,22 +469,22 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     <span class="ticker-item">AI Invoice Extraction</span>
     <span class="ticker-item">Smart PO Matching</span>
     <span class="ticker-item">Duplicate Detection</span>
-    <span class="ticker-item">6 ERPs Live</span>
-    <span class="ticker-item">QuickBooks Sync</span>
+    <span class="ticker-item">Oracle Fusion Live</span>
+    <span class="ticker-item">Bidirectional Sync</span>
     <span class="ticker-item">Slack & Teams Alerts</span>
     <span class="ticker-item">Auto Approvals</span>
     <span class="ticker-item">PO from Email Body</span>
-    <span class="ticker-item">Supplier Portal</span>
+    <span class="ticker-item">PDF Audit Trail</span>
     <span class="ticker-item">Zero Manual Entry</span>
     <span class="ticker-item">AI Invoice Extraction</span>
     <span class="ticker-item">Smart PO Matching</span>
     <span class="ticker-item">Duplicate Detection</span>
-    <span class="ticker-item">6 ERPs Live</span>
-    <span class="ticker-item">QuickBooks Sync</span>
+    <span class="ticker-item">Oracle Fusion Live</span>
+    <span class="ticker-item">Bidirectional Sync</span>
     <span class="ticker-item">Slack & Teams Alerts</span>
     <span class="ticker-item">Auto Approvals</span>
     <span class="ticker-item">PO from Email Body</span>
-    <span class="ticker-item">Supplier Portal</span>
+    <span class="ticker-item">PDF Audit Trail</span>
   </div>
 </div>
 
@@ -511,7 +537,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
     </div>
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:white">2-minute product demo</div>
     <div style="font-size:13px;color:var(--dim)">Invoice uploaded → Claude AI extracts → Oracle Fusion receives PDF attachment</div>
-    <a href="#" style="background:var(--orange);color:white;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book Oracle Demo →</a>
+    <a href="#demo" style="background:var(--orange);color:white;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif">Book a Demo →</a>
   </div>
 </section>
 
@@ -624,7 +650,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>Zero manual entry into Oracle or QuickBooks</div>
         <div style="display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.7)"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0"></div>3-way match validation respects your Oracle MatchApprovalLevel</div>
       </div>
-      <a href="#" class="btn-primary" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book Oracle Demo →</a>
+      <a href="#demo" class="btn-primary">Book a Demo →</a>
     </div>
     <div class="reveal" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px">
       <div style="font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:16px;letter-spacing:1px">PROCESSING NOW</div>
@@ -681,9 +707,9 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">QuickBooks</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">QuickBooks</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Online</div>
-        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
         <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Gmail/Outlook</div>
@@ -706,24 +732,24 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">NetSuite</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">NetSuite</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Oracle</div>
-        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Xero</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Xero</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Accounting</div>
-        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Dynamics</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Dynamics</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">365</div>
-        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
-        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:white">Zoho</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Zoho</div>
         <div style="font-size:10px;color:var(--dim);font-family:'DM Mono',monospace">Books</div>
-        <div style="font-size:9px;color:#22c55e;background:rgba(34,197,94,0.08);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">LIVE</div>
+        <div style="font-size:9px;color:var(--dim);background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace">SOON</div>
       </div>
       <div style="padding:28px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px">
         <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:15px;color:rgba(255,255,255,0.3)">Coupa</div>
@@ -927,7 +953,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   </div>
   <div class="idr-note reveal">* Based on commonly reported limitations. IDR capabilities vary by vendor, license tier, and configuration.</div>
   <div style="display:flex;gap:14px;margin-top:32px;flex-wrap:wrap" class="reveal">
-    <a href="#" class="btn-primary" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book Oracle Demo →</a>
+    <a href="#demo" class="btn-primary">Book a Demo →</a>
     <div style="font-size:13px;color:var(--muted);font-style:italic;padding:14px 20px;background:var(--bg2);border-radius:12px;border:1px solid var(--border);line-height:1.6;max-width:400px">"Billtiq connects to your existing ERP in 5 minutes and handles the parts of AP automation that built-in IDR leaves to your team."</div>
   </div>
 </section>
@@ -952,7 +978,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <li>Full audit trail</li>
         <li>Email support (24h response)</li>
       </ul>
-      <a href="#" class="plan-btn plan-btn-outline" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book a demo →</a>
+      <a href="#demo" class="plan-btn plan-btn-outline">Book a demo →</a>
     </div>
     <div class="price-card pop reveal">
       <div class="pop-badge">For Oracle / NetSuite teams</div>
@@ -972,7 +998,7 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
         <li>Priority support (4h response)</li>
         <li>Onboarding included</li>
       </ul>
-      <a href="#" class="plan-btn plan-btn-fill" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book a 15-min Oracle demo →</a>
+      <a href="#demo" class="plan-btn plan-btn-fill">Book a Demo →</a>
     </div>
     <div class="price-card reveal">
       <div class="plan-name">Enterprise</div>
@@ -1002,10 +1028,58 @@ try{const t=localStorage.getItem('sb-cwsubqfynnntrzfshldy-auth-token');if(t){con
   <h2 class="cta-h reveal">Ready to fix Oracle AP<br>exception <span>handling?</span></h2>
   <p class="cta-p reveal">15 minutes. We'll show you a real Oracle Fusion invoice push end-to-end — including exception resolution, PDF attachment, and approval routing.</p>
   <div class="reveal" style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-    <a href="#" class="btn-primary" style="font-size:15px;padding:16px 32px" data-cal-link="lakya-r-uh2c7c/oracle-demo" data-cal-namespace="oracle-demo" data-cal-config='{"layout":"month_view"}'>Book a 15-min Oracle Demo →</a>
+    <a href="#demo" class="btn-primary" style="font-size:15px;padding:16px 32px">Book a Demo →</a>
     <a href="/login?signup=true" class="btn-secondary" style="font-size:15px;padding:16px 28px">Try with one invoice</a>
   </div>
   <div class="cta-note reveal">Suppliers always use Billtiq free · No credit card required for demo · 30-day money-back guarantee</div>
+</section>
+
+<!-- DEMO FORM -->
+<section id="demo" class="demo-section">
+  <div class="demo-wrap">
+    <div class="demo-left reveal">
+      <div class="eyebrow">Book a Demo</div>
+      <h2>See Billtiq on your<br><span>Oracle Fusion instance.</span></h2>
+      <p>15 minutes. We'll walk through a real invoice end-to-end — AI extraction, anomaly detection, PO matching, Oracle push with dynamic supplier/site resolution, and bidirectional payment sync.</p>
+      <div class="demo-bullets">
+        <div class="demo-bullet"><div class="demo-bullet-dot"></div>Live Oracle Fusion integration — not a slideshow</div>
+        <div class="demo-bullet"><div class="demo-bullet-dot"></div>Bring your own invoice — we'll extract it on the call</div>
+        <div class="demo-bullet"><div class="demo-bullet-dot"></div>No sales pitch — built and run by an Oracle Fusion engineer</div>
+        <div class="demo-bullet"><div class="demo-bullet-dot"></div>We respond within one business day</div>
+      </div>
+    </div>
+    <div class="demo-form-card reveal">
+      <div id="demo-message" class="demo-message"></div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-firstname">First Name <span class="req">*</span></label>
+        <input class="demo-input" id="demo-firstname" type="text" required autocomplete="given-name"/>
+      </div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-lastname">Last Name <span class="req">*</span></label>
+        <input class="demo-input" id="demo-lastname" type="text" required autocomplete="family-name"/>
+      </div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-company">Company <span class="req">*</span></label>
+        <input class="demo-input" id="demo-company" type="text" required autocomplete="organization"/>
+      </div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-jobtitle">Job Title <span class="req">*</span></label>
+        <input class="demo-input" id="demo-jobtitle" type="text" required autocomplete="organization-title"/>
+      </div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-email">Work Email <span class="req">*</span></label>
+        <input class="demo-input" id="demo-email" type="email" required autocomplete="email"/>
+      </div>
+      <div class="demo-field">
+        <label class="demo-label" for="demo-type">Type of Demo:</label>
+        <select class="demo-select" id="demo-type">
+          <option value="">Select...</option>
+          <option value="prospective_customer">I am a prospective customer</option>
+        </select>
+      </div>
+      <button class="demo-submit" id="demo-submit" type="button">Request Demo</button>
+    </div>
+  </div>
 </section>
 
 <footer>
@@ -1026,14 +1100,78 @@ const reveals=document.querySelectorAll('.reveal');
 const obs=new IntersectionObserver(entries=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('show'),i*60);obs.unobserve(e.target);}});},{threshold:0.06});
 reveals.forEach(el=>obs.observe(el));
 document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'});});});
+
+// Demo request form handler
+(function(){
+  const submitBtn = document.getElementById('demo-submit');
+  if (!submitBtn) return;
+  const msg = document.getElementById('demo-message');
+  const fields = ['firstname','lastname','company','jobtitle','email'];
+
+  // Backend endpoint — override at build time if needed via <meta name="api-base">
+  const API_BASE = (document.querySelector('meta[name="api-base"]')?.content) || '';
+
+  function showMessage(text, kind){
+    msg.textContent = text;
+    msg.className = 'demo-message show ' + kind;
+  }
+
+  function isValidEmail(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  submitBtn.addEventListener('click', async ()=>{
+    const data = {};
+    for (const f of fields) {
+      const el = document.getElementById('demo-' + f);
+      const val = (el?.value || '').trim();
+      if (!val) {
+        showMessage('Please fill in all required fields.', 'error');
+        el?.focus();
+        return;
+      }
+      data[f] = val;
+    }
+    if (!isValidEmail(data.email)) {
+      showMessage('Please enter a valid work email.', 'error');
+      document.getElementById('demo-email')?.focus();
+      return;
+    }
+    data.demoType = document.getElementById('demo-type').value || 'prospective_customer';
+    data.source = 'billtiq.com landing';
+    data.submittedAt = new Date().toISOString();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    msg.className = 'demo-message';
+
+    try {
+      const res = await fetch(API_BASE + '/api/demo-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error || ('Request failed: ' + res.status));
+      }
+      showMessage("Thanks! We'll get back to you within one business day.", 'success');
+      submitBtn.textContent = 'Request sent ✓';
+      // Clear inputs
+      for (const f of fields) {
+        const el = document.getElementById('demo-' + f);
+        if (el) el.value = '';
+      }
+      document.getElementById('demo-type').value = '';
+    } catch (err) {
+      console.error('Demo request failed:', err);
+      showMessage('Something went wrong. Please email lakya7@gmail.com directly.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request Demo';
+    }
+  });
+})();
 </script>
 
-<!-- Cal.com embed: opens booking popup for "Book Oracle Demo" CTAs.
-     Any element with data-cal-link="lakya-r-uh2c7c/oracle-demo" will trigger the popup. -->
-<script type="text/javascript">
-(function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-Cal("init", "oracle-demo", {origin:"https://cal.com"});
-Cal.ns["oracle-demo"]("ui", {hideEventTypeDetails:false, layout:"month_view"});
-</script>
 </body>
 </html>

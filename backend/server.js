@@ -89,6 +89,81 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
+// ── DEMO REQUEST ────────────────────────────────────────────────
+// Public endpoint for the landing-page demo form. Validates input, then emails
+// the lead to lakya7@gmail.com via the existing sendEmail() helper (Resend
+// primary, Gmail fallback). Intentionally never returns details about email
+// provider failure to the public client.
+app.post("/api/demo-request", async (req, res) => {
+  try {
+    const {
+      firstname, lastname, company, jobtitle, email, demoType, source,
+    } = req.body || {};
+
+    // Required-field validation
+    const required = { firstname, lastname, company, jobtitle, email };
+    for (const [k, v] of Object.entries(required)) {
+      if (typeof v !== "string" || !v.trim()) {
+        return res.status(400).json({ error: `Missing field: ${k}` });
+      }
+    }
+
+    // Cheap email format check (matches client-side check)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+
+    // Defensive length caps to keep email payload bounded
+    const esc = (s) => String(s).slice(0, 300).replace(/[<>]/g, "");
+    const data = {
+      firstname: esc(firstname),
+      lastname: esc(lastname),
+      company: esc(company),
+      jobtitle: esc(jobtitle),
+      email: esc(email),
+      demoType: esc(demoType || "prospective_customer"),
+      source: esc(source || "billtiq.com"),
+      ip: req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown",
+      userAgent: String(req.headers["user-agent"] || "").slice(0, 200),
+    };
+
+    const subject = `New demo request: ${data.firstname} ${data.lastname} (${data.company})`;
+    const html = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px">
+        <h2 style="margin:0 0 16px;color:#0d4f3c">New demo request</h2>
+        <table style="border-collapse:collapse;width:100%;font-size:14px">
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600;width:130px">Name</td><td style="padding:8px 12px;border-bottom:1px solid #eee">${data.firstname} ${data.lastname}</td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600">Company</td><td style="padding:8px 12px;border-bottom:1px solid #eee">${data.company}</td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600">Job Title</td><td style="padding:8px 12px;border-bottom:1px solid #eee">${data.jobtitle}</td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600">Work Email</td><td style="padding:8px 12px;border-bottom:1px solid #eee"><a href="mailto:${data.email}">${data.email}</a></td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600">Demo Type</td><td style="padding:8px 12px;border-bottom:1px solid #eee">${data.demoType}</td></tr>
+          <tr><td style="padding:8px 12px;background:#f5f5f0;font-weight:600">Source</td><td style="padding:8px 12px;border-bottom:1px solid #eee">${data.source}</td></tr>
+        </table>
+        <div style="margin-top:20px;padding:12px;background:#fafafa;border-radius:6px;font-size:12px;color:#666">
+          IP: ${data.ip}<br/>UA: ${data.userAgent}<br/>Received: ${new Date().toISOString()}
+        </div>
+        <p style="margin-top:20px;font-size:13px;color:#555">Reply directly to <a href="mailto:${data.email}">${data.email}</a> to follow up.</p>
+      </div>
+    `;
+
+    try {
+      await sendEmail({ to: "lakya7@gmail.com", subject, html });
+    } catch (err) {
+      console.error("[demo-request] sendEmail failed:", err.message);
+      // Still return success to client — the request was valid; provider failure
+      // is on us, not them. Lead is logged below so we can recover manually.
+    }
+
+    // Always log the lead so it's recoverable from Render logs even if email fails
+    console.log("[demo-request] LEAD:", JSON.stringify(data));
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[demo-request] Unexpected error:", err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
 // Helper: Determine final PO match status. If no PO at all, mark as 'non_po'
 // (it's a direct expense, not a missing match). Otherwise use the matcher's result.
 function resolveMatchStatus(invoiceData, matchResult) {
@@ -993,6 +1068,11 @@ app.post("/api/invoices/:invoiceId/audit/comment", async (req, res) => {
 
 
 app.listen(PORT, () => {
+  // Fail fast if ENCRYPTION_KEY is missing/malformed — better to crash at boot
+  // than silently fail on the first Oracle credential read/write.
+  const { assertKeyConfigured } = require("./lib/crypto");
+  assertKeyConfigured();
+
   console.log(`Billtiq backend on port ${PORT}`);
   // Start ERP Sync Agent scheduler
   startErpSyncScheduler().catch(e => console.error("ERP Sync scheduler failed to start:", e.message));
