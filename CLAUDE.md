@@ -59,6 +59,11 @@ npm run dev                     # Vite dev server
 git push                        # Vercel rebuilds frontend, Render rebuilds backend
 ```
 
+⚠️ **There is no staging / test environment.** Every `git push` to `main` deploys
+straight to production. No dev → staging → prod promotion. No automated tests run.
+This is a known gap (see SDLC audit item #11). Before pushing any non-trivial change:
+test locally with `node server.js`, run the change through manually, and only then push.
+
 No CI/CD yet. No automated tests yet. Both are in the roadmap.
 
 ---
@@ -113,8 +118,10 @@ No CI/CD yet. No automated tests yet. Both are in the roadmap.
 - **Hard-coded fallback values still exist** in `oracle.js` as safety net. Don't
   remove until first paying customer is stable.
 - **Pod URL:** `https://fa-euth-dev20-saasfademo1.ds-fa.oraclepdemos.com` — this is
-  a demo pod that occasionally refreshes and wipes the user account. If login fails,
-  contact pod provisioner; it's not a code bug.
+  a temporary Oracle-provided demo instance used only for development and prospect
+  demos. It refreshes regularly and wipes user accounts. **NOT production.** Real
+  customers will connect via their own Oracle Fusion instance with their own
+  credentials. If login fails, contact the pod provisioner; it's not a code bug.
 
 ### Supabase
 
@@ -162,7 +169,9 @@ These are documented so future-you doesn't waste time looking:
 
 - ❌ No automated tests (extraction, ERP push, anomaly logic)
 - ❌ No CI/CD pipeline (push = deploy with zero gates)
-- ❌ No staging environment (Render + Vercel both deploy main → prod)
+- ❌ **No staging or test environment.** Production is the only environment.
+  Every git push deploys to billtiq.com (frontend) and the Render backend (prod).
+  Acceptable while solo + invite-only; mandatory to fix before first paying customer.
 - ❌ No status page or uptime monitoring
 - ❌ No secrets manager (env vars only)
 - ❌ ERP credentials in plaintext in Supabase (encryption #6 parked)
