@@ -195,3 +195,23 @@ See the SDLC audit PDF for the full prioritized list.
   blocked on Oracle pod login restoration. Key: see memory #14.
 - **Hard-coded Oracle fallbacks kept** (May 14 2026) — safety net for first prospect.
   Remove only after a real customer integration is stable.
+
+---
+
+## Encryption (SHIPPED May 19 2026)
+
+- **AES-256-GCM** for ERP credentials. Implementation: `backend/lib/crypto.js`
+- `encrypt()` on save, `decrypt()` on read, with passthrough for legacy plaintext values (no `v1:` prefix)
+- `ENCRYPTION_KEY` env var on Render (64-char hex, never in git)
+- `server.js` boot-time `assertKeyConfigured()` fails fast if key missing
+- Migration script: `backend/scripts/encrypt-erp-credentials.js` (dry-run by default, `--apply` to commit)
+- Verified via Supabase: passwords show `v1:...` prefix in `erp_connections` table
+
+## Oracle pod gotcha (learned May 19 2026)
+
+- **HTTP 401 on Oracle API but web UI works fine = password issue, not roles.**
+- When pod gets refreshed and you do a "forgot password" reset, the new password sometimes only updates web UI auth, not REST API Basic Auth.
+- **Fix: reset password again to a simple alphanumeric** (no special chars), then update Billtiq's stored credentials via Settings → ERP → Disconnect → Reconnect.
+- Don't chase role/permission fixes when the symptom is 401 (Forbidden = 403 would be the role issue).
+- Pod URLs change between provisions. Previously `fa-euth-dev20`, now `fa-eseb-dev24`. Always read from `erp_connections.base_url`, never hardcode.
+
