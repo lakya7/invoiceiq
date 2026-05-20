@@ -20,6 +20,18 @@ const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+// ── ENCRYPTION KEY BOOT CHECK ────────────────────────────────────
+// Fail fast at boot if ENCRYPTION_KEY is missing or malformed. This avoids
+// silent decrypt failures on the first invoice push hours after deploy.
+const { assertKeyConfigured } = require("./lib/crypto");
+try {
+  assertKeyConfigured();
+  console.log("[crypto] ENCRYPTION_KEY configured correctly");
+} catch (err) {
+  console.error("[crypto] BOOT FAILURE:", err.message);
+  process.exit(1);
+}
+
 // ── AUDIT LOG HELPER ─────────────────────────────────────────────
 async function logAudit({ invoiceId, teamId, userId, userEmail, action, detail, actor = "system" }) {
   try {

@@ -3,6 +3,7 @@
 
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
+const { encrypt, decrypt } = require("./lib/crypto");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -17,7 +18,10 @@ async function getOracleToken(teamId) {
 
   if (!conn) throw new Error("Oracle Fusion not connected for this team");
 
-  const credentials = Buffer.from(`${conn.username}:${conn.password}`).toString("base64");
+  // Password may be encrypted (v1:...) or plaintext (legacy). decrypt() passes
+  // through plaintext unchanged so this is safe for both during migration.
+  const password = decrypt(conn.password);
+  const credentials = Buffer.from(`${conn.username}:${password}`).toString("base64");
   return { credentials, baseUrl: conn.base_url };
 }
 
@@ -926,17 +930,25 @@ async function validateOnly(teamId, invoiceData) {
 
 // ── SAVE ORACLE CONNECTION ──────────────────────────────────────
 async function saveConnection(teamId, { baseUrl, username, password }) {
+  // Encrypt the password before persisting to Supabase. encrypt() is a no-op
+  // for already-encrypted values, so this is safe even if a caller passes
+  // an already-encrypted password.
+  const encryptedPassword = encrypt(password);
+
   await supabase.from("erp_connections").upsert({
     team_id: teamId,
     erp_type: "oracle",
     base_url: baseUrl,
     username,
-    password,
+    password: encryptedPassword,
     status: "connected",
     updated_at: new Date().toISOString(),
   }, { onConflict: "team_id,erp_type" });
 
   try {
+    // For the verification call we need the plaintext password (Basic Auth
+    // can't use encrypted blobs). Use the original parameter, not the stored
+    // encrypted value.
     const credentials = Buffer.from(`${username}:${password}`).toString("base64");
     await axios.get(`${baseUrl}/fscmRestApi/resources/11.13.18.05/invoices?limit=1`, {
       headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" }
