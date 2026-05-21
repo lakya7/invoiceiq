@@ -215,3 +215,40 @@ See the SDLC audit PDF for the full prioritized list.
 - Don't chase role/permission fixes when the symptom is 401 (Forbidden = 403 would be the role issue).
 - Pod URLs change between provisions. Previously `fa-euth-dev20`, now `fa-eseb-dev24`. Always read from `erp_connections.base_url`, never hardcode.
 
+
+---
+
+## RLS status (verified May 20 2026)
+
+**RLS is ALREADY enabled on production.** Memory previously claimed RLS was off — this was incorrect.
+
+Verified via SQL queries on prod (cwsubqfynnntrzfshldy):
+- invoices.rowsecurity = true
+- invoice_comments.rowsecurity = true
+- 27 policies exist across the public schema
+
+Policies on invoices: Users can view/insert/update/delete own invoices (by user_id); Team members can view/update team invoices (by team_id); Admins can delete team invoices.
+
+Policies on invoice_comments: invoice_comments_select/insert/update/delete.
+
+Note: invoices has BOTH user_id (NOT NULL) and team_id (nullable) — legacy + team patterns coexist. New inserts should set both.
+
+## Staging status (May 20 2026)
+
+Supabase staging project exists at aosgfxbmaupsccfvwovv.supabase.co (us-east-1).
+- Created with secure defaults (Data API ON, auto-expose-tables OFF, auto-RLS OFF)
+- Supabase CLI installed locally (v2.100.1)
+- Schema dump blocked by Docker Desktop dependency
+- Decision: parked. RLS testable on prod safely via service-role-bypass + one-line rollback. Revisit post-customer #1.
+- Note: supabase-schema.sql in repo root is OUTDATED (36 lines, only invoices table). Do not use as source of truth.
+
+## Hard-learned lesson (May 20 2026)
+
+**Always verify current state with SQL queries before applying changes.**
+
+Spent 90+ minutes setting up staging to safely test RLS — only to discover RLS was already enabled. A 30-second SQL query at the start would have saved 90 minutes.
+
+Run these diagnostic queries BEFORE any schema/policy change:
+- Check RLS: SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname='public';
+- List policies: SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname='public';
+- Inspect table: SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='TABLE_NAME';
