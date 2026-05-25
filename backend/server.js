@@ -466,6 +466,31 @@ app.post("/api/push-erp", async (req, res) => {
             console.error(`Oracle push FAILED for invoice #${invoiceData.invoiceNumber}:`, err.message);
           }
         }
+        // ── ACTUALLY PUSH TO QUICKBOOKS ───────────────────────────
+        if (erpType === "quickbooks") {
+          try {
+            const qb = require("./quickbooks");
+            console.log(`QB push: starting for invoice #${invoiceData.invoiceNumber}`);
+            const qbResult = await qb.pushInvoice(teamId, invoiceData);
+            const realRef = qbResult?.erpReference;
+            if (realRef) {
+              erpReference = String(realRef);
+              pushedToErp = true;
+              validationStatus = "needs_validation";
+              validationMessage = "Invoice submitted to QuickBooks Online as a draft Bill. Go to Expenses → Bills to review and approve.";
+              console.log(`QB push: success, ref=${erpReference}`);
+            } else {
+              console.warn("QB push: returned without a Bill ID. Full result:", JSON.stringify(qbResult));
+              validationStatus = "push_uncertain";
+              validationMessage = "QuickBooks accepted the request but did not return a Bill ID. Verify in QBO Expenses → Bills.";
+            }
+          } catch (err) {
+            pushError = err.message;
+            validationStatus = "push_failed";
+            validationMessage = `Failed to push to QuickBooks: ${err.message}`;
+            console.error(`QB push FAILED for invoice #${invoiceData.invoiceNumber}:`, err.message);
+          }
+        }
       }
     }
 
