@@ -1,6 +1,7 @@
 // quickbooks.js — QuickBooks Online Integration
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
+const { encrypt, decrypt } = require("./lib/crypto");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -37,13 +38,13 @@ async function exchangeCode(code, teamId, realmId) {
   const { access_token, refresh_token, expires_in } = res.data;
   const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString();
 
-  // Save tokens to Supabase
+  // Save tokens to Supabase (encrypted with v1: prefix)
   await supabase.from("erp_connections").upsert({
     team_id: teamId,
     erp_type: "quickbooks",
     realm_id: realmId,
-    access_token,
-    refresh_token,
+    access_token: encrypt(access_token),
+    refresh_token: encrypt(refresh_token),
     expires_at: expiresAt,
     status: "connected",
     updated_at: new Date().toISOString(),
@@ -63,23 +64,32 @@ async function refreshToken(teamId) {
 
   if (!conn) throw new Error("QuickBooks not connected for this team");
 
-  // Check if token is still valid
+  // Tokens are stored encrypted with v1: prefix. decrypt() passes through
+  // plaintext unchanged so this is safe for both encrypted and legacy values.
+  const storedAccessToken = decrypt(conn.access_token);
+  const storedRefreshToken = decrypt(conn.refresh_token);
+
+  // Check if token is still valid (>60s remaining)
   if (new Date(conn.expires_at) > new Date(Date.now() + 60000)) {
-    return conn.access_token;
+    return storedAccessToken;
   }
 
   // Refresh the token
   const credentials = Buffer.from(`${process.env.QB_CLIENT_ID}:${process.env.QB_CLIENT_SECRET}`).toString("base64");
   const res = await axios.post(QB_TOKEN_URL,
-    new URLSearchParams({ grant_type: "refresh_token", refresh_token: conn.refresh_token }),
+    new URLSearchParams({ grant_type: "refresh_token", refresh_token: storedRefreshToken }),
     { headers: { Authorization: `Basic ${credentials}`, "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" } }
   );
 
   const { access_token, refresh_token, expires_in } = res.data;
   const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString();
 
+  // Encrypt new tokens before persisting
   await supabase.from("erp_connections").update({
-    access_token, refresh_token, expires_at: expiresAt, updated_at: new Date().toISOString()
+    access_token: encrypt(access_token),
+    refresh_token: encrypt(refresh_token),
+    expires_at: expiresAt,
+    updated_at: new Date().toISOString()
   }).eq("team_id", teamId).eq("erp_type", "quickbooks");
 
   return access_token;
