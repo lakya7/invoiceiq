@@ -22,6 +22,7 @@ export default function Success({ result, data, matchResult, onReset }) {
   const erpType = result?.erpType || "mock";
   const validationStatus = result?.validationStatus || (erpType === "mock" ? "mock" : "needs_validation");
   const vs = VALIDATION_STATUS[validationStatus] || VALIDATION_STATUS.mock;
+  const validationMessage = result?.validationMessage;
   const agentDecision = result?.agentDecision;
   const as = agentDecision ? AGENT_STATUS[agentDecision.decision] || AGENT_STATUS.manual : null;
   const anomaly = result?.anomalyResult;
@@ -110,10 +111,15 @@ export default function Success({ result, data, matchResult, onReset }) {
               {erpLabel}
             </span>
           </div>
-          <div style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{vs.desc}</div>
-          {validationStatus === "needs_validation" && (
+          <div style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{validationMessage || vs.desc}</div>
+          {validationStatus === "needs_validation" && erpType === "oracle" && (
             <div style={{ marginTop:8, fontSize:12, color:"#92400e" }}>
               💡 In Oracle: Go to <strong>Payables → Invoices → Validate</strong> to complete validation
+            </div>
+          )}
+          {validationStatus === "needs_validation" && erpType === "quickbooks" && (
+            <div style={{ marginTop:8, fontSize:12, color:"#92400e" }}>
+              💡 In QuickBooks: Go to <strong>Expenses → Bills</strong> to review and approve the draft
             </div>
           )}
           {validationStatus === "mock" && (
