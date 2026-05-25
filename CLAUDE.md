@@ -252,3 +252,56 @@ Run these diagnostic queries BEFORE any schema/policy change:
 - Check RLS: SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname='public';
 - List policies: SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname='public';
 - Inspect table: SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='TABLE_NAME';
+
+---
+
+## Trial management (May 24 2026)
+
+Teams now get a 30-day trial auto-started on creation. Code in server.js (POST /api/teams) and billing.js (startTrial).
+
+DB constraint subscriptions_plan_check was originally missing 'trial' as a valid value. Fixed via ALTER TABLE on May 24 to add it. Allowed plan values are now: free, trial, starter, growth, enterprise.
+
+### Extending a trial manually (when prospect asks for more time)
+
+Step 1 -- Find the team UUID by name:
+
+    SELECT id, name FROM teams WHERE name ILIKE '%PROSPECT_COMPANY_NAME%';
+
+Step 2 -- Extend their trial by 30 days:
+
+    UPDATE subscriptions
+    SET trial_end = trial_end + INTERVAL '30 days', updated_at = NOW()
+    WHERE team_id = 'THEIR_TEAM_UUID';
+
+Step 3 -- Verify it took effect:
+
+    SELECT team_id, plan, status, trial_end FROM subscriptions WHERE team_id = 'THEIR_TEAM_UUID';
+
+### Backfilling teams with no subscription row (legacy data)
+
+If you find a team without a subscription row (should not happen with new code, but just in case):
+
+    INSERT INTO subscriptions (team_id, plan, status, trial_end, docs_used_this_period, created_at, updated_at)
+    SELECT t.id, 'trial', 'trialing', NOW() + INTERVAL '30 days', 0, NOW(), NOW()
+    FROM teams t
+    LEFT JOIN subscriptions s ON s.team_id = t.id
+    WHERE s.team_id IS NULL;
+
+### When prospect trial is about to expire
+
+Default behavior: no warning emails are sent today. Prospect just hits the wall on day 31.
+
+Better practice (build later when scale demands):
+- Day 23: email "trial expires in 7 days"
+- Day 28: "3 days left"
+- Day 30: "trial ends tomorrow"
+- Day 31: blocked with "request extension" link
+
+### Monitoring trial expirations (run this periodically)
+
+    SELECT t.name, s.plan, s.status, s.trial_end,
+           EXTRACT(DAYS FROM (s.trial_end - NOW())) AS days_remaining
+    FROM teams t
+    JOIN subscriptions s ON s.team_id = t.id
+    WHERE s.status = 'trialing' AND s.trial_end > NOW()
+    ORDER BY s.trial_end ASC;
