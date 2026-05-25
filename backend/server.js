@@ -647,6 +647,14 @@ app.post("/api/teams", async (req, res) => {
     const userEmail = await getUserEmail(userId);
     await supabase.from("team_members").insert({ team_id: team.id, user_id: userId, email: userEmail, role: "admin", status: "active", joined_at: new Date().toISOString() });
 
+    // Start 30-day trial for the new team (idempotent — no-op if a plan already exists)
+    try {
+      await billing.startTrial(team.id);
+      console.log(`[teams] Started 30-day trial for new team ${team.id}`);
+    } catch (trialErr) {
+      console.error("[teams] Trial start failed:", trialErr);
+    }
+
     res.json({ success: true, team });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
