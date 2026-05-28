@@ -83,19 +83,30 @@ export default function Review({ data, filePreview, onApprove, onBack, team, pdf
     setShowModal(true);
     setOracleResult(null);
 
-    // Run Oracle-specific validation if team has Oracle connected
+    // Run ERP-specific pre-push validation based on connected ERP
     if (team?.id) {
       setOracleValidating(true);
       try {
-        const res = await fetch(`${API}/api/erp/oracle/validate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ teamId: team.id, invoiceData: form }),
-        });
-        const data = await res.json();
-        setOracleResult(data);
+        // Discover which ERP this team has connected
+        const connRes = await fetch(`${API}/api/erp/connections/${team.id}`);
+        const connData = await connRes.json();
+        const connected = (connData?.connections || []).find(c => c.status === "connected");
+        const erpType = connected?.erp_type;
+        // Only Oracle and NetSuite have pre-push validation endpoints today.
+        // QuickBooks (and mock) skip pre-push validation — rely on local checks only.
+        if (erpType === "oracle" || erpType === "netsuite") {
+          const res = await fetch(`${API}/api/erp/${erpType}/validate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ teamId: team.id, invoiceData: form }),
+          });
+          const data = await res.json();
+          setOracleResult(data);
+        } else {
+          setOracleResult({ valid: true, errors: [], warnings: [] });
+        }
       } catch (e) {
-        setOracleResult({ valid: true, errors: [], warnings: ["Could not run Oracle validation — proceeding with local checks only"] });
+        setOracleResult({ valid: true, errors: [], warnings: ["Could not run pre-push validation — proceeding with local checks only"] });
       }
       setOracleValidating(false);
     }
