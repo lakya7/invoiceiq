@@ -16,6 +16,8 @@
 //   6. OLD wrote to `erp_sync_at` column which doesn't exist. Use `last_synced_at`
 //      to match what the manual mark-paid endpoint writes.
 
+const axios = require("axios");
+const qb = require("./quickbooks");
 const { createClient } = require("@supabase/supabase-js");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -183,11 +185,88 @@ function mapOracleToBilltiq(oracleInvoice, billtiqInvoice) {
 }
 
 // ── QUICKBOOKS SYNC ──────────────────────────────────────────────
-// Stubbed. Will need accessToken + realmId fields added to erp_connections,
-// or a separate OAuth token store. Implement when QuickBooks integration tested.
+// Polls QBO for Bills pushed by Billtiq and updates local invoice status.
+// Maps Balance===0 → paid, Balance<TotalAmt → partially_paid.
+// Uses qb.refreshToken() which handles encrypted token storage transparently.
 async function syncQuickBooksPayments({ teamId, connection }) {
-  console.log("QuickBooks Sync: not yet wired (need OAuth token storage)");
-  return { updated: 0, errors: 0, checked: 0, details: [] };
+  const result = { updated: 0, errors: 0, checked: 0, details: [] };
+  if (!connection?.realm_id) {
+    console.log("QB Sync: skipped — no realm_id on connection");
+    return result;
+  }
+  const { data: invoices, error } = await supabase
+    .from("invoices")
+    .select("id, erp_reference, status, total, invoice_number")
+    .eq("team_id", teamId)
+    .like("erp_reference", "QB-%")
+    .not("status", "in", "(paid,rejected_duplicate)");
+  if (error) {
+    console.error("QB Sync: invoices query failed:", error.message);
+    return { ...result, errors: 1 };
+  }
+  if (!invoices?.length) {
+    console.log("QB Sync: no QB invoices need status check");
+    return result;
+  }
+  let accessToken;
+  try {
+    accessToken = await qb.refreshToken(teamId);
+  } catch (e) {
+    console.error("QB Sync: token refresh failed:", e.message);
+    return { ...result, errors: invoices.length };
+  }
+  const realmId = connection.realm_id;
+  const qbBase = process.env.QB_SANDBOX === "true"
+    ? "https://sandbox-quickbooks.api.intuit.com"
+    : "https://quickbooks.api.intuit.com";
+  for (const inv of invoices) {
+    result.checked++;
+    try {
+      const billId = String(inv.erp_reference || "").replace(/^QB-/, "");
+      if (!billId || !/^\d+$/.test(billId)) {
+        console.warn(`QB Sync: invalid erp_reference ${inv.erp_reference} for invoice ${inv.id}`);
+        continue;
+      }
+      const billRes = await axios.get(
+        `${qbBase}/v3/company/${realmId}/bill/${billId}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+          timeout: 8000,
+        }
+      );
+      const bill = billRes.data?.Bill;
+      if (!bill) {
+        console.warn(`QB Sync: Bill ${billId} not returned`);
+        continue;
+      }
+      const balance = Number(bill.Balance);
+      const totalAmt = Number(bill.TotalAmt);
+      let newStatus = inv.status;
+      if (balance === 0) {
+        newStatus = "paid";
+      } else if (balance > 0 && balance < totalAmt) {
+        newStatus = "partially_paid";
+      }
+      if (newStatus !== inv.status) {
+        const { error: upErr } = await supabase
+          .from("invoices")
+          .update({ status: newStatus, last_synced_at: new Date().toISOString() })
+          .eq("id", inv.id);
+        if (upErr) {
+          console.error(`QB Sync: failed to update invoice ${inv.id}: ${upErr.message}`);
+          result.errors++;
+        } else {
+          result.updated++;
+          result.details.push({ invoice_id: inv.id, invoice_number: inv.invoice_number, from: inv.status, to: newStatus });
+          console.log(`QB Sync: invoice #${inv.invoice_number} ${inv.status} → ${newStatus}`);
+        }
+      }
+    } catch (e) {
+      console.error(`QB Sync: error checking invoice ${inv.id}: ${e.message}`);
+      result.errors++;
+    }
+  }
+  return result;
 }
 
 // ── MAIN: RUN ERP SYNC FOR A TEAM ───────────────────────────────
@@ -198,7 +277,7 @@ async function runErpSync({ teamId }) {
   try {
     const { data: connections, error } = await supabase
       .from("erp_connections")
-      .select("erp_type, base_url, username, password, status")
+      .select("erp_type, base_url, username, password, status, access_token, refresh_token, realm_id, expires_at")
       .eq("team_id", teamId)
       .eq("status", "connected");
 

@@ -228,4 +228,4 @@ async function disconnect(teamId) {
   return { success: true };
 }
 
-module.exports = { getAuthUrl, exchangeCode, pushInvoice, getConnectionStatus, disconnect };
+module.exports = { getAuthUrl, exchangeCode, pushInvoice, getConnectionStatus, disconnect, refreshToken };
