@@ -417,6 +417,52 @@ app.post("/api/pos", upload.single("file"), async (req, res) => {
 app.post("/api/push-erp", async (req, res) => {
   try {
     const { invoiceData, userId, teamId, matchResult, pdfBase64, pdfFilename } = req.body;
+    // ── RULE 0: HARD DUPLICATE CHECK (Billtiq DB) ────────────────
+    // Reject if this team has previously pushed an invoice with the same
+    // vendor + invoice number + amount. Layer 1 of duplicate detection.
+    if (teamId && invoiceData?.invoiceNumber && invoiceData?.vendor?.name && invoiceData?.total != null) {
+      const { data: dupes } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, vendor_name, total, erp_reference, status, created_at")
+        .eq("team_id", teamId)
+        .eq("invoice_number", invoiceData.invoiceNumber)
+        .ilike("vendor_name", invoiceData.vendor.name)
+        .eq("total", invoiceData.total)
+        .in("status", ["pushed", "paid", "partially_paid"]);
+      if (dupes && dupes.length > 0) {
+        const existing = dupes[0];
+        // Write a rejected_duplicate row so this attempt shows in the audit trail.
+        await supabase.from("invoices").insert({
+          user_id: userId,
+          team_id: teamId,
+          invoice_number: invoiceData.invoiceNumber,
+          vendor_name: invoiceData.vendor.name,
+          invoice_date: invoiceData.invoiceDate,
+          due_date: invoiceData.dueDate,
+          total: invoiceData.total,
+          currency: invoiceData.currency || "USD",
+          status: "rejected_duplicate",
+          match_status: resolveMatchStatus(invoiceData, matchResult),
+          erp_reference: null,
+          raw_data: invoiceData,
+          agent_decision: "rejected_duplicate",
+          agent_reason: `Duplicate of invoice ${existing.invoice_number} from ${existing.vendor_name} pushed ${existing.created_at} (ERP ref: ${existing.erp_reference}).`,
+        });
+        return res.status(409).json({
+          error: "Duplicate invoice rejected.",
+          message: `Invoice #${invoiceData.invoiceNumber} from ${invoiceData.vendor.name} for ${invoiceData.total} was already pushed (ERP ref: ${existing.erp_reference}). Refusing to create a duplicate payment.`,
+          rule: "RULE_0_HARD_DUPLICATE",
+          existing_invoice: {
+            invoice_number: existing.invoice_number,
+            vendor_name: existing.vendor_name,
+            total: existing.total,
+            erp_reference: existing.erp_reference,
+            status: existing.status,
+            created_at: existing.created_at,
+          },
+        });
+      }
+    }
     // Local fallback reference. Overwritten below with the real Oracle InvoiceId if push succeeds.
     let erpReference = `ERP-${Date.now()}`;
     const timestamp = new Date().toISOString();
