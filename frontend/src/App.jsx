@@ -231,6 +231,22 @@ export default function App() {
 
       const result = await res.json();
 
+      // RULE 0: hard duplicate rejection — render via Success page in push_failed mode
+      if (res.status === 409 && result.rule === "RULE_0_HARD_DUPLICATE") {
+        setErpResult({
+          success: false,
+          validationStatus: "push_failed",
+          validationMessage: result.message,
+          erpType: "duplicate_rejected",
+          rejectionRule: "RULE_0_HARD_DUPLICATE",
+          existingInvoice: result.existing_invoice,
+          invoice_number: data?.invoiceNumber,
+          vendor_name: data?.vendor?.name,
+          total: data?.total,
+        });
+        setStage(STAGES.SUCCESS);
+        return;
+      }
       if (!res.ok) {
         throw new Error(result.error || `Push failed (${res.status})`);
       }
