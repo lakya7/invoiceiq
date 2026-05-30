@@ -436,6 +436,12 @@ app.post("/api/push-erp", async (req, res) => {
         .eq("status", "connected");
 
       if (connections && connections.length > 0) {
+        if (connections.length > 1) {
+          return res.status(409).json({
+            error: "Multiple ERPs connected. Per-invoice routing rules not yet configured. Disconnect all but one ERP to proceed.",
+            connected_erps: connections.map(c => c.erp_type),
+          });
+        }
         erpType = connections[0].erp_type;
         validationStatus = "needs_validation";
         validationMessage = erpType === "oracle"
