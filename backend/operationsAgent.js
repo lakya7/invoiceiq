@@ -28,9 +28,7 @@ function poNumberOf(inv) {
 }
 
 function isException(inv) {
-  const badMatch = ["unmatched", "mismatch", "partial"].includes(inv.match_status);
-  const hasAnomalies = Array.isArray(inv.anomalies) && inv.anomalies.length > 0;
-  return badMatch || hasAnomalies;
+  return ["unmatched", "mismatch", "partial"].includes(inv.match_status);
 }
 
 // Insert only tasks whose stable key isn't already present (open or otherwise)
@@ -67,7 +65,7 @@ async function upsertTasks(teamId, userId, type, candidates) {
 async function runExceptionTriage({ teamId, userId }) {
   const { data: invoices, error } = await supabase
     .from("invoices")
-    .select("id, invoice_number, vendor_name, total, invoice_date, match_status, anomalies, status, payment_status, raw_data, created_at")
+    .select("id, invoice_number, vendor_name, total, invoice_date, match_status, status, payment_status, raw_data, created_at")
     .eq("team_id", teamId)
     .order("created_at", { ascending: false })
     .limit(100);
