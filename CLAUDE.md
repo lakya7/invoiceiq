@@ -1,3 +1,14 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+> **Note on stale claims below:** A few early sections were written before features shipped. Where the
+> early text conflicts with a later dated correction, **the later dated section wins**. Specifically:
+> encryption IS shipped (see "Encryption (SHIPPED May 19 2026)") and RLS IS enabled (see "RLS status
+> (verified May 20 2026)"). The "planned/parked/NOT enabled" wording earlier is obsolete.
+
+---
+
 # Billtiq — Oracle Fusion AP Exception Handling
 
 AI-native B2B SaaS for mid-market AP teams using Oracle Fusion (and eventually QuickBooks,
@@ -26,23 +37,40 @@ Do not assume QB/NetSuite/Xero/Zoho/Dynamics works — those connectors are stub
 ```
 /
 ├── backend/
-│   ├── server.js              ← Express routes (~1700 lines, all endpoints)
-│   ├── oracle.js              ← Oracle Fusion integration (push, lookup, attach PDF)
+│   ├── server.js              ← Express routes (~1860 lines, ALL endpoints, the hub)
+│   ├── oracle.js              ← Oracle Fusion integration (push, lookup, attach PDF) — the only LIVE ERP
+│   ├── quickbooks.js          ← QuickBooks connector (OAuth-gated, partially wired)
+│   ├── netsuite.js, xero.js, zoho.js, dynamics.js  ← ERP connector STUBS (not live)
 │   ├── approvalAgent.js       ← Routes invoices to approvers
 │   ├── anomalyAgent.js        ← Flags suspicious invoices (6 anomaly types)
 │   ├── supplierAgent.js       ← Supplier notification logic
-│   ├── erpSyncAgent.js        ← Pulls paid/voided status FROM Oracle back to Billtiq
-│   ├── notificationAgent.js   ← Webhooks + email notifications
+│   ├── erpSyncAgent.js        ← Pulls paid/voided status FROM Oracle back to Billtiq (scheduler)
+│   ├── notificationAgent.js   ← Webhooks + email notifications (notify/EVENTS)
+│   ├── emailAgent.js          ← Gmail API + IMAP inbox polling for inbound invoices
+│   ├── batchProcessor.js      ← Processes uploaded ZIPs of invoices (adm-zip)
+│   ├── vendorMatcher.js       ← Claude-assisted vendor/supplier matching
+│   ├── reportAgent.js         ← Monthly report generation
+│   ├── billing.js             ← Stripe + trial/subscription logic (startTrial)
+│   ├── lib/crypto.js          ← AES-256-GCM encrypt/decrypt for ERP creds (SHIPPED)
+│   ├── scripts/encrypt-erp-credentials.js  ← One-off migration (dry-run unless --apply)
 │   └── uploads/               ← Temp PDF storage (multer)
 ├── frontend/
-│   ├── public/
-│   │   ├── landing.html       ← Marketing site (billtiq.com)
-│   │   ├── privacy.html, terms.html, security.html
-│   ├── src/                   ← React app (the actual product at /app)
-│   ├── index.html             ← Vite entry for React app
+│   ├── public/                ← landing.html (billtiq.com), privacy/terms/security.html
+│   ├── src/
+│   │   ├── App.jsx            ← Main app + routing
+│   │   ├── supabase.js        ← Supabase client (anon key)
+│   │   └── components/        ← Dashboard, Review, Upload, BatchUpload, ERPConnections,
+│   │                            Settings, Billing, TeamManagement, EmailAgent, Auth, etc.
+│   ├── index.html             ← Vite entry for React app (served at /app)
 │   └── vercel.json            ← Routes config; / → landing.html
-└── .gitignore                 ← node_modules, .env, dist
+└── supabase-schema.sql        ← OUTDATED (only invoices table); NOT source of truth
 ```
+
+**Architecture in one line:** `server.js` is the hub — it requires every agent/connector module
+and exposes them as Express endpoints. Agents are plain modules exporting functions (e.g.
+`runAnomalyAgent`, `runErpSync`), not separate services. ERP connectors share a common shape but
+only `oracle.js` is live. Extraction + anomaly detection call Claude (`claude-opus-4-6`) via
+`@anthropic-ai/sdk`.
 
 ---
 
@@ -50,14 +78,19 @@ Do not assume QB/NetSuite/Xero/Zoho/Dynamics works — those connectors are stub
 
 ```bash
 # Backend (run from backend/)
-node server.js                  # Starts Express on PORT 3001
+npm install
+node server.js                  # Express on process.env.PORT || 4000  (npm start, or npm run dev for nodemon)
 
 # Frontend dev (run from frontend/)
-npm run dev                     # Vite dev server
+npm install
+npm run dev                     # Vite dev server (port 3000); npm run build for prod bundle
 
 # Deploy (auto on git push to main)
 git push                        # Vercel rebuilds frontend, Render rebuilds backend
 ```
+
+**Tests:** none exist. There is no test runner, no lint config, no CI. "Testing" = run
+`node server.js` locally and exercise the change by hand before pushing.
 
 ⚠️ **There is no staging / test environment.** Every `git push` to `main` deploys
 straight to production. No dev → staging → prod promotion. No automated tests run.
@@ -97,8 +130,8 @@ No CI/CD yet. No automated tests yet. Both are in the roadmap.
   logs and are how we debug prod.
 - **Email sending:** Use `sendEmail({ to, subject, html })`. Try Resend, fall back to
   Gmail SMTP. Never let email-provider failure break the user-facing request.
-- **Encryption (planned, parked):** AES-256-GCM, `v1:` prefix. Code is in artifacts
-  but NOT deployed. Blocked on Oracle pod login. See memory #14.
+- **Encryption (SHIPPED — see dated section below):** AES-256-GCM, `v1:` prefix, in
+  `backend/lib/crypto.js`. `encrypt()` on save, `decrypt()` on read, plaintext passthrough for legacy.
 
 ---
 
@@ -125,9 +158,9 @@ No CI/CD yet. No automated tests yet. Both are in the roadmap.
 
 ### Supabase
 
-- **RLS NOT enabled on `invoices` and `invoice_comments`.** Frontend queries these
-  with anon key (grandfathered safe). Before first paying customer, MUST enable RLS —
-  anon-key holders can currently query all teams' data via raw HTTP. (Memory #6)
+- **RLS IS enabled on `invoices` and `invoice_comments`** (verified May 20 2026 — see dated
+  "RLS status" section below; the old "NOT enabled" claim was wrong). `invoices` has BOTH
+  `user_id` (NOT NULL) and `team_id` (nullable); new inserts should set both.
 - **Confirm email is OFF** (intentional). Invite-only model gates real access via
   `team_members` table. No `/auth/callback` page needed.
 - **Ghost-user audit:** Weekly, check `auth.users` rows with no matching `team_members`
@@ -174,8 +207,8 @@ These are documented so future-you doesn't waste time looking:
   Acceptable while solo + invite-only; mandatory to fix before first paying customer.
 - ❌ No status page or uptime monitoring
 - ❌ No secrets manager (env vars only)
-- ❌ ERP credentials in plaintext in Supabase (encryption #6 parked)
-- ❌ No RLS on `invoices` / `invoice_comments`
+- ✅ ERP credentials encrypted at rest (AES-256-GCM, shipped May 19 2026)
+- ✅ RLS enabled on `invoices` / `invoice_comments` (verified May 20 2026)
 - ❌ No ADR log (this file is the closest thing)
 
 See the SDLC audit PDF for the full prioritized list.
