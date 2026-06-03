@@ -39,6 +39,17 @@ const ISSUE_TEMPLATES = {
     getMessage: (inv) => `Invoice <strong>#${inv.invoice_number}</strong> for <strong>${inv.currency === "INR" ? "₹" : inv.currency === "EUR" ? "€" : inv.currency === "GBP" ? "£" : "$"}${Number(inv.total || 0).toLocaleString()}</strong> has been flagged by our automated review system and is currently under manual review by our AP team.`,
     getAction: () => `No action is required from you at this time. Our AP team will review the invoice within 1-2 business days and contact you if additional information is needed. You will receive a confirmation once the invoice is approved and scheduled for payment.`,
   },
+  // Used by the Operations module's PO Acknowledgment agent.
+  po_acknowledgment: {
+    subject: (inv) => `Action Requested: Acknowledge PO for Invoice #${inv.invoice_number}`,
+    headline: "Purchase Order Acknowledgment Requested",
+    emoji: "📋",
+    color: "#2563eb",
+    bgColor: "#eff6ff",
+    borderColor: "#bfdbfe",
+    getMessage: (inv) => `We received invoice <strong>#${inv.invoice_number}</strong> referencing purchase order <strong>${inv.po_number || "on file"}</strong>. Before we schedule payment, please confirm the purchase order details match your records.`,
+    getAction: () => `Please reply to this email confirming the PO number, line items, and total amount are correct. If anything does not match, let us know so we can resolve it before payment is scheduled.`,
+  },
 };
 
 // ── GENERATE PERSONALIZED EMAIL WITH CLAUDE ─────────────────────

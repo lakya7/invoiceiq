@@ -1,3 +1,7 @@
+// Load .env for local/dev only. On Render, env vars are injected by the platform —
+// the guard ensures a stray .env can never interfere with production config.
+if (process.env.NODE_ENV !== "production") require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -12,6 +16,10 @@ const { runAnomalyAgent, sendAnomalyEmail } = require("./anomalyAgent");
 const { notifySupplier, scanAndNotifySuppliers } = require("./supplierAgent");
 const { runErpSync, startErpSyncScheduler } = require("./erpSyncAgent");
 const { notify, EVENTS, getNotificationSettings, saveNotificationSettings, testWebhook: testNotifWebhook } = require("./notificationAgent");
+const {
+  runExceptionTriage, runVendorStatus, runPoAcknowledgment,
+  sendPoAcknowledgment, listOperationsTasks, updateOperationsTask,
+} = require("./operationsAgent");
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -1536,6 +1544,66 @@ app.post("/api/agent/report", async (req, res) => {
     });
 
     res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── OPERATIONS MODULE (exception triage / vendor status / PO ack) ─
+// On-demand agents. Each run refreshes rows in operations_tasks.
+const OPS_RUNNERS = {
+  exception_triage: runExceptionTriage,
+  vendor_status: runVendorStatus,
+  po_acknowledgment: runPoAcknowledgment,
+};
+
+// Run one agent on demand
+app.post("/api/operations/run/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { teamId, userId } = req.body;
+    const runner = OPS_RUNNERS[type];
+    if (!runner) return res.status(400).json({ error: "Unknown operations agent type" });
+    if (!teamId || !userId) return res.status(400).json({ error: "teamId and userId are required" });
+
+    const result = await runner({ teamId, userId });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("[operations] run error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List tasks (optionally filtered by ?type=)
+app.get("/api/operations/:teamId", async (req, res) => {
+  try {
+    const tasks = await listOperationsTasks({ teamId: req.params.teamId, type: req.query.type });
+    res.json({ success: true, tasks });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Update a task's status
+app.post("/api/operations/task/:id/status", async (req, res) => {
+  try {
+    const { teamId, status } = req.body;
+    if (!teamId || !status) return res.status(400).json({ error: "teamId and status are required" });
+    const result = await updateOperationsTask({ taskId: req.params.id, teamId, status });
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json({ success: true, data: result.task });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Send a PO acknowledgment email for a task (outward-facing — explicit action)
+app.post("/api/operations/po-ack/send", async (req, res) => {
+  try {
+    const { teamId, taskId } = req.body;
+    if (!teamId || !taskId) return res.status(400).json({ error: "teamId and taskId are required" });
+    const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).single();
+    const result = await sendPoAcknowledgment({
+      taskId,
+      teamId,
+      sendEmail,
+      teamName: team?.name || "AP Team",
+    });
+    res.json({ success: !!result.sent, data: result });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

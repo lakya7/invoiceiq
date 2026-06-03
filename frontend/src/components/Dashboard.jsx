@@ -560,6 +560,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           <div className="nav-item" onClick={onPOs}>📋 Purchase Orders</div>
           <div className="nav-item" onClick={onAnalytics}>📈 Analytics</div>
           <div className="nav-item" onClick={onEmailAgent}>📧 Email Agent</div>
+          <div className="nav-item" onClick={onOperations}>🛠️ Operations</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onTeam}>👥 Team</div>}
           <div className="nav-item" onClick={onERP}>🔗 ERP Connections</div>
           {team && team.role === "admin" && <div className="nav-item" onClick={onBilling}>💳 Billing</div>}
