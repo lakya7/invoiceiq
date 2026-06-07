@@ -5,6 +5,38 @@ Last updated this session (2026-06-06).
 
 ---
 
+## 🔴 HIGH-PRIORITY BUG (separate from the redesign): failed ERP pushes are mislabeled as "pushed"
+
+**This is a data-integrity bug, tracked here but independent of the approval-flow redesign — and
+likely HIGHER priority, because it may be corrupting live production data right now.**
+
+In `server.js` `/api/push-erp`, the Oracle-push **catch block (~lines 522–527)** sets
+`validationStatus = "push_failed"` but **does NOT `return`**. Execution falls through, and the
+invoice is then saved (~line 662) with:
+- `status: "pushed"` — even though the real push failed, and
+- a **fake** `erp_reference` of the form `ERP-${Date.now()}` — because the real Oracle InvoiceId
+  was never obtained (the genuine refs look like `ORA-…`).
+
+**Consequences:**
+- Invoices that **never reached the ERP** are recorded in Billtiq as `"pushed"` with bogus
+  `ERP-…` references that don't correspond to anything in Oracle.
+- The `push_failed` status/message exist **only in the HTTP response** (line 703) — they are
+  **never persisted**, so the dashboard/DB show these as successfully pushed.
+- (Pre-validation failures write `status:"validation_failed"`, but that update matches by
+  `invoice_number + team_id` and only hits **already-saved** rows — not first-time pushes.)
+
+**Action:** treat this as its own investigation item. ⚠️ Before any fix, **audit how many existing
+invoices are affected** — query for rows with `status='pushed'` and `erp_reference LIKE 'ERP-%'`
+(real pushes are `ORA-%`). Decide remediation (re-classify affected rows, attempt re-push, or
+flag for manual review) only after the blast radius is known. The fix itself (return/short-circuit
+on push failure + persist a real failed status) is small, but the **data cleanup is the risky
+part** and must be scoped first.
+
+> Note: the persisted-failed-status work here overlaps with prerequisite (a) of Q3 below — a real
+> "ERP-rejected / Review" status is needed for both. Coordinate the two.
+
+---
+
 ## The bug (what's actually wired today)
 
 Traced end-to-end this session. Two findings:
@@ -62,27 +94,100 @@ must pre-approve before it goes out." This replaces the current `pending` (pre-a
 
 ---
 
-## Open questions to resolve NEXT SESSION (before any code)
+## Resolved decisions — model level (M1, M2)
 
-1. **Does a manual "Approve" action still have meaning?**
-   Under the push-at-upload model there's nothing to pre-approve. So either:
-   - (a) Drop the dead Approve/Reject buttons entirely, **or**
-   - (b) Replace them on **Review** invoices with a **"Retry / Fix & Resubmit"** action that
-     re-attempts the ERP push after the user corrects the issue (e.g. supplier match).
-   Leaning toward (b) — needs confirmation.
+> Numbering note: an earlier revision labeled these two "Q1/Q2". They are renumbered here to
+> **M1/M2** so that **Q1/Q2/Q3** can refer to the duplicate/Review sub-questions below (the
+> current working numbering).
 
-2. **Should the "$ Pending Approval" tile become "$ in Review"?**
-   To match the outcome-based model, the tile (and its filter) would shift from "pending
-   approval" to "in Review" (ERP-rejected, needs fixing). Decide whether to rename the tile +
-   its `setFilter` target, and whether the underlying filter value (`"pending"`) is renamed too.
+### M1 — RESOLVED: "Approve" becomes "Fix & Resubmit"
+Push-at-upload stays; there is **no pre-approval gate**. The dead Approve/Reject buttons are
+replaced (on Review invoices) by a **"Fix & Resubmit"** action that corrects the data and
+re-attempts the ERP push.
+
+### M2 — RESOLVED (direction): "$ Pending Approval" tile becomes "$ in Review"
+The tile (and its filter) shift from "pending approval" to **"$ in Review"**, matching the
+outcome-based model. Still to settle in implementation: whether the underlying filter value
+(`"pending"`) is also renamed, and the exact tile copy/threshold.
+
+---
+
+## NEW nuance to design next: "Review" has TWO distinct reasons → DIFFERENT actions
+
+The "Review" state is not one thing. It bundles two causes that need different user actions:
+
+| Review reason | What happened | Correct action |
+|---|---|---|
+| **(a) ERP-rejected** | Push attempted, ERP refused it (e.g. supplier name / address mismatch, validation failure) | **"Fix & Resubmit"** — correct the data, retry the push |
+| **(b) Duplicate-suspect** | Flagged as a possible duplicate of an existing invoice | **A decision, not a fix** — **"Push anyway"** vs **"Block / Reject"** |
+
+Key point: (b) is **not** a data-correction flow. Offering "Fix & Resubmit" on a duplicate would
+be wrong — the user needs to *decide* whether it's truly a duplicate, not edit fields. The Review
+UI must branch the action by reason.
+
+---
+
+## Duplicate / Review sub-questions (Q1, Q2, Q3)
+
+### Q1 — RESOLVED: three-tier duplicate model
+Duplicates are handled in **three distinct tiers**, each with its own behavior:
+1. **Exact duplicates → Rule 0 hard-block, stays as-is.** The existing `/api/push-erp` Rule 0
+   (exact `invoice_number + vendor + amount` against already-pushed/paid rows) continues to
+   auto-reject with a `409` and a `rejected_duplicate` row. No change.
+2. **Soft duplicate-suspects → Review with a decision.** Anomaly-style soft signals (e.g. same
+   number different amount, same amount different number) route to **Review** with a
+   **"Push anyway" / "Block"** decision — not a fix.
+3. **ERP-rejected → Fix & Resubmit.** Push attempted and refused → Review with the
+   **"Fix & Resubmit"** data-correction action (see M1).
+
+### Q2 — RESOLVED: human-blocked duplicates get a distinct status
+When a user chooses **"Block"** on a soft suspect, the invoice gets a **distinct status, e.g.
+`blocked_duplicate`** — kept **separate** from Rule 0's automated `rejected_duplicate`. This
+preserves the audit distinction between "the system auto-rejected an exact dupe" vs. "a human
+reviewed a suspect and decided to block it."
+
+### Q3 — OPEN, and NOT a simple design question: it's blocked on prerequisites (mini-project)
+
+Originally phrased as "what does 'Fix' involve in the UI?" The code investigation this session
+found that the **assumptions behind "Fix & Resubmit" don't hold**, so it cannot be built as a
+straightforward UI feature:
+
+- **The `vendor_mappings` / `vendorMatcher.js` system is effectively unwired.** `matchVendor` and
+  `saveVendorSelection` have **no call sites**; the table is **never written** by running code;
+  and `matchVendor` doesn't even **read** `vendor_mappings`. So "the fix persists a mapping for
+  next time" would be built **largely from scratch**, not wired onto something working.
+- **Supplier/address mismatches do NOT reject today.** `oracle.js` `validateInvoice` **warns and
+  pushes anyway**, using a partial name match or a hard-coded demo fallback. So the
+  **"ERP-rejected → Review" trigger our design assumes does not currently exist.** Making it real
+  requires a **behavior change** in `validateInvoice`/`pushInvoice` to decide which mismatches
+  become hard Review stops vs. continue warn-and-pushing.
+- **Reusable pieces that DO exist:** `Review.jsx`'s editable `Field` components +
+  `POST /api/erp/oracle/validate` (`validateOnly`, returns `{errors, warnings, matchedSupplier}`)
+  give a ready **"edit fields → re-check"** UX — **but only at upload time.** There is **no
+  equivalent for an already-pushed/failed invoice**, **no endpoint to update an existing
+  invoice's vendor**, and **no resubmit/re-push endpoint**.
+
+**Q3's three prerequisites — must land BEFORE any Fix & Resubmit build:**
+- **(a)** Introduce a real **persisted "ERP-rejected / Review" status** on the invoice row.
+  *(Overlaps with the high-priority bug above — coordinate.)*
+- **(b)** Decide **which mismatches become hard Review stops vs. stay warn-and-push** (the
+  `validateInvoice`/`pushInvoice` behavior change).
+- **(c)** If fixes should persist: **wire up `vendor_mappings`** — write a mapping on fix, **and**
+  make `oracle.js`'s supplier lookup actually **consult** it.
+
+**Q3 stays OPEN — it is a mini-project, not a one-line decision.**
 
 ---
 
 ## NOT decided yet / depends on the above
 - Whether to delete the `/approve` + `/reject` frontend handlers, or repoint them at a new
-  `/resubmit` endpoint.
+  `/resubmit` endpoint (the "Fix & Resubmit" action).
 - Whether to build the Slack interactions endpoint at all (may be moot if approval-as-gate is
   gone and Review is dashboard-driven).
-- How to fix the line-511-before-approval inconsistency once the `pending` concept is replaced.
+- How to fix the line-511-before-approval inconsistency once the `pending` concept is replaced
+  by the outcome-based `Pushed` / `Review` model.
 
-**Do not write code until Q1 and Q2 are finalized.**
+**Resolved: M1, M2, Q1, Q2. Still open: Q3 (a mini-project, blocked on prerequisites a/b/c).
+Also tracking the separate 🔴 high-priority data-integrity bug at the top. Do not write code:
+Q3's prerequisites must be scoped first, and the data-integrity bug needs an impact audit before
+any fix.**
