@@ -742,7 +742,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
           </div>
 
           {/* $ Pending Approval */}
-          <div className="stat-card" style={{ background: "white", borderColor: "var(--border)" }}>
+          <div className="stat-card stat-clickable" style={{ background: "white", borderColor: "var(--border)" }} onClick={() => setFilter("pending")}>
             <div className="stat-card-icon" style={{ background: "rgba(13,79,60,0.1)", color: "#0a3d2f" }}>💰</div>
             <div className="stat-card-body">
               <div className="stat-card-value" style={{ color: pendingApprovalAmount > 0 ? "var(--ink)" : "#cbc5b8", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(pendingApprovalAmount)}</div>
