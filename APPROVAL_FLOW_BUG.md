@@ -5,10 +5,12 @@ Last updated this session (2026-06-06).
 
 ---
 
-## 🔴 HIGH-PRIORITY BUG (separate from the redesign): failed ERP pushes are mislabeled as "pushed"
+## 🟠 BUG (separate from the redesign): failed ERP pushes are mislabeled as "pushed"
 
-**This is a data-integrity bug, tracked here but independent of the approval-flow redesign — and
-likely HIGHER priority, because it may be corrupting live production data right now.**
+**This is a real code bug, tracked here but independent of the approval-flow redesign.**
+**Urgency downgraded** (2026-06-06) from "may be corrupting live production data" to
+**"real code bug, LOW data impact"** after the audit below — the affected rows look like test
+data, not customer data. Still worth fixing, but not an emergency.
 
 In `server.js` `/api/push-erp`, the Oracle-push **catch block (~lines 522–527)** sets
 `validationStatus = "push_failed"` but **does NOT `return`**. Execution falls through, and the
@@ -25,12 +27,49 @@ invoice is then saved (~line 662) with:
 - (Pre-validation failures write `status:"validation_failed"`, but that update matches by
   `invoice_number + team_id` and only hits **already-saved** rows — not first-time pushes.)
 
-**Action:** treat this as its own investigation item. ⚠️ Before any fix, **audit how many existing
-invoices are affected** — query for rows with `status='pushed'` and `erp_reference LIKE 'ERP-%'`
-(real pushes are `ORA-%`). Decide remediation (re-classify affected rows, attempt re-push, or
-flag for manual review) only after the blast radius is known. The fix itself (return/short-circuit
-on push failure + persist a real failed status) is small, but the **data cleanup is the risky
-part** and must be scoped first.
+### Audit findings (read-only, 2026-06-06)
+
+Ran a read-only prefix audit of `status='pushed'` rows on prod (cwsubqfynnntrzfshldy). **67 pushed
+rows total:**
+
+| Prefix | Count | Meaning |
+|---|---|---|
+| `ORA-` | 16 | Real Oracle pushes ✅ |
+| `QB-` | 5 | QuickBooks pushes |
+| `BATCH-` | 10 | Batch-processor ingested |
+| `EMAIL-` | 1 | Email-agent ingested |
+| `ERP-` | 35 | Fallback ref — see refinement below |
+| `(null)` | 0 | — |
+
+**KEY REFINEMENT — `ERP-%` does NOT mean "failed push".** `ERP-${Date.now()}` is the *initial
+fallback* reference (`server.js:475`), used in **two** situations:
+- **(a) Mock mode** — no ERP connected → saved as `status:"pushed"` with an `ERP-` ref **by
+  design** (`validationStatus:"mock"`). Not a failure.
+- **(b) The actual bug** — an ERP *was* connected but the push threw → ref never overwritten →
+  mislabeled `"pushed"`.
+
+**Prefix alone cannot separate (a) from (b)**; the distinguishing field is `validationStatus`,
+which is **never persisted** (that's the bug). So **35 is an upper bound**, not the true count.
+
+The 35 `ERP-` rows **look like test data** — `$0`/`$5` totals; vendors like `"Your Company Name"`,
+`"Anthropic, PBC"`, `"Sonic Solutions"`; date range 2026-04-12 → 2026-06-03. ⇒ **genuine
+customer-data corruption is likely minimal.** Hence the urgency downgrade above.
+
+**Next-session isolation step (read-only)** — to count genuine case-(b) failures, cross-reference
+each `ERP-` row against:
+- **`erp_connections`** — was an ERP actually connected for that team at the time? (separates
+  mock-mode (a) from real-failure (b))
+- **`agent_reason`** — does it carry push/validation failure text?
+- **`total > 0` + a real vendor name** — filters out the obvious test rows.
+
+**Also flag (possibly a SEPARATE correctness question):** verify that **`BATCH-` / `EMAIL-`
+invoices are actually pushed to an ERP**, versus just being labeled `"pushed"` on ingest. If those
+paths stamp `"pushed"` without a real ERP push, that's a second mislabeling issue distinct from
+the catch-block bug.
+
+**Fix scope:** the code fix (return/short-circuit on push failure + persist a real failed status)
+is small. Any **data cleanup** should be scoped only after the case-(b) isolation above — likely
+minimal given the test-data finding.
 
 > Note: the persisted-failed-status work here overlaps with prerequisite (a) of Q3 below — a real
 > "ERP-rejected / Review" status is needed for both. Coordinate the two.
@@ -188,6 +227,6 @@ straightforward UI feature:
   by the outcome-based `Pushed` / `Review` model.
 
 **Resolved: M1, M2, Q1, Q2. Still open: Q3 (a mini-project, blocked on prerequisites a/b/c).
-Also tracking the separate 🔴 high-priority data-integrity bug at the top. Do not write code:
-Q3's prerequisites must be scoped first, and the data-integrity bug needs an impact audit before
-any fix.**
+Also tracking the separate 🟠 data-integrity bug at the top (urgency downgraded after audit —
+real bug, low data impact). Do not write code: Q3's prerequisites must be scoped first, and the
+data-integrity bug's genuine-failure subset should be isolated (read-only) before any fix.**
