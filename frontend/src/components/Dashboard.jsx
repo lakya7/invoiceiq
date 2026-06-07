@@ -8,6 +8,8 @@ const STATUS_COLORS = {
   approved: { bg:"#dcfce7", color:"#16a34a" },
   rejected: { bg:"#fee2e2", color:"#dc2626" },
   pushed:   { bg:"#dbeafe", color:"#1d4ed8" },
+  review:         { bg:"#ffedd5", color:"#c2410c" },  // amber/orange — ERP rejected, needs action
+  push_uncertain: { bg:"#f3f4f6", color:"#6b7280" },  // grey — ERP accepted but no ID returned
 };
 
 const MATCH_COLORS = {

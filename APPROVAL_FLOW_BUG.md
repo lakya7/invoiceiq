@@ -74,6 +74,29 @@ minimal given the test-data finding.
 > Note: the persisted-failed-status work here overlaps with prerequisite (a) of Q3 below — a real
 > "ERP-rejected / Review" status is needed for both. Coordinate the two.
 
+### ✅ Tier 1 fix — IMPLEMENTED & VERIFIED (2026-06-07)
+
+The catch-block mislabel is fixed in `/api/push-erp`:
+- Save now derives `status`/`erp_reference` from `validationStatus`: `push_failed → review` (ref
+  `null`), `push_uncertain → push_uncertain` (ref `null`), otherwise unchanged (`pushed` / mock).
+- Buyer notifications suppressed on `push_failed`/`push_uncertain` (outer notify gate).
+- Insert error is no longer swallowed — the supabase `error` field is logged.
+- DB: `invoices_status_check` extended (migration
+  `supabase/migrations/20260607_extend_invoices_status_check.sql`) — required because `review` /
+  `push_uncertain` (and the pre-existing `validation_failed`) were silently failing the constraint.
+- Frontend: `STATUS_COLORS` gains `review` (amber) + `push_uncertain` (grey).
+- Verified live end-to-end: failure team → saved `status:"review"`, `erp_reference:null`, no buyer
+  notification; success team → still `pushed` with real `ORA-` ref + notification.
+
+### Follow-up (NOT fixed — discovered during Tier 1)
+
+**Misleading admin "Auto-Approved" email on failed pushes.** When a push fails, the
+agent-decision email (`sendAgentDecisionEmail`, ~server.js:617-628) still fires and tells the
+admin the invoice was "✅ Auto-Approved" — it runs *before* the save and isn't aware the ERP push
+threw. This is separate from the buyer Slack/Teams notification (which IS now gated). Candidate
+fix: gate `sendAgentDecisionEmail` the same way (skip on `push_failed`/`push_uncertain`), or
+re-order so it reflects the real push outcome. Low urgency; informational email only.
+
 ---
 
 ## The bug (what's actually wired today)

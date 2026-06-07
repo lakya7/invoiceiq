@@ -659,7 +659,18 @@ app.post("/api/push-erp", async (req, res) => {
     let savedInv = null;
     if (teamId) {
       try {
-        const { data } = await supabase.from("invoices").insert({
+        // Derive persisted status/ref from the push OUTCOME instead of hardcoding
+        // "pushed". Branch on validationStatus (NOT !pushedToErp) so mock-mode and
+        // clean successes are untouched; only real push failures are re-classified.
+        const savedStatus =
+          validationStatus === "push_failed"    ? "review"
+          : validationStatus === "push_uncertain" ? "push_uncertain"
+          : "pushed";
+        const savedErpRef =
+          (validationStatus === "push_failed" || validationStatus === "push_uncertain")
+            ? null
+            : erpReference;
+        const { data, error: saveErr } = await supabase.from("invoices").insert({
           user_id: userId,
           team_id: teamId,
           invoice_number: invoiceData.invoiceNumber,
@@ -668,20 +679,27 @@ app.post("/api/push-erp", async (req, res) => {
           due_date: invoiceData.dueDate,
           total: invoiceData.total,
           currency: invoiceData.currency || "USD",
-          status: "pushed",
+          status: savedStatus,
           match_status: resolveMatchStatus(invoiceData, matchResult),
-          erp_reference: erpReference,
+          erp_reference: savedErpRef,
           raw_data: invoiceData,
           agent_decision: agentDecision?.decision,
           agent_reason: agentDecision?.reason,
           agent_rule: agentDecision?.rule,
         }).select().single();
+        if (saveErr) {
+          // Never swallow the insert error — a silent failure here once hid invoices
+          // vanishing on a status CHECK-constraint violation. Surface it loudly.
+          console.error(`Invoice save FAILED for #${invoiceData.invoiceNumber} (status=${savedStatus}): ${saveErr.message}${saveErr.details ? " | " + saveErr.details : ""}`);
+        }
         savedInv = data;
       } catch (e) { console.error("Invoice save error:", e.message); }
     }
 
     // ── NOTIFY BUYER via Teams/Slack ────────────────────────────
-    if (teamId && savedInv) {
+    // Suppress ALL buyer notifications when the push failed or is uncertain — a
+    // failed/uncertain push must not tell the buyer it was processed OR flagged.
+    if (teamId && savedInv && validationStatus !== "push_failed" && validationStatus !== "push_uncertain") {
       try {
         // Only send ONE notification — prioritise anomaly flag over processed
         if (anomalyResult?.totalFlags > 0) {
