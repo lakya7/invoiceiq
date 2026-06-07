@@ -19,6 +19,7 @@
 const axios = require("axios");
 const qb = require("./quickbooks");
 const { createClient } = require("@supabase/supabase-js");
+const { decrypt } = require("./lib/crypto");
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 // ── ORACLE FUSION SYNC ───────────────────────────────────────────
@@ -26,7 +27,10 @@ async function syncOraclePayments({ teamId, connection }) {
   const results = { updated: 0, errors: 0, checked: 0, details: [] };
 
   try {
-    const { base_url: baseUrl, username, password } = connection;
+    const { base_url: baseUrl, username } = connection;
+    // Password is stored encrypted (v1:...) since May 2026; decrypt() passes
+    // through legacy plaintext unchanged. Mirrors oracle.js getOracleToken().
+    const password = decrypt(connection.password);
     if (!baseUrl || !username || !password) {
       console.warn(`Oracle Sync: missing connection fields for team ${teamId}, skipping`);
       return results;
