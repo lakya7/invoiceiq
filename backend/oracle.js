@@ -498,7 +498,10 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
   }
 
   // ── 5. AMOUNT BALANCE VALIDATION ─────────────────────────────
-  if (invoiceData.lineItems?.length > 0) {
+  if (!invoiceData.lineItems?.length) {
+    // Oracle AP requires at least one line; an empty invoiceLines:[] is rejected at push.
+    errors.push("Invoice must have at least one line item");
+  } else {
     const lineTotal = invoiceData.lineItems.reduce((sum, l) => sum + (l.amount || 0), 0);
     const tax = invoiceData.tax || 0;
     const expectedTotal = lineTotal + tax;
