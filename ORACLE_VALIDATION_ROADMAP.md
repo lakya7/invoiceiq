@@ -145,6 +145,13 @@ lines 771–843), 2026-06-07.
 
 ## 3. Distributions Strategy — Decision
 
+> **⛔ PARKED — pending an upstream architecture fork.** The strategy below assumes **Path A**
+> (direct REST into AP tables → Billtiq validates CoA before push). If we instead move to **Path B**
+> (stage into interface tables → Oracle's Import process validates CoA/distributions), this whole
+> strategy is superseded by import-rejection handling. Lakya is reviewing Oracle docs to decide.
+> **Do not build the CoA sync / distribution engine until the fork is resolved** — see the PARKED
+> banner in `DISTRIBUTION_ENGINE_DESIGN.md`.
+
 **The Section 2 "accounting distribution / CoA for non-PO lines" gap is the biggest blocker** for
 reliable non-PO invoice pushes. Decision below.
 

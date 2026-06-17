@@ -2,6 +2,27 @@
 
 **Status: DESIGN / ROADMAP — NOT yet implemented. No code exists for any of this.**
 
+> ## ⛔ PARKED — pending an upstream architecture decision (do NOT start the build)
+>
+> **This entire engine — and the Oracle CoA Sync it depends on — is on hold until a higher-level
+> fork is resolved. The fork decides whether the engine is needed at all.**
+>
+> - **Path A — Direct REST into AP tables (today's approach).** Billtiq must **validate CoA /
+>   distributions before push** → this distribution engine + CoA sync **must be built**.
+> - **Path B — Stage into interface tables + run Oracle's Import process.** Oracle's Import program
+>   **validates CoA/distributions** and produces correctable rejection rows → the engine is
+>   **not needed**; instead we **handle Oracle's import rejections** (read AP import errors, surface
+>   them for correction/resubmit).
+>
+> **Trade-off:** Path B is **asynchronous** and **moves validation into Oracle**, which weakens
+> Billtiq's "validated before push" value proposition — but it is **far less to build** than the
+> CoA sync engine.
+>
+> **Owner / status:** Lakya is reviewing Oracle documentation to decide A vs B.
+>
+> **DO NOT start the CoA sync build (or any of §1–§6 below) until this fork is resolved.** If Path B
+> is chosen, most of this document is superseded by an import-rejection-handling design instead.
+
 Purpose: assign a valid Oracle GL account (CoA combination) to every **non-PO** invoice line
 before push, so Billtiq stops relying on Oracle to default distributions (the Section 2 gap in
 `ORACLE_VALIDATION_ROADMAP.md`). PO-matched lines derive their account from the PO and are out of
