@@ -125,6 +125,22 @@ lines 771–843), 2026-06-07.
    validated; accounting date isn't even sent (period never checked); `InvoiceType` is hard-coded
    `"Standard"` (no credit/prepayment).
 
+### Shipped / deferred status of the gaps
+
+- **Gap 1 (min-line):** ✅ FIXED — `validateInvoice` §5 now hard-blocks zero-line invoices.
+- **Gap 2 (per-supplier uniqueness):**
+  - ✅ *Message* improved — the §6 duplicate error now names the existing invoice's supplier
+    (`Supplier` + `SupplierNumber`, both confirmed in the default invoices response) and tells the
+    reviewer a different-supplier collision may be acceptable.
+  - ⏳ *Logic* DEFERRED (**Option B**) — reorder so supplier resolution (§7) runs **before** the
+    duplicate check (§6), then scope the dup query by `SupplierNumber` (confirmed a queryable
+    attribute on the `invoices` resource, e.g. `q=InvoiceNumber=<n>;SupplierNumber=<id>`). Current
+    behavior is **safe** (it over-blocks, never under-blocks) but can **false-block** a legitimate
+    cross-supplier same-number invoice. Defer until the supplier-resolution reorder is done so the
+    resolved `SupplierNumber` is available at the check.
+- **Gap 3 (distributions/CoA):** ⏳ deferred — see `DISTRIBUTION_ENGINE_DESIGN.md`.
+- **Gap 4 (BU/period/type):** ⏳ not started — checklist Sections 1 & 9.
+
 ---
 
 ## 3. Distributions Strategy — Decision

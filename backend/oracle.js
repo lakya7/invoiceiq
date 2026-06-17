@@ -527,9 +527,12 @@ async function validateInvoice({ invoiceData, teamId, credentials, baseUrl }) {
       );
       const existing = dupRes.data?.items || [];
       if (existing.length > 0) {
+        const dupSupplier = existing[0].Supplier || "unknown supplier";
+        const dupSupplierNum = existing[0].SupplierNumber || "n/a";
         errors.push(
-          `Invoice #${invoiceData.invoiceNumber} already exists in Oracle Fusion ` +
-          `(Oracle Invoice ID: ${existing[0].InvoiceId}). Oracle will reject duplicates.`
+          `Invoice #${invoiceData.invoiceNumber} already exists in Oracle Fusion for supplier ` +
+          `${dupSupplier} (Supplier #${dupSupplierNum}, Oracle Invoice ID ${existing[0].InvoiceId}). ` +
+          `If this is a different supplier, Oracle may accept it — review before resubmitting.`
         );
       }
     } catch (e) {
