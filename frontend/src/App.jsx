@@ -323,7 +323,7 @@ export default function App() {
     <Billing user={user} team={team} onBack={() => setView("dashboard")} />
   );
 
-  if (view === "settings") return <Settings user={user} onBack={() => setView("dashboard")} />;
+  if (view === "settings") return <Settings user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "team") return <TeamManagement user={user} team={team} onBack={() => setView("dashboard")} />;
   if (view === "pos") return <PurchaseOrders user={user} team={team} onBack={() => setView("dashboard")} />;
 

@@ -1007,6 +1007,57 @@ app.delete("/api/teams/:teamId/members/:memberId", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── DISTRIBUTION DEFAULTS (Non-PO GL coding rules) ──────────────
+app.get("/api/distribution-defaults/:teamId", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("distribution_defaults")
+      .select("*")
+      .eq("team_id", req.params.teamId)
+      .order("scope_type", { ascending: true });
+    if (error) throw error;
+    res.json({ success: true, defaults: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post("/api/distribution-defaults", async (req, res) => {
+  try {
+    const { teamId, scopeType, scopeValue, distributionCombination } = req.body;
+    if (!teamId) return res.status(400).json({ error: "teamId is required." });
+    if (!['supplier_site','supplier','bu','global'].includes(scopeType)) return res.status(400).json({ error: "Invalid scope type." });
+    if (scopeType !== "global" && !(scopeValue && scopeValue.trim())) return res.status(400).json({ error: "Scope value is required for non-global rules." });
+    if (!(distributionCombination && distributionCombination.trim())) return res.status(400).json({ error: "Distribution account is required." });
+    const row = {
+      team_id: teamId,
+      scope_type: scopeType,
+      scope_value: scopeType === "global" ? null : scopeValue.trim(),
+      distribution_combination: distributionCombination.trim(),
+    };
+    const { data, error } = await supabase.from("distribution_defaults").insert(row).select().single();
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "A rule for this scope already exists." });
+      throw error;
+    }
+    res.json({ success: true, rule: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.put("/api/distribution-defaults/:id", async (req, res) => {
+  try {
+    const { distributionCombination, active } = req.body;
+    const patch = { updated_at: new Date().toISOString() };
+    if (distributionCombination !== undefined) patch.distribution_combination = distributionCombination.trim();
+    if (active !== undefined) patch.active = active;
+    const { data, error } = await supabase.from("distribution_defaults").update(patch).eq("id", req.params.id).select().single();
+    if (error) throw error;
+    res.json({ success: true, rule: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.delete("/api/distribution-defaults/:id", async (req, res) => {
+  try {
+    const { error } = await supabase.from("distribution_defaults").delete().eq("id", req.params.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 // ── SETTINGS ────────────────────────────────────────────────────
 app.get("/api/settings/:userId", async (req, res) => {
   try {

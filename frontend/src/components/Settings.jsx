@@ -35,7 +35,7 @@ function SettingRow({ label, sub, children }) {
   );
 }
 
-export default function Settings({ user, onBack }) {
+export default function Settings({ user, team, onBack }) {
   const [activeSection, setActiveSection] = useState("Notifications");
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,10 +46,14 @@ export default function Settings({ user, onBack }) {
   const [testingWebhook, setTestingWebhook] = useState(null);
   const [toast, setToast] = useState(null);
   const [profile, setProfile] = useState({ full_name: user.user_metadata?.full_name || "", email: user.email });
+  const [distRules, setDistRules] = useState([]);
+  const [distForm, setDistForm] = useState({ scopeType: "global", scopeValue: "", account: "" });
+  const [distBusy, setDistBusy] = useState(false);
 
   const firstName = profile.full_name?.split(" ")[0] || profile.email?.split("@")[0];
 
   useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { if (activeSection === "ERP & Integration") loadDistRules(); }, [activeSection, team?.id]);
 
   const loadSettings = async () => {
     setLoading(true);
@@ -67,6 +71,47 @@ export default function Settings({ user, onBack }) {
   };
 
   const set = (key, val) => setSettings(s => ({ ...s, [key]: val }));
+
+  const loadDistRules = async () => {
+    if (!team?.id) return;
+    try {
+      const res = await fetch(`${API}/api/distribution-defaults/${team.id}`);
+      const data = await res.json();
+      if (data.success) setDistRules(data.defaults || []);
+    } catch (e) { console.error("Dist rules load error", e); }
+  };
+
+  const addDistRule = async () => {
+    if (!team?.id) return showToast("No team selected", "error");
+    if (!distForm.account.trim()) return showToast("Distribution account is required", "error");
+    if (distForm.scopeType !== "global" && !distForm.scopeValue.trim()) return showToast("Scope value is required", "error");
+    setDistBusy(true);
+    try {
+      const res = await fetch(`${API}/api/distribution-defaults`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: team.id, scopeType: distForm.scopeType, scopeValue: distForm.scopeValue, distributionCombination: distForm.account }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add rule");
+      showToast("Rule added", "success");
+      setDistForm({ scopeType: "global", scopeValue: "", account: "" });
+      loadDistRules();
+    } catch (e) { showToast(e.message, "error"); }
+    setDistBusy(false);
+  };
+
+  const deleteDistRule = async (id) => {
+    setDistBusy(true);
+    try {
+      const res = await fetch(`${API}/api/distribution-defaults/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete rule");
+      showToast("Rule deleted", "success");
+      loadDistRules();
+    } catch (e) { showToast(e.message, "error"); }
+    setDistBusy(false);
+  };
 
   const save = async () => {
     setSaving(true);
@@ -288,6 +333,43 @@ export default function Settings({ user, onBack }) {
                       label="Require PO match before approval"
                       sub="Flag invoices that don't match an open purchase order"
                     />
+                  </div>
+                </div>
+
+                <div className="settings-card">
+                  <div className="settings-card-title">Distribution Accounts (Non-PO)</div>
+                  <div className="settings-card-sub">GL account sent to Oracle for non-PO invoices. Most specific rule wins: Supplier Site &gt; Supplier &gt; Business Unit &gt; Global. If none match, Oracle defaults.</div>
+                  <div className="settings-card-body">
+                    {distRules.length === 0 && (
+                      <div style={{ color: "#9a9a8f", fontSize: 14, padding: "8px 0" }}>No distribution rules yet. Add one below, or leave empty to let Oracle default.</div>
+                    )}
+                    {distRules.map(r => (
+                      <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>
+                            {r.scope_type === "global" ? "Global (all suppliers)"
+                              : r.scope_type === "bu" ? `Business Unit: ${r.scope_value}`
+                              : r.scope_type === "supplier" ? `Supplier: ${r.scope_value}`
+                              : `Supplier Site: ${r.scope_value}`}
+                          </div>
+                          <div style={{ fontFamily: "monospace", fontSize: 13, color: "#555" }}>{r.distribution_combination}</div>
+                        </div>
+                        <button className="btn-secondary-action" onClick={() => deleteDistRule(r.id)} disabled={distBusy}>Delete</button>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
+                      <select className="settings-input" style={{ maxWidth: 180 }} value={distForm.scopeType} onChange={e => setDistForm(f => ({ ...f, scopeType: e.target.value }))}>
+                        <option value="global">Global</option>
+                        <option value="bu">Business Unit</option>
+                        <option value="supplier">Supplier</option>
+                        <option value="supplier_site">Supplier Site</option>
+                      </select>
+                      {distForm.scopeType !== "global" && (
+                        <input className="settings-input" style={{ maxWidth: 200 }} placeholder="e.g. ABC Consulting" value={distForm.scopeValue} onChange={e => setDistForm(f => ({ ...f, scopeValue: e.target.value }))} />
+                      )}
+                      <input className="settings-input" style={{ maxWidth: 220 }} placeholder="101.10.13500.000.000.000" value={distForm.account} onChange={e => setDistForm(f => ({ ...f, account: e.target.value }))} />
+                      <button className="btn-primary-action" onClick={addDistRule} disabled={distBusy}>{distBusy ? "Saving..." : "Add rule"}</button>
+                    </div>
                   </div>
                 </div>
               </>
