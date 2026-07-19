@@ -7,6 +7,28 @@ const { encrypt, decrypt } = require("./lib/crypto");
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
+// Non-PO distribution resolution. Precedence: supplier_site -> supplier -> bu -> global.
+// Returns { combination, source } or null (caller omits field so Oracle defaults).
+async function resolveDistribution(teamId, ctx) {
+  if (!teamId) return null;
+  const { data, error } = await supabase
+    .from("distribution_defaults")
+    .select("scope_type, scope_value, distribution_combination")
+    .eq("team_id", teamId)
+    .eq("active", true);
+  if (error) { console.warn("Distribution resolution error:", error.message); return null; }
+  if (!data || data.length === 0) return null;
+  const bySite = data.find(r => r.scope_type === "supplier_site" && r.scope_value === ctx.supplierSite);
+  if (bySite) return { combination: bySite.distribution_combination, source: "supplier_site" };
+  const bySup = data.find(r => r.scope_type === "supplier" && r.scope_value === ctx.supplier);
+  if (bySup) return { combination: bySup.distribution_combination, source: "supplier" };
+  const byBu = data.find(r => r.scope_type === "bu" && r.scope_value === ctx.businessUnit);
+  if (byBu) return { combination: byBu.distribution_combination, source: "bu" };
+  const glob = data.find(r => r.scope_type === "global");
+  if (glob) return { combination: glob.distribution_combination, source: "global" };
+  return null;
+}
+
 // ── AUTH ────────────────────────────────────────────────────────
 async function getOracleToken(teamId) {
   const { data: conn } = await supabase
@@ -804,6 +826,18 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
   }
 
   // Map invoice data to Oracle Fusion format
+  // Resolve non-PO distribution (null -> Oracle defaults)
+  const isPoMatched = !!validation.threeWayMatch && validation.threeWayMatch.status !== "skipped";
+  let distribution = null;
+  if (!isPoMatched) {
+    distribution = await resolveDistribution(teamId, {
+      supplier: resolved.Supplier,
+      supplierSite: resolved.SupplierSite,
+      businessUnit: resolved.BusinessUnit,
+    });
+    if (distribution) console.log("Distribution resolved: " + distribution.combination + " (source: " + distribution.source + ")");
+    else console.log("Distribution: none configured, leaving to Oracle defaulting.");
+  }
   const oracleInvoice = {
     BusinessUnit: resolved.BusinessUnit,
     InvoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
@@ -833,6 +867,7 @@ async function pushInvoice(teamId, invoiceData, opts = {}) {
         Description: item.description,
         Quantity: lineType === "Item" ? (item.quantity || 1) : undefined,
         UnitPrice: lineType === "Item" ? (item.unitPrice || 0) : undefined,
+        DistributionCombination: (distribution && lineType === "Item") ? distribution.combination : undefined,
       };
     }),
   };
