@@ -19,6 +19,7 @@ import BatchUpload from "./components/BatchUpload";
 import Support from "./components/Support";
 import Operations from "./components/Operations";
 import "./App.css";
+import { apiFetch } from "./api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const STAGES = { UPLOAD:"upload", PROCESSING:"processing", REVIEW:"review", MATCHING:"matching", SUCCESS:"success" };
@@ -64,7 +65,7 @@ export default function App() {
       const emailAgentError = params.get("emailAgentError");
 
       if (inviteToken) {
-        fetch(`${API}/api/invite/accept`, {
+        apiFetch(`${API}/api/invite/accept`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: inviteToken, userId: user.id })
@@ -97,7 +98,7 @@ export default function App() {
 
   const loadTeams = async (retries = 3) => {
     try {
-      const res = await fetch(`${API}/api/teams/user/${user.id}`);
+      const res = await apiFetch(`${API}/api/teams/user/${user.id}`);
       const data = await res.json();
       if (data.success) {
         setTeams(data.teams || []);
@@ -125,7 +126,7 @@ export default function App() {
     // Check usage limit
     if (team) {
       try {
-        const r = await fetch(`${API}/api/billing/check/${team.id}`);
+        const r = await apiFetch(`${API}/api/billing/check/${team.id}`);
         const d = await r.json();
         if (d.success && !d.allowed) {
           let msg;
@@ -153,7 +154,7 @@ export default function App() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${API}/api/extract`, { method: "POST", body: formData });
+      const res = await apiFetch(`${API}/api/extract`, { method: "POST", body: formData });
       const result = await res.json();
       if (!result.success) throw new Error(result.error);
 
@@ -202,7 +203,7 @@ export default function App() {
     if (team) {
       setStatusMsg("Matching against purchase orders...");
       try {
-        const res = await fetch(`${API}/api/match-po`, {
+        const res = await apiFetch(`${API}/api/match-po`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ invoiceData: data, teamId: team.id }),
@@ -215,7 +216,7 @@ export default function App() {
 
     setStatusMsg("Pushing to ERP...");
     try {
-      const res = await fetch(`${API}/api/push-erp`, {
+      const res = await apiFetch(`${API}/api/push-erp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invoiceData: data, userId: user?.id, teamId: team?.id, matchResult: match, pdfBase64: activePdf, pdfFilename: activeFilename }),
@@ -345,7 +346,7 @@ export default function App() {
       onReport={async () => {
         if (!team) return alert("Please create a team first");
         try {
-          const res = await fetch(`${API}/api/agent/report`, {
+          const res = await apiFetch(`${API}/api/agent/report`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ teamId: team.id, userId: user.id })

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -191,7 +192,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
 
   const approveInvoice = async (invoiceId) => {
     try {
-      const res = await fetch(`${API}/api/invoices/${invoiceId}/approve`, {
+      const res = await apiFetch(`${API}/api/invoices/${invoiceId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team?.id }),
@@ -205,7 +206,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const rejectInvoice = async (invoiceId) => {
     if (!window.confirm("Reject this invoice? The supplier will be notified.")) return;
     try {
-      const res = await fetch(`${API}/api/invoices/${invoiceId}/reject`, {
+      const res = await apiFetch(`${API}/api/invoices/${invoiceId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team?.id }),
@@ -234,7 +235,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     for (const invoiceId of eligibleIds) {
       try {
         const inv = invoices.find(i => i.id === invoiceId);
-        const res = await fetch(`${API}/api/invoices/${invoiceId}/mark-paid`, {
+        const res = await apiFetch(`${API}/api/invoices/${invoiceId}/mark-paid`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -330,7 +331,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     e.preventDefault();
     if (!newTeamName.trim()) return;
     try {
-      const res = await fetch(`${API}/api/teams`, {
+      const res = await apiFetch(`${API}/api/teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newTeamName, userId: user.id }),
@@ -446,7 +447,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
   const loadAudit = async (invoiceId) => {
     setAuditLoading(true);
     try {
-      const res = await fetch(`${API}/api/invoices/${invoiceId}/audit`);
+      const res = await apiFetch(`${API}/api/invoices/${invoiceId}/audit`);
       const data = await res.json();
       setAuditLog(data.audit || []);
     } catch (e) { console.error("Audit load error:", e); }
@@ -480,7 +481,7 @@ export default function Dashboard({ user, team, teams, onTeamChange, onNewInvoic
     if (!paidInvoice) return;
     setSavingPaid(true);
     try {
-      const res = await fetch(`${API}/api/invoices/${paidInvoice.id}/mark-paid`, {
+      const res = await apiFetch(`${API}/api/invoices/${paidInvoice.id}/mark-paid`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -59,7 +60,7 @@ export default function Support({ user, team, onBack }) {
 
     try {
       // Send via backend email
-      const res = await fetch(`${API}/api/support`, {
+      const res = await apiFetch(`${API}/api/support`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

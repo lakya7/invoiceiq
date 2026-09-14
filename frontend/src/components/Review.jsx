@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -88,14 +89,14 @@ export default function Review({ data, filePreview, onApprove, onBack, team, pdf
       setOracleValidating(true);
       try {
         // Discover which ERP this team has connected
-        const connRes = await fetch(`${API}/api/erp/connections/${team.id}`);
+        const connRes = await apiFetch(`${API}/api/erp/connections/${team.id}`);
         const connData = await connRes.json();
         const connected = (connData?.connections || []).find(c => c.status === "connected");
         const erpType = connected?.erp_type;
         // Only Oracle and NetSuite have pre-push validation endpoints today.
         // QuickBooks (and mock) skip pre-push validation — rely on local checks only.
         if (erpType === "oracle" || erpType === "netsuite") {
-          const res = await fetch(`${API}/api/erp/${erpType}/validate`, {
+          const res = await apiFetch(`${API}/api/erp/${erpType}/validate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ teamId: team.id, invoiceData: form }),

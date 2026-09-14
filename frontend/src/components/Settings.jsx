@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -58,12 +59,12 @@ export default function Settings({ user, team, onBack }) {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/settings/${user.id}`);
+      const res = await apiFetch(`${API}/api/settings/${user.id}`);
       const data = await res.json();
       if (data.success) setSettings(data.settings);
     } catch (e) { showToast("Failed to load settings", "error"); }
     try {
-      const nRes = await fetch(`${API}/api/notifications/settings/${user.id}`);
+      const nRes = await apiFetch(`${API}/api/notifications/settings/${user.id}`);
       const nData = await nRes.json();
       if (nData.success && nData.settings) setNotifSettings(s => ({ ...s, ...nData.settings }));
     } catch (e) { console.error("Notif settings load error", e); }
@@ -75,7 +76,7 @@ export default function Settings({ user, team, onBack }) {
   const loadDistRules = async () => {
     if (!team?.id) return;
     try {
-      const res = await fetch(`${API}/api/distribution-defaults/${team.id}`);
+      const res = await apiFetch(`${API}/api/distribution-defaults/${team.id}`);
       const data = await res.json();
       if (data.success) setDistRules(data.defaults || []);
     } catch (e) { console.error("Dist rules load error", e); }
@@ -87,7 +88,7 @@ export default function Settings({ user, team, onBack }) {
     if (distForm.scopeType !== "global" && !distForm.scopeValue.trim()) return showToast("Scope value is required", "error");
     setDistBusy(true);
     try {
-      const res = await fetch(`${API}/api/distribution-defaults`, {
+      const res = await apiFetch(`${API}/api/distribution-defaults`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, scopeType: distForm.scopeType, scopeValue: distForm.scopeValue, distributionCombination: distForm.account }),
@@ -104,7 +105,7 @@ export default function Settings({ user, team, onBack }) {
   const deleteDistRule = async (id) => {
     setDistBusy(true);
     try {
-      const res = await fetch(`${API}/api/distribution-defaults/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`${API}/api/distribution-defaults/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete rule");
       showToast("Rule deleted", "success");
@@ -116,7 +117,7 @@ export default function Settings({ user, team, onBack }) {
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${API}/api/settings`, {
+      const res = await apiFetch(`${API}/api/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, settings }),
@@ -132,7 +133,7 @@ export default function Settings({ user, team, onBack }) {
     const email = settings?.notify_email || user.email;
     setTestSending(true);
     try {
-      const res = await fetch(`${API}/api/settings/test-email`, {
+      const res = await apiFetch(`${API}/api/settings/test-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, userId: user.id }),
@@ -153,7 +154,7 @@ export default function Settings({ user, team, onBack }) {
   const saveNotifSettings = async () => {
     setNotifSaving(true);
     try {
-      const res = await fetch(`${API}/api/notifications/settings`, {
+      const res = await apiFetch(`${API}/api/notifications/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, settings: notifSettings }),
@@ -170,7 +171,7 @@ export default function Settings({ user, team, onBack }) {
     if (!url) return showToast(`Please enter a ${platform === "slack" ? "Slack" : "Teams"} webhook URL first`, "error");
     setTestingWebhook(platform);
     try {
-      const res = await fetch(`${API}/api/notifications/test`, {
+      const res = await apiFetch(`${API}/api/notifications/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ platform, webhookUrl: url }),

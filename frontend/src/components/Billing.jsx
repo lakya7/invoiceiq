@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -116,7 +117,7 @@ export default function Billing({ user, team, onBack }) {
   const fetchBilling = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/billing/${team.id}`);
+      const res = await apiFetch(`${API}/api/billing/${team.id}`);
       const data = await res.json();
       if (data.success) { setSub(data.subscription); setUsage(data.usage); }
     } catch (e) { showToast("Failed to load billing info", "error"); }
@@ -130,7 +131,7 @@ export default function Billing({ user, team, onBack }) {
     }
     setCheckoutLoading(planId);
     try {
-      const res = await fetch(`${API}/api/billing/checkout`, {
+      const res = await apiFetch(`${API}/api/billing/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, plan: planId, email: user.email, teamName: team.name }),
@@ -145,7 +146,7 @@ export default function Billing({ user, team, onBack }) {
   const openPortal = async () => {
     setPortalLoading(true);
     try {
-      const res = await fetch(`${API}/api/billing/portal`, {
+      const res = await apiFetch(`${API}/api/billing/portal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id }),
