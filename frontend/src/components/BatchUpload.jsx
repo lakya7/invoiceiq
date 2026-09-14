@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -27,7 +28,7 @@ export default function BatchUpload({ user, team, onBack, onDone }) {
       formData.append("teamId", team.id);
       formData.append("userId", user.id);
 
-      const res = await fetch(`${API}/api/batch/upload`, { method: "POST", body: formData });
+      const res = await apiFetch(`${API}/api/batch/upload`, { method: "POST", body: formData });
       const data = await res.json();
       setResult(data);
     } catch (e) { alert("Upload failed: " + e.message); }

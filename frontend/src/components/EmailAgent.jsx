@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -17,7 +18,7 @@ export default function EmailAgent({ user, team, onBack }) {
   const fetchConfig = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch(`${API}/api/agent/email/${team.id}`);
+      const res = await apiFetch(`${API}/api/agent/email/${team.id}`);
       const data = await res.json();
       setConfig(data.config);
     } catch (e) { console.error(e); }
@@ -26,7 +27,7 @@ export default function EmailAgent({ user, team, onBack }) {
 
   const connectGmail = async () => {
     try {
-      const res = await fetch(`${API}/api/agent/email/gmail/auth-url`, {
+      const res = await apiFetch(`${API}/api/agent/email/gmail/auth-url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, userId: user.id }),
@@ -40,7 +41,7 @@ export default function EmailAgent({ user, team, onBack }) {
     setChecking(true);
     setResult(null);
     try {
-      const res = await fetch(`${API}/api/agent/email/check`, {
+      const res = await apiFetch(`${API}/api/agent/email/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, userId: user.id }),
@@ -56,7 +57,7 @@ export default function EmailAgent({ user, team, onBack }) {
     e.preventDefault();
     setImapLoading(true);
     try {
-      const res = await fetch(`${API}/api/agent/email/imap/connect`, {
+      const res = await apiFetch(`${API}/api/agent/email/imap/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, ...imapForm }),
@@ -72,7 +73,7 @@ export default function EmailAgent({ user, team, onBack }) {
   const testImap = async () => {
     setImapTesting(true);
     try {
-      const res = await fetch(`${API}/api/agent/email/imap/test`, {
+      const res = await apiFetch(`${API}/api/agent/email/imap/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(imapForm),
@@ -87,7 +88,7 @@ export default function EmailAgent({ user, team, onBack }) {
   const disconnectEmail = async () => {
     if (!confirm("Disconnect email agent?")) return;
     try {
-      await fetch(`${API}/api/agent/email/config`, {
+      await apiFetch(`${API}/api/agent/email/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, provider: config?.provider, email: config?.email, enabled: false }),

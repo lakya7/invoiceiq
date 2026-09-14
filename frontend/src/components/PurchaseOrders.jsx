@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -27,7 +28,7 @@ export default function PurchaseOrders({ user, team, onBack }) {
   const fetchPOs = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/pos/${team.id}`);
+      const res = await apiFetch(`${API}/api/pos/${team.id}`);
       const data = await res.json();
       if (data.success) setPos(data.pos);
     } catch (e) { showToast("Failed to load POs", "error"); }
@@ -42,7 +43,7 @@ export default function PurchaseOrders({ user, team, onBack }) {
       formData.append("file", file);
       formData.append("teamId", team.id);
       formData.append("userId", user.id);
-      const res = await fetch(`${API}/api/pos`, { method: "POST", body: formData });
+      const res = await apiFetch(`${API}/api/pos`, { method: "POST", body: formData });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       showToast("PO uploaded & extracted!", "success");
@@ -60,7 +61,7 @@ export default function PurchaseOrders({ user, team, onBack }) {
       formData.append("teamId", team.id);
       formData.append("userId", user.id);
       formData.append("poData", JSON.stringify({ ...manualPO, vendor: { name: manualPO.vendorName }, totalAmount: parseFloat(manualPO.totalAmount) || 0 }));
-      const res = await fetch(`${API}/api/pos`, { method: "POST", body: formData });
+      const res = await apiFetch(`${API}/api/pos`, { method: "POST", body: formData });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       showToast("PO created!", "success");

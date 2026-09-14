@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -34,7 +35,7 @@ export default function Operations({ user, team, onBack }) {
   const fetchTasks = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch(`${API}/api/operations/${team.id}?type=${activeTab}`);
+      const res = await apiFetch(`${API}/api/operations/${team.id}?type=${activeTab}`);
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch (e) { console.error(e); }
@@ -45,7 +46,7 @@ export default function Operations({ user, team, onBack }) {
     setRunning(true);
     setLastRun(null);
     try {
-      const res = await fetch(`${API}/api/operations/run/${activeTab}`, {
+      const res = await apiFetch(`${API}/api/operations/run/${activeTab}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, userId: user.id }),
@@ -61,7 +62,7 @@ export default function Operations({ user, team, onBack }) {
   const updateStatus = async (taskId, status) => {
     setBusyId(taskId);
     try {
-      const res = await fetch(`${API}/api/operations/task/${taskId}/status`, {
+      const res = await apiFetch(`${API}/api/operations/task/${taskId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, status }),
@@ -77,7 +78,7 @@ export default function Operations({ user, team, onBack }) {
     if (!confirm("Send a PO acknowledgment request to the supplier?")) return;
     setBusyId(taskId);
     try {
-      const res = await fetch(`${API}/api/operations/po-ack/send`, {
+      const res = await apiFetch(`${API}/api/operations/po-ack/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, taskId }),

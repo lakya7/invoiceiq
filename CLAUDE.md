@@ -89,8 +89,10 @@ npm run dev                     # Vite dev server (port 3000); npm run build for
 git push                        # Vercel rebuilds frontend, Render rebuilds backend
 ```
 
-**Tests:** none exist. There is no test runner, no lint config, no CI. "Testing" = run
-`node server.js` locally and exercise the change by hand before pushing.
+**Tests:** `backend/test/` (node:test). Run against STAGING only:
+`cd backend && SUPABASE_URL=https://aosgfxbmaupsccfvwovv.supabase.co SUPABASE_SERVICE_KEY=… SUPABASE_ANON_KEY=… npm test`.
+Boots server.js with `AUTH_ENFORCE=on`, creates throwaway users/teams, proves cross-tenant
+requests are refused, and deletes what it created. No lint config, no CI yet.
 
 ⚠️ **There is no staging / test environment.** Every `git push` to `main` deploys
 straight to production. No dev → staging → prod promotion. No automated tests run.
@@ -119,6 +121,20 @@ No CI/CD yet. No automated tests yet. Both are in the roadmap.
   before code lands.
 
 ---
+
+## API auth (added Sept 2026, Phase 0 of supplier portal)
+
+- `backend/lib/auth.js` runs on every `/api` route: verifies the Supabase JWT from
+  `Authorization: Bearer …`, then checks that any `userId` / `teamId` in the path, body or
+  query belongs to the caller (`team_members.status = 'active'`). `/api/invoices/:invoiceId/*`
+  is guarded by `requireInvoiceAccess`.
+- **`AUTH_ENFORCE` env var (Render): `off` (default) = shadow mode — nothing blocked, violations
+  logged as `[auth] shadow …`. `on` = 401/403.** Watch Render logs for shadow warnings before
+  flipping on. `AUTH_MEMBERSHIP_CACHE_MS` (default 30000) controls the membership cache.
+- Frontend: all backend calls go through `apiFetch` in `frontend/src/api.js`, which attaches the
+  session token. New components must use it, not bare `fetch`.
+- Public (no token) paths: `/health`, `/api/demo-request`, `/api/support`, `/api/billing/webhook`,
+  ERP OAuth callbacks, Gmail callback.
 
 ## Conventions
 

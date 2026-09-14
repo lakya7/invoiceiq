@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const ROLES = ["admin", "member", "viewer"];
@@ -31,7 +32,7 @@ export default function TeamManagement({ user, team, onBack }) {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/teams/${team.id}/members`);
+      const res = await apiFetch(`${API}/api/teams/${team.id}/members`);
       const data = await res.json();
       if (data.success) setMembers(data.members);
     } catch (e) { showToast("Failed to load members", "error"); }
@@ -43,7 +44,7 @@ export default function TeamManagement({ user, team, onBack }) {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      const res = await fetch(`${API}/api/teams/${team.id}/invite`, {
+      const res = await apiFetch(`${API}/api/teams/${team.id}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole, invitedBy: user.id }),
@@ -59,7 +60,7 @@ export default function TeamManagement({ user, team, onBack }) {
 
   const updateRole = async (memberId, role) => {
     try {
-      const res = await fetch(`${API}/api/teams/${team.id}/members/${memberId}`, {
+      const res = await apiFetch(`${API}/api/teams/${team.id}/members/${memberId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role }),
@@ -74,7 +75,7 @@ export default function TeamManagement({ user, team, onBack }) {
   const removeMember = async (memberId, email) => {
     if (!confirm(`Remove ${email} from the team?`)) return;
     try {
-      const res = await fetch(`${API}/api/teams/${team.id}/members/${memberId}`, { method: "DELETE" });
+      const res = await apiFetch(`${API}/api/teams/${team.id}/members/${memberId}`, { method: "DELETE" });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       setMembers(m => m.filter(x => x.id !== memberId));
@@ -85,7 +86,7 @@ export default function TeamManagement({ user, team, onBack }) {
   const resendInvite = async (email) => {
     setResendingFor(email);
     try {
-      const res = await fetch(`${API}/api/teams/${team.id}/invite/resend`, {
+      const res = await apiFetch(`${API}/api/teams/${team.id}/invite/resend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

@@ -32,6 +32,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // Fail fast at boot if ENCRYPTION_KEY is missing or malformed. This avoids
 // silent decrypt failures on the first invoice push hours after deploy.
 const { assertKeyConfigured } = require("./lib/crypto");
+const { createAuth } = require("./lib/auth");
 try {
   assertKeyConfigured();
   console.log("[crypto] ENCRYPTION_KEY configured correctly");
@@ -104,9 +105,14 @@ async function sendEmail({ to, subject, html }) {
   throw new Error("No email provider configured (Resend and Gmail both unavailable)");
 }
 
-app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","PUT","DELETE"] }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "*", methods: ["GET","POST","PUT","DELETE"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Caller identity + tenant checks for every /api route (AUTH_ENFORCE=on|off, see lib/auth.js).
+const auth = createAuth(supabase);
+app.use("/api", auth.authenticate, auth.enforceTenantParams);
+console.log(`[auth] enforcement ${auth.enforcing() ? "ON" : "OFF (shadow mode)"}`);
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 // ── DEMO REQUEST ────────────────────────────────────────────────
@@ -280,7 +286,7 @@ async function getUserEmail(userId) {
 }
 
 // ── EXTRACT INVOICE ─────────────────────────────────────────────
-app.post("/api/extract", upload.single("file"), async (req, res) => {
+app.post("/api/extract", upload.single("file"), auth.enforceTenantParams, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const b64 = readFile(req.file.path).toString("base64");
@@ -377,7 +383,7 @@ app.get("/api/pos/:teamId", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post("/api/pos", upload.single("file"), async (req, res) => {
+app.post("/api/pos", upload.single("file"), auth.enforceTenantParams, async (req, res) => {
   try {
     const { teamId, userId } = req.body;
 
@@ -1040,7 +1046,7 @@ app.post("/api/distribution-defaults", async (req, res) => {
     res.json({ success: true, rule: data });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.put("/api/distribution-defaults/:id", async (req, res) => {
+app.put("/api/distribution-defaults/:id", auth.requireRowInTeam("distribution_defaults"), async (req, res) => {
   try {
     const { distributionCombination, active } = req.body;
     const patch = { updated_at: new Date().toISOString() };
@@ -1051,7 +1057,7 @@ app.put("/api/distribution-defaults/:id", async (req, res) => {
     res.json({ success: true, rule: data });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.delete("/api/distribution-defaults/:id", async (req, res) => {
+app.delete("/api/distribution-defaults/:id", auth.requireRowInTeam("distribution_defaults"), async (req, res) => {
   try {
     const { error } = await supabase.from("distribution_defaults").delete().eq("id", req.params.id);
     if (error) throw error;
@@ -1121,7 +1127,7 @@ async function sendApprovalEmail({ to, notifyEmail, invoiceData, erpReference, m
 
 const PORT = process.env.PORT || 4000;
 // ── INVOICE COMMENTS ─────────────────────────────────────────────
-app.get("/api/invoices/:invoiceId/comments", async (req, res) => {
+app.get("/api/invoices/:invoiceId/comments", auth.requireInvoiceAccess, async (req, res) => {
   try {
     const { data } = await supabase.from("invoice_comments")
       .select("*").eq("invoice_id", req.params.invoiceId)
@@ -1131,7 +1137,7 @@ app.get("/api/invoices/:invoiceId/comments", async (req, res) => {
 });
 
 // Mark invoice as paid (manual - admin only)
-app.post("/api/invoices/:invoiceId/mark-paid", async (req, res) => {
+app.post("/api/invoices/:invoiceId/mark-paid", auth.requireInvoiceAccess, async (req, res) => {
   try {
     const { teamId, userId, userEmail, paymentDate, paymentMethod, paymentReference, paidAmount } = req.body;
     const invoiceId = req.params.invoiceId;
@@ -1205,7 +1211,7 @@ app.post("/api/erp-sync/trigger", async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post("/api/invoices/:invoiceId/comments", async (req, res) => {
+app.post("/api/invoices/:invoiceId/comments", auth.requireInvoiceAccess, async (req, res) => {
   try {
     const { teamId, userId, userEmail, comment } = req.body;
     const { data } = await supabase.from("invoice_comments").insert({
@@ -1222,7 +1228,7 @@ app.post("/api/invoices/:invoiceId/comments", async (req, res) => {
 
 
 // ── AUDIT LOG ROUTES ─────────────────────────────────────────────
-app.get("/api/invoices/:invoiceId/audit", async (req, res) => {
+app.get("/api/invoices/:invoiceId/audit", auth.requireInvoiceAccess, async (req, res) => {
   try {
     const { data } = await supabase.from("invoice_audit_log")
       .select("*").eq("invoice_id", req.params.invoiceId)
@@ -1232,7 +1238,7 @@ app.get("/api/invoices/:invoiceId/audit", async (req, res) => {
 });
 
 // Log comment added to audit trail
-app.post("/api/invoices/:invoiceId/audit/comment", async (req, res) => {
+app.post("/api/invoices/:invoiceId/audit/comment", auth.requireInvoiceAccess, async (req, res) => {
   try {
     const { teamId, userId, userEmail, comment } = req.body;
     await logAudit({ invoiceId: req.params.invoiceId, teamId, userId, userEmail, action: "comment_added", detail: `"${comment}"`, actor: userEmail || "AP Team" });
@@ -1975,7 +1981,7 @@ app.post("/api/agent/erp-sync", async (req, res) => {
 // ── BATCH ZIP PROCESSING ────────────────────────────────────────
 const { processZipBuffer } = require("./batchProcessor");
 
-app.post("/api/batch/upload", upload.single("zip"), async (req, res) => {
+app.post("/api/batch/upload", upload.single("zip"), auth.enforceTenantParams, async (req, res) => {
   try {
     const { teamId, userId } = req.body;
     if (!req.file) return res.status(400).json({ error: "No ZIP file uploaded" });

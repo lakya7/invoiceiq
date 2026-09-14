@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../api";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -105,7 +106,7 @@ export default function ERPConnections({ user, team, onBack }) {
 
   const fetchConnections = async () => {
     try {
-      const res = await fetch(`${API}/api/erp/connections/${team.id}`);
+      const res = await apiFetch(`${API}/api/erp/connections/${team.id}`);
       const data = await res.json();
       if (data.success) {
         const map = {};
@@ -118,7 +119,7 @@ export default function ERPConnections({ user, team, onBack }) {
   const connectQB = async () => {
     setLoading("quickbooks");
     try {
-      const res = await fetch(`${API}/api/erp/quickbooks/auth/${team.id}`);
+      const res = await apiFetch(`${API}/api/erp/quickbooks/auth/${team.id}`);
       const data = await res.json();
       if (data.success) window.location.href = data.url; // redirect to QB OAuth
     } catch (e) { showToast(e.message, "error"); }
@@ -129,7 +130,7 @@ export default function ERPConnections({ user, team, onBack }) {
     e.preventDefault();
     setOracleLoading(true);
     try {
-      const res = await fetch(`${API}/api/erp/oracle/connect`, {
+      const res = await apiFetch(`${API}/api/erp/oracle/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, ...oracleForm }),
@@ -147,7 +148,7 @@ export default function ERPConnections({ user, team, onBack }) {
     e.preventDefault();
     setNetsuiteLoading(true);
     try {
-      const res = await fetch(`${API}/api/erp/netsuite/connect`, {
+      const res = await apiFetch(`${API}/api/erp/netsuite/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, ...netsuiteForm }),
@@ -164,7 +165,7 @@ export default function ERPConnections({ user, team, onBack }) {
   const connectXero = async () => {
     setLoading("xero");
     try {
-      const res = await fetch(`${API}/api/erp/xero/auth/${team.id}`);
+      const res = await apiFetch(`${API}/api/erp/xero/auth/${team.id}`);
       const data = await res.json();
       if (data.success) window.location.href = data.url;
     } catch (e) { showToast(e.message, "error"); }
@@ -174,7 +175,7 @@ export default function ERPConnections({ user, team, onBack }) {
   const connectZoho = async () => {
     setLoading("zoho");
     try {
-      const res = await fetch(`${API}/api/erp/zoho/auth/${team.id}`);
+      const res = await apiFetch(`${API}/api/erp/zoho/auth/${team.id}`);
       const data = await res.json();
       if (data.success) window.location.href = data.url;
     } catch (e) { showToast(e.message, "error"); }
@@ -185,7 +186,7 @@ export default function ERPConnections({ user, team, onBack }) {
     e.preventDefault();
     setDynamicsLoading(true);
     try {
-      const res = await fetch(`${API}/api/erp/dynamics/connect`, {
+      const res = await apiFetch(`${API}/api/erp/dynamics/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id, ...dynamicsForm }),
@@ -202,7 +203,7 @@ export default function ERPConnections({ user, team, onBack }) {
   const disconnect = async (erpType) => {
     setLoading(erpType);
     try {
-      const res = await fetch(`${API}/api/erp/${erpType}/disconnect`, {
+      const res = await apiFetch(`${API}/api/erp/${erpType}/disconnect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: team.id }),
